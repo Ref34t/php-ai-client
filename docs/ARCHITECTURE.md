@@ -12,6 +12,14 @@ The main additional aspect that the Vercel AI SDK does not cater for easily is f
 
 The following examples indicate how this SDK could eventually be used.
 
+#### Generate text using any suitable model from any provider (most basic example)
+
+```php
+$text = Ai::generateTextResult(
+    'Write a 2-verse poem about PHP.'
+)->toText();
+```
+
 #### Generate text using a Google model
 
 ```php
@@ -64,26 +72,67 @@ $imageFile = Ai::generateImageResult(
 )->toImageFile();
 ```
 
-#### Generate embeddings using any suitable model from any provider
+#### Generate text using any suitable model from any provider
+
+_Note: This does effectively the exact same as [the first code example](#generate-text-using-any-suitable-model-from-any-provider-most-basic-example), but more verbosely. In other words, if you omit the model parameter, the SDK will do this internally._
 
 ```php
 $providerModelsMetadata = Ai::defaultRegistry()->findModelsMetadataForSupport(
-    AiFeature::EMBEDDING_GENERATION
+    AiFeature::TEXT_GENERATION
 );
-$embeddings = Ai::generateEmbeddingsResult(
-    [
-        'A very long text.',
-        'Another very long text.',
-        'More long text.',
-    ],
+$text = Ai::generateTextResult(
+    'Write a 2-verse poem about PHP.',
     Ai::defaultRegistry()->getProviderModel(
         $providerModelsMetadata[0]->getProvider()->getId(),
         $providerModelsMetadata[0]->getModels()[0]->getId()
     )
-)->getEmbeddings();
+)->toText();
+```
+
+#### Generate text with an image as additional input using any suitable model from any provider
+
+_Note: Since this omits the model parameter, the SDK will automatically determine which models are suitable and use any of them, similar to [the first code example](#generate-text-using-any-suitable-model-from-any-provider-most-basic-example). Since it knows the input includes an image, it can internally infer that the model needs to not only support `AiFeature::TEXT_GENERATION`, but also `AiCapability::INPUT_MODALITIES => ['text', 'image']`._
+
+```php
+$text = Ai::generateTextResult(
+    [
+        [
+            'text' => 'Generate alternative text for this image.',
+        ],
+        [
+            'mimeType'   => 'image/png',
+            'base64Data' => '...', // Base64-encoded data blob.
+        ],
+    ]
+)->toText();
+```
+
+#### Generate text with chat history using any suitable model from any provider
+
+_Note: Similarly to the previous example, even without specifying the model here, the SDK will be able to infer required model capabilities because it can detect that multiple chat messages are passed. Therefore it will internally only consider models that support `AiFeature::TEXT_GENERATION` as well as `AiCapability::CHAT_HISTORY`._
+
+```php
+$text = Ai::generateTextResult(
+    [
+        [
+            'role'  => MessageRole::USER,
+            'parts' => ['text' => 'Do you spell it WordPress or Wordpress?'],
+        ],
+        [
+            'role'  => MessageRole::MODEL,
+            'parts' => ['text' => 'The correct spelling is WordPress.'],
+        ],
+        [
+            'role'  => MessageRole::USER,
+            'parts' => ['text' => 'Can you repeat that please?'],
+        ],
+    ]
+)->toText();
 ```
 
 #### Generate text with JSON output using any suitable model from any provider
+
+_Note: Unlike the previous two examples, to require JSON output it is necessary to go the verbose route, since it is impossible for the SDK to detect whether you require JSON output purely from the prompt input. Therefore this code example contains the logic to manually search for suitable models and then use one of them for the task._
 
 ```php
 $providerModelsMetadata = Ai::defaultRegistry()->findModelsMetadataForSupport(
@@ -120,6 +169,25 @@ $jsonString = Ai::generateTextResult(
         ]
     )
 )->toText();
+```
+
+#### Generate embeddings using any suitable model from any provider
+
+```php
+$providerModelsMetadata = Ai::defaultRegistry()->findModelsMetadataForSupport(
+    AiFeature::EMBEDDING_GENERATION
+);
+$embeddings = Ai::generateEmbeddingsResult(
+    [
+        'A very long text.',
+        'Another very long text.',
+        'More long text.',
+    ],
+    Ai::defaultRegistry()->getProviderModel(
+        $providerModelsMetadata[0]->getProvider()->getId(),
+        $providerModelsMetadata[0]->getModels()[0]->getId()
+    )
+)->getEmbeddings();
 ```
 
 ## Class diagrams
