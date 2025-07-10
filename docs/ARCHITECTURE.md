@@ -212,11 +212,11 @@ classDiagram
 direction LR
     namespace Ai {
         class AiEntrypoint {
-            +prompt(?string $text) PromptFacade$
-            +message(?string $text) MessageFacade$
+            +prompt(?string $text) PromptBuilder$
+            +message(?string $text) MessageBuilder$
         }
 
-        class PromptFacade {
+        class PromptBuilder {
             +withText(string $text) self
             +withImageFile(File $file) self
             +withAudioFile(File $file) self
@@ -255,7 +255,7 @@ direction LR
             +generateEmbeddings() Embedding[]
         }
 
-        class MessageFacade {
+        class MessageBuilder {
             +usingRole(MessageRole $role) self
             +withText(string $text) self
             +withImageFile(File $file) self
@@ -268,8 +268,8 @@ direction LR
         }
     }
 
-    AiEntrypoint .. PromptFacade : creates
-    AiEntrypoint .. MessageFacade : creates
+    AiEntrypoint .. PromptBuilder : creates
+    AiEntrypoint .. MessageBuilder : creates
 ```
 
 ### Overview: Traditional method call API for AI consumption
@@ -348,8 +348,8 @@ classDiagram
 direction LR
     namespace Ai {
         class AiEntrypoint {
-            +prompt(?string $text) PromptFacade$
-            +message(?string $text) MessageFacade$
+            +prompt(?string $text) PromptBuilder$
+            +message(?string $text) MessageBuilder$
             +defaultRegistry() AiProviderRegistry$
             +isConfigured(AiProviderAvailability $availability) bool$
             +generateResult(string|MessagePart|MessagePart[]|Message|Message[] $prompt, AiModel $model) GenerativeAiResult$
@@ -367,7 +367,7 @@ direction LR
             +generateEmbeddingsOperation(string[]|Message[] $input, AiModel $model) EmbeddingOperation$
         }
 
-        class PromptFacade {
+        class PromptBuilder {
             +withText(string $text) self
             +withImageFile(File $file) self
             +withAudioFile(File $file) self
@@ -406,7 +406,7 @@ direction LR
             +generateEmbeddings() Embedding[]
         }
 
-        class MessageFacade {
+        class MessageBuilder {
             +usingRole(MessageRole $role) self
             +withText(string $text) self
             +withImageFile(File $file) self
@@ -592,17 +592,17 @@ direction LR
 
     AiEntrypoint .. Message : receives
     AiEntrypoint .. MessagePart : receives
-    AiEntrypoint .. PromptFacade : creates
-    AiEntrypoint .. MessageFacade : creates
+    AiEntrypoint .. PromptBuilder : creates
+    AiEntrypoint .. MessageBuilder : creates
     AiEntrypoint .. GenerativeAiResult : creates
     AiEntrypoint .. EmbeddingResult : creates
     AiEntrypoint .. GenerativeAiOperation : creates
     AiEntrypoint .. EmbeddingOperation : creates
-    PromptFacade .. GenerativeAiResult : creates
-    PromptFacade .. EmbeddingResult : creates
-    PromptFacade .. GenerativeAiOperation : creates
-    PromptFacade .. EmbeddingOperation : creates
-    MessageFacade .. Message : creates
+    PromptBuilder .. GenerativeAiResult : creates
+    PromptBuilder .. EmbeddingResult : creates
+    PromptBuilder .. GenerativeAiOperation : creates
+    PromptBuilder .. EmbeddingOperation : creates
+    MessageBuilder .. Message : creates
     Message "1" *-- "1..*" MessagePart
     MessagePart "1" o-- "0..1" InlineFile
     MessagePart "1" o-- "0..1" RemoteFile
