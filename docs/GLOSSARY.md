@@ -3,6 +3,8 @@
 This glossary defines common terms relevant for the PHP AI Client and related projects.
 
 * **Agent**: An autonomous system that can perceive its environment, make decisions, and take actions to achieve specific goals, often leveraging AI models.
+* **AI Capability**: A single string that denotes an AI feature, such as text generation or image generation.
+* **AI Option**: A parameter that can be passed to a model, such as temperature or output MIME type.
 * **Generative AI**: Overaching term describing AI models that generate content as requested in a prompt.
 * **MCP**: The "Model Context Protocol", a proposed standard for connecting AI assistants to the systems where data lives.
 * **Message**: A single message, either a user prompt, a model response, or a system prompt—optionally containing of multiple message parts.

@@ -6,7 +6,7 @@ This document outlines the architecture for the PHP AI Client. It is critical th
 
 The API design at a high level is heavily inspired by the [Vercel AI SDK](https://github.com/vercel/ai), which is widely used in the NodeJS ecosystem and one of the very few comprehensive AI client SDKs available.
 
-The main additional aspect that the Vercel AI SDK does not cater for easily is for a developer to use AI in a way that the choice of provider remains with the user. To clarify with an example: Instead of "Generate text with Google's model `gemini-2.5-flash`", go with "Generate text using any provider model that supports text generation and multimodal input". In other words, there needs to be a mechanism that allows finding any configured model that supports the given set of required AI features and capabilities.
+The main additional aspect that the Vercel AI SDK does not cater for easily is for a developer to use AI in a way that the choice of provider remains with the user. To clarify with an example: Instead of "Generate text with Google's model `gemini-2.5-flash`", go with "Generate text using any provider model that supports text generation and multimodal input". In other words, there needs to be a mechanism that allows finding any configured model that supports the given set of required AI capabilities and options.
 
 ### Code examples
 
@@ -36,7 +36,7 @@ $texts = Ai::generateTextResult(
     'Write a 2-verse poem about PHP.',
     Anthropic::model(
         'claude-3.7-sonnet',
-        [TextGenerationConfig::CANDIDATE_COUNT => 4]
+        [AiOption::CANDIDATE_COUNT => 4]
     )
 )->toTexts();
 ```
@@ -46,7 +46,7 @@ $texts = Ai::generateTextResult(
 ```php
 $modelsMetadata = Ai::defaultRegistry()->findProviderModelsMetadataForSupport(
     'openai',
-    AiFeature::IMAGE_GENERATION
+    AiCapability::IMAGE_GENERATION
 );
 $imageFile = Ai::generateImageResult(
     'Generate an illustration of the PHP elephant in the Carribean sea.',
@@ -61,7 +61,7 @@ $imageFile = Ai::generateImageResult(
 
 ```php
 $providerModelsMetadata = Ai::defaultRegistry()->findModelsMetadataForSupport(
-    AiFeature::IMAGE_GENERATION
+    AiCapability::IMAGE_GENERATION
 );
 $imageFile = Ai::generateImageResult(
     'Generate an illustration of the PHP elephant in the Carribean sea.',
@@ -78,7 +78,7 @@ _Note: This does effectively the exact same as [the first code example](#generat
 
 ```php
 $providerModelsMetadata = Ai::defaultRegistry()->findModelsMetadataForSupport(
-    AiFeature::TEXT_GENERATION
+    AiCapability::TEXT_GENERATION
 );
 $text = Ai::generateTextResult(
     'Write a 2-verse poem about PHP.',
@@ -91,7 +91,7 @@ $text = Ai::generateTextResult(
 
 #### Generate text with an image as additional input using any suitable model from any provider
 
-_Note: Since this omits the model parameter, the SDK will automatically determine which models are suitable and use any of them, similar to [the first code example](#generate-text-using-any-suitable-model-from-any-provider-most-basic-example). Since it knows the input includes an image, it can internally infer that the model needs to not only support `AiFeature::TEXT_GENERATION`, but also `TextGenerationConfig::INPUT_MODALITIES => ['text', 'image']`._
+_Note: Since this omits the model parameter, the SDK will automatically determine which models are suitable and use any of them, similar to [the first code example](#generate-text-using-any-suitable-model-from-any-provider-most-basic-example). Since it knows the input includes an image, it can internally infer that the model needs to not only support `AiCapability::TEXT_GENERATION`, but also `AiOption::INPUT_MODALITIES => ['text', 'image']`._
 
 ```php
 $text = Ai::generateTextResult(
@@ -109,7 +109,7 @@ $text = Ai::generateTextResult(
 
 #### Generate text with chat history using any suitable model from any provider
 
-_Note: Similarly to the previous example, even without specifying the model here, the SDK will be able to infer required model capabilities because it can detect that multiple chat messages are passed. Therefore it will internally only consider models that support `AiFeature::TEXT_GENERATION` as well as `TextGenerationConfig::CHAT_HISTORY`._
+_Note: Similarly to the previous example, even without specifying the model here, the SDK will be able to infer required model capabilities because it can detect that multiple chat messages are passed. Therefore it will internally only consider models that support `AiCapability::TEXT_GENERATION` as well as `AiCapability::CHAT_HISTORY`._
 
 ```php
 $text = Ai::generateTextResult(
@@ -136,11 +136,11 @@ _Note: Unlike the previous two examples, to require JSON output it is necessary 
 
 ```php
 $providerModelsMetadata = Ai::defaultRegistry()->findModelsMetadataForSupport(
-    AiFeature::TEXT_GENERATION,
+    AiCapability::TEXT_GENERATION,
     [
         // Make sure the model supports JSON output as well as following a given schema.
-        TextGenerationConfig::OUTPUT_MIME_TYPE => 'application/json',
-        TextGenerationConfig::OUTPUT_SCHEMA    => true,
+        AiOption::OUTPUT_MIME_TYPE => 'application/json',
+        AiOption::OUTPUT_SCHEMA    => true,
     ]
 );
 $jsonString = Ai::generateTextResult(
@@ -149,19 +149,17 @@ $jsonString = Ai::generateTextResult(
         $providerModelsMetadata[0]->getProvider()->getId(),
         $providerModelsMetadata[0]->getModels()[0]->getId(),
         [
-            AiModelConfig::GENERATION_CONFIG => [
-                TextGenerationConfig::OUTPUT_MIME_TYPE => 'application/json',
-                TextGenerationConfig::OUTPUT_SCHEMA    => [
-                    'type'  => 'array',
-                    'items' => [
-                        'type'       => 'object',
-                        'properties' => [
-                            'name' => [
-                                'type' => 'string',
-                            ],
-                            'age'  => [
-                                'type' => 'integer',
-                            ],
+            AiOption::OUTPUT_MIME_TYPE => 'application/json',
+            AiOption::OUTPUT_SCHEMA    => [
+                'type'  => 'array',
+                'items' => [
+                    'type'       => 'object',
+                    'properties' => [
+                        'name' => [
+                            'type' => 'string',
+                        ],
+                        'age'  => [
+                            'type' => 'integer',
                         ],
                     ],
                 ],
@@ -175,7 +173,7 @@ $jsonString = Ai::generateTextResult(
 
 ```php
 $providerModelsMetadata = Ai::defaultRegistry()->findModelsMetadataForSupport(
-    AiFeature::EMBEDDING_GENERATION
+    AiCapability::EMBEDDING_GENERATION
 );
 $embeddings = Ai::generateEmbeddingsResult(
     [
@@ -253,6 +251,8 @@ direction LR
             +convertTextToSpeech() File
             +generateSpeech() File
             +generateEmbeddings() Embedding[]
+            +getModelRequirements() AiModelRequirements
+            +isSupported() bool
         }
 
         class MessageBuilder {
@@ -327,9 +327,9 @@ direction LR
             +hasProvider(string $idOrClassName) bool
             +getProviderClassName(string $id) string
             +isProviderConfigured(string $idOrClassName) bool
-            +getProviderModel(string $idOrClassName, string $modelId, AiModelConfig|array $modelConfig) AiModel
-            +findProviderModelsMetadataForSupport(string $idOrClassName, AiFeature $feature, array<string, mixed > $capabilities) AiModelMetadata[]
-            +findModelsMetadataForSupport(AiFeature $feature, array<string, mixed > $capabilities) AiProviderModelMetadata[]
+            +getProviderModel(string $idOrClassName, string $modelId, AiModelConfig|array< string, mixed > $modelConfig) AiModel
+            +findProviderModelsMetadataForSupport(string $idOrClassName, AiModelRequirements $modelRequirements) AiModelMetadata[]
+            +findModelsMetadataForSupport(AiModelRequirements $modelRequirements) AiProviderModelMetadata[]
         }
     }
 
@@ -404,6 +404,8 @@ direction LR
             +convertTextToSpeech() File
             +generateSpeech() File
             +generateEmbeddings() Embedding[]
+            +getModelRequirements() AiModelRequirements
+            +isSupported() bool
         }
 
         class MessageBuilder {
@@ -579,6 +581,9 @@ direction LR
             +toFirstAudioFile(Candidate[] $candidates) File$
             +toFirstVideoFile(Candidate[] $candidates) File$
         }
+        class RequirementsUtil {
+            +inferRequirements(Message[] $messages, AiModelConfig $modelConfig) AiModelRequirements$
+        }
     }
 
     <<interface>> File
@@ -645,9 +650,9 @@ direction LR
             +hasProvider(string $idOrClassName) bool
             +getProviderClassName(string $id) string
             +isProviderConfigured(string $idOrClassName) bool
-            +getProviderModel(string $idOrClassName, string $modelId, AiModelConfig|array $modelConfig) AiModel
-            +findProviderModelsMetadataForSupport(string $idOrClassName, AiFeature $feature, array<string, mixed > $capabilities) AiModelMetadata[]
-            +findModelsMetadataForSupport(AiFeature $feature, array<string, mixed > $capabilities) AiProviderModelMetadata[]
+            +getProviderModel(string $idOrClassName, string $modelId, AiModelConfig|array< string, mixed > $modelConfig) AiModel
+            +findProviderModelsMetadataForSupport(string $idOrClassName, AiModelRequirements $modelRequirements) AiModelMetadata[]
+            +findModelsMetadataForSupport(AiModelRequirements $modelRequirements) AiProviderModelMetadata[]
         }
     }
     namespace Ai.Providers.Contracts {
@@ -661,7 +666,6 @@ direction LR
             +metadata() AiModelMetadata
             +setConfig(AiModelConfig $config) void
             +getConfig() AiModelConfig
-            +getSupportedCapabilities() AiCapability[]$
         }
         class AiProviderAvailability {
             +isConfigured() bool
@@ -735,14 +739,18 @@ direction LR
         class AiModelMetadata {
             +getId() string
             +getName() string
-            +getSupportedFeatures() AiFeature[]
             +getSupportedCapabilities() AiCapability[]
+            +getSupportedOptions() AiSupportedOption[]
             +getJsonSchema() array< string, mixed >$
         }
         class AiProviderModelsMetadata {
             +getProvider() AiProviderMetadata
             +getModels() AiModelMetadata[]
             +getJsonSchema() array< string, mixed >$
+        }
+        class AiModelRequirements {
+            getRequiredCapabilities() AiCapability[]
+            getRequiredOptions() AiRequiredOption[]
         }
         class AiModelConfig {
             +setSystemInstruction(string|MessagePart|MessagePart[]|Message $systemInstruction) void
@@ -787,10 +795,15 @@ direction LR
             +getDisallowedDomains() string[]
             +getJsonSchema() array< string, mixed >$
         }
-        class AiCapability {
-            +isSupported() bool
+        class AiSupportedOption {
+            +getName() string
             +isSupportedValue(mixed $value) bool
             +getSupportedValues() mixed[]
+            +getJsonSchema() array< string, mixed >$
+        }
+        class AiRequiredOption {
+            +getName() string
+            +getValue() mixed
             +getJsonSchema() array< string, mixed >$
         }
     }
@@ -804,7 +817,7 @@ direction LR
             FUNCTION_DECLARATIONS
             WEB_SEARCH
         }
-        class AiFeature {
+        class AiCapability {
             TEXT_GENERATION
             IMAGE_GENERATION
             TEXT_TO_SPEECH
@@ -812,12 +825,23 @@ direction LR
             MUSIC_GENERATION
             VIDEO_GENERATION
             EMBEDDING_GENERATION
+            CHAT_HISTORY
+        }
+        class AiOption {
+            INPUT_MODALITIES
+            OUTPUT_MODALITIES
+            CANDIDATE_COUNT
+            TEMPERATURE
+            TOP_K
+            TOP_P
+            OUTPUT_MIME_TYPE
+            OUTPUT_SCHEMA
         }
     }
     namespace Ai.Providers.Util {
-        class AiFeaturesUtil {
-            +getSupportedFeatures(AiModel|string $modelClass) AiFeature[]$
+        class AiCapabilitiesUtil {
             +getSupportedCapabilities(AiModel|string $modelClass) AiCapability[]$
+            +getSupportedOptions(AiModel|string $modelClass) AiSupportedOption[]$
         }
     }
 
@@ -842,7 +866,8 @@ direction LR
     <<interface>> WithAuthentication
     <<interface>> Authentication
     <<interface>> GenerationConfig
-    <<Enumeration>> AiFeature
+    <<Enumeration>> AiCapability
+    <<Enumeration>> AiOption
     <<Enumeration>> AiProviderType
 
     AiProvider .. AiModel : creates
@@ -856,14 +881,17 @@ direction LR
     AiProviderRegistry "1" o-- "0..*" AiProvider
     AiProviderRegistry "1" o-- "0..*" AiProviderMetadata
     AiModelMetadataDirectory "1" o-- "1..*" AiModelMetadata
-    AiModelMetadata "1" o-- "1..*" AiFeature
-    AiModelMetadata "1" o-- "0..*" AiCapability
+    AiModelMetadata "1" o-- "1..*" AiCapability
+    AiModelMetadata "1" o-- "0..*" AiSupportedOption
+    AiModelRequirements "1" o-- "1..*" AiCapability
+    AiModelRequirements "1" o-- "0..*" AiRequiredOption
     AiModelConfig "1" o-- "0..1" GenerationConfig
     AiModelConfig "1" o-- "0..*" Tool
     Tool "1" o-- "0..*" FunctionDeclaration
     Tool "1" o-- "0..1" WebSearch
     AiProviderMetadata ..> AiProviderType
-    AiModelMetadata ..> AiFeature
+    AiModelMetadata ..> AiCapability
+    AiModelMetadata ..> AiSupportedOption
     AiModel <|-- AiTextGenerationModel
     AiModel <|-- AiImageGenerationModel
     AiModel <|-- AiTextToSpeechConversionModel
