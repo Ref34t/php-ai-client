@@ -239,18 +239,18 @@ direction LR
             +generateTextResult() GenerativeAiResult
             +streamGenerateTextResult() Generator< GenerativeAiResult >
             +generateImageResult() GenerativeAiResult
-            +textToSpeechResult() GenerativeAiResult
+            +convertTextToSpeechResult() GenerativeAiResult
             +generateSpeechResult() GenerativeAiResult
             +generateEmbeddingsResult() EmbeddingResult
             +generateTextOperation() GenerativeAiOperation
             +generateImageOperation() GenerativeAiOperation
-            +textToSpeechOperation() GenerativeAiOperation
+            +convertTextToSpeechOperation() GenerativeAiOperation
             +generateSpeechOperation() GenerativeAiOperation
             +generateEmbeddingsOperation() EmbeddingOperation
             +generateText() string
             +streamGenerateText() Generator< string >
             +generateImage() File
-            +textToSpeech() File
+            +convertTextToSpeech() File
             +generateSpeech() File
             +generateEmbeddings() Embedding[]
         }
@@ -291,12 +291,12 @@ direction LR
             +generateTextResult(string|MessagePart|MessagePart[]|Message|Message[] $prompt, AiModel $model) GenerativeAiResult$
             +streamGenerateTextResult(string|MessagePart|MessagePart[]|Message|Message[] $prompt, AiModel $model) Generator< GenerativeAiResult >$
             +generateImageResult(string|MessagePart|MessagePart[]|Message|Message[] $prompt, AiModel $model) GenerativeAiResult$
-            +textToSpeechResult(string|MessagePart|MessagePart[]|Message|Message[] $prompt, AiModel $model) GenerativeAiResult$
+            +convertTextToSpeechResult(string|MessagePart|MessagePart[]|Message|Message[] $prompt, AiModel $model) GenerativeAiResult$
             +generateSpeechResult(string|MessagePart|MessagePart[]|Message|Message[] $prompt, AiModel $model) GenerativeAiResult$
             +generateEmbeddingsResult(string[]|Message[] $input, AiModel $model) EmbeddingResult$
             +generateTextOperation(string|MessagePart|MessagePart[]|Message|Message[] $prompt, AiModel $model) GenerativeAiOperation$
             +generateImageOperation(string|MessagePart|MessagePart[]|Message|Message[] $prompt, AiModel $model) GenerativeAiOperation$
-            +textToSpeechOperation(string|MessagePart|MessagePart[]|Message|Message[] $prompt, AiModel $model) GenerativeAiOperation$
+            +convertTextToSpeechOperation(string|MessagePart|MessagePart[]|Message|Message[] $prompt, AiModel $model) GenerativeAiOperation$
             +generateSpeechOperation(string|MessagePart|MessagePart[]|Message|Message[] $prompt, AiModel $model) GenerativeAiOperation$
             +generateEmbeddingsOperation(string[]|Message[] $input, AiModel $model) EmbeddingOperation$
         }
@@ -357,12 +357,12 @@ direction LR
             +generateTextResult(string|MessagePart|MessagePart[]|Message|Message[] $prompt, AiModel $model) GenerativeAiResult$
             +streamGenerateTextResult(string|MessagePart|MessagePart[]|Message|Message[] $prompt, AiModel $model) Generator< GenerativeAiResult >$
             +generateImageResult(string|MessagePart|MessagePart[]|Message|Message[] $prompt, AiModel $model) GenerativeAiResult$
-            +textToSpeechResult(string|MessagePart|MessagePart[]|Message|Message[] $prompt, AiModel $model) GenerativeAiResult$
+            +convertTextToSpeechResult(string|MessagePart|MessagePart[]|Message|Message[] $prompt, AiModel $model) GenerativeAiResult$
             +generateSpeechResult(string|MessagePart|MessagePart[]|Message|Message[] $prompt, AiModel $model) GenerativeAiResult$
             +generateEmbeddingsResult(string[]|Message[] $input, AiModel $model) EmbeddingResult$
             +generateTextOperation(string|MessagePart|MessagePart[]|Message|Message[] $prompt, AiModel $model) GenerativeAiOperation$
             +generateImageOperation(string|MessagePart|MessagePart[]|Message|Message[] $prompt, AiModel $model) GenerativeAiOperation$
-            +textToSpeechOperation(string|MessagePart|MessagePart[]|Message|Message[] $prompt, AiModel $model) GenerativeAiOperation$
+            +convertTextToSpeechOperation(string|MessagePart|MessagePart[]|Message|Message[] $prompt, AiModel $model) GenerativeAiOperation$
             +generateSpeechOperation(string|MessagePart|MessagePart[]|Message|Message[] $prompt, AiModel $model) GenerativeAiOperation$
             +generateEmbeddingsOperation(string[]|Message[] $input, AiModel $model) EmbeddingOperation$
         }
@@ -390,18 +390,18 @@ direction LR
             +generateTextResult() GenerativeAiResult
             +streamGenerateTextResult() Generator< GenerativeAiResult >
             +generateImageResult() GenerativeAiResult
-            +textToSpeechResult() GenerativeAiResult
+            +convertTextToSpeechResult() GenerativeAiResult
             +generateSpeechResult() GenerativeAiResult
             +generateEmbeddingsResult() EmbeddingResult
             +generateTextOperation() GenerativeAiOperation
             +generateImageOperation() GenerativeAiOperation
-            +textToSpeechOperation() GenerativeAiOperation
+            +convertTextToSpeechOperation() GenerativeAiOperation
             +generateSpeechOperation() GenerativeAiOperation
             +generateEmbeddingsOperation() EmbeddingOperation
             +generateText() string
             +streamGenerateText() Generator< string >
             +generateImage() File
-            +textToSpeech() File
+            +convertTextToSpeech() File
             +generateSpeech() File
             +generateEmbeddings() Embedding[]
         }
@@ -684,8 +684,8 @@ direction LR
         class AiImageGenerationModel {
             +generateImageResult(Message[] $prompt) GenerativeAiResult
         }
-        class AiTextToSpeechModel {
-            +textToSpeechResult(Message[] $prompt) GenerativeAiResult
+        class AiTextToSpeechConversionModel {
+            +convertTextToSpeechResult(Message[] $prompt) GenerativeAiResult
         }
         class AiSpeechGenerationModel {
             +generateSpeechResult(Message[] $prompt) GenerativeAiResult
@@ -699,8 +699,8 @@ direction LR
         class AiImageGenerationOperationModel {
             +generateImageOperation(Message[] $prompt) GenerativeAiOperation
         }
-        class AiTextToSpeechOperationModel {
-            +textToSpeechOperation(Message[] $prompt) GenerativeAiOperation
+        class AiTextToSpeechConversionOperationModel {
+            +convertTextToSpeechOperation(Message[] $prompt) GenerativeAiOperation
         }
         class AiSpeechGenerationOperationModel {
             +generateSpeechOperation(Message[] $prompt) GenerativeAiOperation
@@ -764,7 +764,7 @@ direction LR
         }
         class ImageGenerationConfig {
         }
-        class TextToSpeechConfig {
+        class TextToSpeechConversionConfig {
         }
         class SpeechGenerationConfig {
         }
@@ -829,12 +829,12 @@ direction LR
     <<interface>> WithEmbeddingOperations
     <<interface>> AiTextGenerationModel
     <<interface>> AiImageGenerationModel
-    <<interface>> AiTextToSpeechModel
+    <<interface>> AiTextToSpeechConversionModel
     <<interface>> AiSpeechGenerationModel
     <<interface>> AiEmbeddingGenerationModel
     <<interface>> AiTextGenerationOperationModel
     <<interface>> AiImageGenerationOperationModel
-    <<interface>> AiTextToSpeechOperationModel
+    <<interface>> AiTextToSpeechConversionOperationModel
     <<interface>> AiSpeechGenerationOperationModel
     <<interface>> AiEmbeddingGenerationOperationModel
     <<interface>> WithHttpClient
@@ -866,17 +866,17 @@ direction LR
     AiModelMetadata ..> AiFeature
     AiModel <|-- AiTextGenerationModel
     AiModel <|-- AiImageGenerationModel
-    AiModel <|-- AiTextToSpeechModel
+    AiModel <|-- AiTextToSpeechConversionModel
     AiModel <|-- AiSpeechGenerationModel
     AiModel <|-- AiEmbeddingGenerationModel
     AiModel <|-- AiTextGenerationOperationModel
     AiModel <|-- AiImageGenerationOperationModel
-    AiModel <|-- AiTextToSpeechOperationModel
+    AiModel <|-- AiTextToSpeechConversionOperationModel
     AiModel <|-- AiSpeechGenerationOperationModel
     AiModel <|-- AiEmbeddingGenerationOperationModel
     GenerationConfig <|-- TextGenerationConfig
     GenerationConfig <|-- ImageGenerationConfig
-    GenerationConfig <|-- TextToSpeechConfig
+    GenerationConfig <|-- TextToSpeechConversionConfig
     GenerationConfig <|-- SpeechGenerationConfig
     GenerationConfig <|-- EmbeddingGenerationConfig
 ```
