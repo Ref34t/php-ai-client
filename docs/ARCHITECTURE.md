@@ -755,30 +755,30 @@ direction LR
             getRequiredOptions() AiRequiredOption[]
         }
         class AiModelConfig {
+            +setOutputModalities(AiModality[] $modalities) void
+            +getOutputModalities() AiModality[]
             +setSystemInstruction(string|MessagePart|MessagePart[]|Message $systemInstruction) void
             +getSystemInstruction() Message?
-            +setGenerationConfig(GenerationConfig $config) void
-            +getGenerationConfig() GenerationConfig?
+            +setCandidateCount(int $candidateCount) void
+            +getCandidateCount() int
+            +setMaxTokens(int $maxTokens) void
+            +getMaxTokens() int
+            +setTemperature(float $temperature) void
+            +getTemperature() float
+            +setTopK(int $topK) void
+            +getTopK() int
+            +setTopP(float $topP) void
+            +getTopP() float
+            +setOutputMimeType(string $outputMimeType) void
+            +getOutputMimeType() string
+            +setOutputSchema(array< string, mixed > $outputSchema) void
+            +getOutputSchema() array< string, mixed >
+            +setCustomOption(string $key, mixed $value) void
+            +getCustomOption(string $key) mixed
+            +getCustomOptions() array< string, mixed >
             +setTools(Tool[] $tools) void
             +getTools() Tool[]
             +getJsonSchema() array< string, mixed >$
-        }
-        class GenerationConfig {
-            +setValue(string $key, mixed $value) void
-            +getValue(string $key) mixed
-            +getValues() array< string, mixed >
-            +getAdditionalValues() array< string, mixed >
-            +getJsonSchema() array< string, mixed >$
-        }
-        class TextGenerationConfig {
-        }
-        class ImageGenerationConfig {
-        }
-        class TextToSpeechConversionConfig {
-        }
-        class SpeechGenerationConfig {
-        }
-        class EmbeddingGenerationConfig {
         }
         class Tool {
             +getType() ToolType
@@ -832,6 +832,7 @@ direction LR
         class AiOption {
             INPUT_MODALITIES
             OUTPUT_MODALITIES
+            SYSTEM_INSTRUCTION
             CANDIDATE_COUNT
             MAX_TOKENS
             TEMPERATURE
@@ -868,7 +869,6 @@ direction LR
     <<interface>> HttpClient
     <<interface>> WithAuthentication
     <<interface>> Authentication
-    <<interface>> GenerationConfig
     <<Enumeration>> AiCapability
     <<Enumeration>> AiOption
     <<Enumeration>> AiProviderType
@@ -888,7 +888,6 @@ direction LR
     AiModelMetadata "1" o-- "0..*" AiSupportedOption
     AiModelRequirements "1" o-- "1..*" AiCapability
     AiModelRequirements "1" o-- "0..*" AiRequiredOption
-    AiModelConfig "1" o-- "0..1" GenerationConfig
     AiModelConfig "1" o-- "0..*" Tool
     Tool "1" o-- "0..*" FunctionDeclaration
     Tool "1" o-- "0..1" WebSearch
@@ -905,9 +904,4 @@ direction LR
     AiModel <|-- AiTextToSpeechConversionOperationModel
     AiModel <|-- AiSpeechGenerationOperationModel
     AiModel <|-- AiEmbeddingGenerationOperationModel
-    GenerationConfig <|-- TextGenerationConfig
-    GenerationConfig <|-- ImageGenerationConfig
-    GenerationConfig <|-- TextToSpeechConversionConfig
-    GenerationConfig <|-- SpeechGenerationConfig
-    GenerationConfig <|-- EmbeddingGenerationConfig
 ```
