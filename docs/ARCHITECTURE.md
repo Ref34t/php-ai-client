@@ -215,15 +215,22 @@ _Note: Unlike the previous two examples, to require JSON output it is necessary 
 
 ##### Fluent API
 ```php
-// Verbose.
 $text = AiClient::prompt('Transform the following CSV content into a JSON array of row data.')
     ->asJsonResponse()
-    ->usingOutputSchema(['name' => 'string', 'age' => 'integer'])
-    ->generateText();
-
-// Simple.
-$text = AiClient::prompt('Transform the following CSV content into a JSON array of row data.')
-    ->asJsonResponse(['name' => 'string', 'age' => 'integer'])
+    ->usingOutputSchema([
+        'type'  => 'array',
+        'items' => [
+            'type'       => 'object',
+            'properties' => [
+                'name' => [
+                    'type' => 'string',
+                ],
+                'age'  => [
+                    'type' => 'integer',
+                ],
+            ],
+        ],
+    ])
     ->generateText();
 ```
 
