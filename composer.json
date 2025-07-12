@@ -33,12 +33,12 @@
     "prefer-stable": true,
     "autoload": {
         "psr-4": {
-            "WordPress\\AI\\": "src/"
+            "WordPress\\AiClient\\": "src/"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "WordPress\\AI\\Tests\\": "tests/"
+            "WordPress\\AiClient\\Tests\\": "tests/"
         }
     },
     "config": {
