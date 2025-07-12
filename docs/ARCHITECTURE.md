@@ -344,7 +344,6 @@ direction LR
             +usingOutputMime(string $mimeType) self
             +usingOutputSchema(array< string, mixed > $schema) self
             +usingOutputModalities(...AiModality $modalities) self
-            +asArrayResponse(?array< string, mixed > $schema) self
             +asJsonResponse(?array< string, mixed > $schema) self
             +generateResult() GenerativeAiResult
             +generateResults(int $candidateCount) GenerativeAiResult[]
@@ -517,7 +516,6 @@ direction LR
             +usingOutputMime(string $mimeType) self
             +usingOutputSchema(array< string, mixed > $schema) self
             +usingOutputModalities(...AiModality $modalities) self
-            +asArrayResponse(?array< string, mixed > $schema) self
             +asJsonResponse(?array< string, mixed > $schema) self
             +generateResult() GenerativeAiResult
             +generateResults(int $candidateCount) GenerativeAiResult[]
