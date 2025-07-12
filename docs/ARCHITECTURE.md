@@ -51,7 +51,7 @@ $texts = AiClient::generateTextResult(
 ```php
 $modelsMetadata = AiClient::defaultRegistry()->findProviderModelsMetadataForSupport(
     'openai',
-    AiCapability::IMAGE_GENERATION
+    new AiModelRequirements([AiCapability::IMAGE_GENERATION])
 );
 $imageFile = AiClient::generateImageResult(
     'Generate an illustration of the PHP elephant in the Carribean sea.',
@@ -66,7 +66,7 @@ $imageFile = AiClient::generateImageResult(
 
 ```php
 $providerModelsMetadata = AiClient::defaultRegistry()->findModelsMetadataForSupport(
-    AiCapability::IMAGE_GENERATION
+    new AiModelRequirements([AiCapability::IMAGE_GENERATION])
 );
 $imageFile = AiClient::generateImageResult(
     'Generate an illustration of the PHP elephant in the Carribean sea.',
@@ -83,7 +83,7 @@ _Note: This does effectively the exact same as [the first code example](#generat
 
 ```php
 $providerModelsMetadata = AiClient::defaultRegistry()->findModelsMetadataForSupport(
-    AiCapability::TEXT_GENERATION
+    new AiModelRequirements([AiCapability::TEXT_GENERATION])
 );
 $text = AiClient::generateTextResult(
     'Write a 2-verse poem about PHP.',
@@ -141,12 +141,14 @@ _Note: Unlike the previous two examples, to require JSON output it is necessary 
 
 ```php
 $providerModelsMetadata = AiClient::defaultRegistry()->findModelsMetadataForSupport(
-    AiCapability::TEXT_GENERATION,
-    [
-        // Make sure the model supports JSON output as well as following a given schema.
-        AiOption::OUTPUT_MIME_TYPE => 'application/json',
-        AiOption::OUTPUT_SCHEMA    => true,
-    ]
+    new AiModelRequirements(
+        [AiCapability::TEXT_GENERATION],
+        [
+            // Make sure the model supports JSON output as well as following a given schema.
+            AiOption::OUTPUT_MIME_TYPE => 'application/json',
+            AiOption::OUTPUT_SCHEMA    => true,
+        ]
+    )
 );
 $jsonString = AiClient::generateTextResult(
     'Transform the following CSV content into a JSON array of row data.',
@@ -178,7 +180,7 @@ $jsonString = AiClient::generateTextResult(
 
 ```php
 $providerModelsMetadata = AiClient::defaultRegistry()->findModelsMetadataForSupport(
-    AiCapability::EMBEDDING_GENERATION
+    new AiModelRequirements([AiCapability::EMBEDDING_GENERATION])
 );
 $embeddings = AiClient::generateEmbeddingsResult(
     [
