@@ -156,7 +156,7 @@ _Note: Since this omits the model parameter, the SDK will automatically determin
 ##### Fluent API
 ```php
 $text = AiClient::prompt('Generate alternative text for this image.')
-    ->withImage('image/png', $base64blob)
+    ->withImageFile(new InlineFile('image/png', $base64blob))
     ->generateText();
 ```
 
@@ -326,7 +326,6 @@ direction LR
 
         class PromptBuilder {
             +withText(string $text) self
-            +withImage(string $mimeType, string $base64Blob) self
             +withImageFile(File $file) self
             +withAudioFile(File $file) self
             +withVideoFile(File $file) self
@@ -375,7 +374,6 @@ direction LR
         class MessageBuilder {
             +usingRole(MessageRole $role) self
             +withText(string $text) self
-            +withImage(string $mimeType, string $base64Blob) self
             +withImageFile(File $file) self
             +withAudioFile(File $file) self
             +withVideoFile(File $file) self
@@ -487,7 +485,6 @@ direction LR
 
         class PromptBuilder {
             +withText(string $text) self
-            +withImage(string $mimeType, string $base64Blob) self
             +withImageFile(File $file) self
             +withAudioFile(File $file) self
             +withVideoFile(File $file) self
@@ -536,7 +533,6 @@ direction LR
         class MessageBuilder {
             +usingRole(MessageRole $role) self
             +withText(string $text) self
-            +withImage(string $mimeType, string $base64Blob) self
             +withImageFile(File $file) self
             +withAudioFile(File $file) self
             +withVideoFile(File $file) self
