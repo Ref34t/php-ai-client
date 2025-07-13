@@ -829,7 +829,7 @@ direction LR
         class AiCapability {
             TEXT_GENERATION
             IMAGE_GENERATION
-            TEXT_TO_SPEECH
+            TEXT_TO_SPEECH_CONVERSION
             SPEECH_GENERATION
             MUSIC_GENERATION
             VIDEO_GENERATION
