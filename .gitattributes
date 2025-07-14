@@ -2,6 +2,9 @@
 .gitattributes         export-ignore
 /.github/              export-ignore
 .gitignore             export-ignore
+/*.md                  export-ignore
+/LICENSE.md            -export-ignore
+/README.md            -export-ignore
 /docs/                 export-ignore
 /tests/                export-ignore
 /vendor/               export-ignore
