@@ -4,7 +4,7 @@ Thank you for your interest in contributing to the PHP AI Client package! Here y
 
 ## Coding standards
 
-While this project is stewarded by [WordPress AI Team](https://make.wordpress.org/ai/) members and contributors, it is a WordPress agnostic PHP package that can benefit any project in the PHP ecosystem. As such, all code must follow the [PER Coding Style](https://www.php-fig.org/per/coding-style/), which extends PSR-12. Note that the PHPCS config is using PSR-12 due to the fact that it does not support PER, yet. So PER is preferred, but PSR-12 is acceptable.
+While this project is stewarded by [WordPress AI Team](https://make.wordpress.org/ai/) members and contributors, it is a WordPress agnostic PHP package that can benefit any project in the PHP ecosystem. As such, all code must follow the [PER Coding Style](https://www.php-fig.org/per/coding-style/), which extends [PSR-12](https://www.php-fig.org/psr/psr-12/). Note that the PHPCS config is using PSR-12 due to the fact that it does not support PER, yet. So PER is preferred, but PSR-12 is acceptable.
 
 All parameters, return values, and properties must use explicit type hints, except in cases where providing the correct type hint would be impossible given limitations of the oldest supported PHP version (see below).
 
