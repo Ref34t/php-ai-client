@@ -184,7 +184,7 @@ _Note: Similarly to the previous example, even without specifying the model here
 $text = AiClient::prompt()
     ->withHistory(
         new UserMessage('Do you spell it WordPress or Wordpress?'),
-        new AgentMessage('The correct spelling is WordPress.'),
+        new ModelMessage('The correct spelling is WordPress.'),
     )
     ->withText('Can you repeat that please?')
     ->generateText();
