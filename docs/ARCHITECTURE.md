@@ -529,6 +529,12 @@ direction LR
             +getParts() MessagePart[]
             +getJsonSchema() array< string, mixed >$
         }
+        class UserMessage {
+        }
+        class ModelMessage {
+        }
+        class SystemMessage {
+        }
         class MessagePart {
             +getType() MessagePartType
             +getText() string?
@@ -731,6 +737,9 @@ direction LR
     File <|-- InlineFile
     File <|-- RemoteFile
     File <|-- LocalFile
+    Message <|-- UserMessage
+    Message <|-- ModelMessage
+    Message <|-- SystemMessage
     Operation <|-- GenerativeAiOperation
     Operation <|-- EmbeddingOperation
     Result <|-- GenerativeAiResult
