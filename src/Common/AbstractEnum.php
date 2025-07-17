@@ -236,6 +236,7 @@ abstract class AbstractEnum
      * Get all constants for this enum class
      *
      * @return array<string, string|int>
+     * @throws \RuntimeException If invalid constant found
      */
     protected static function getConstants(): array
     {
@@ -245,15 +246,34 @@ abstract class AbstractEnum
             $reflection = new ReflectionClass($className);
             $constants = $reflection->getConstants();
 
-            // Filter to only include uppercase snake_case constants
+            // Validate all constants
             $enumConstants = [];
             foreach ($constants as $name => $value) {
-                if (
-                    preg_match('/^[A-Z][A-Z0-9_]*$/', $name)
-                    && (is_string($value) || is_int($value))
-                ) {
-                    $enumConstants[$name] = $value;
+                // Check if constant name follows uppercase snake_case pattern
+                if (!preg_match('/^[A-Z][A-Z0-9_]*$/', $name)) {
+                    throw new \RuntimeException(
+                        sprintf(
+                            'Invalid enum constant name "%s" in %s. Constants must be UPPER_SNAKE_CASE.',
+                            $name,
+                            $className
+                        )
+                    );
                 }
+
+                // Check if value is valid type
+                if (!is_string($value) && !is_int($value)) {
+                    throw new \RuntimeException(
+                        sprintf(
+                            'Invalid enum value type for constant %s::%s. ' .
+                            'Only string and int values are allowed, %s given.',
+                            $className,
+                            $name,
+                            gettype($value)
+                        )
+                    );
+                }
+
+                $enumConstants[$name] = $value;
             }
 
             self::$cache[$className] = $enumConstants;
