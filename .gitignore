@@ -13,3 +13,4 @@ vendor/
 *.DS_store
 .DS_store?
 .claude/
+.phpunit.cache/
