@@ -535,6 +535,16 @@ direction LR
         }
     }
 
+    namespace AiClientNamespace.Enums {
+        class ModalityEnum {
+            TEXT
+            DOCUMENT
+            IMAGE
+            AUDIO
+            VIDEO
+        }
+    }
+
     namespace AiClientNamespace.Files.Contracts {
         class FileInterface {
         }
@@ -604,6 +614,16 @@ direction LR
         }
     }
 
+    namespace AiClientNamespace.Operations.Enums {
+        class OperationStateEnum {
+            STARTING
+            PROCESSING
+            SUCCEEDED
+            FAILED
+            CANCELED
+        }
+    }
+
     namespace AiClientNamespace.Operations.DTO {
         class EmbeddingOperation {
             +getId() string
@@ -619,36 +639,22 @@ direction LR
         }
     }
 
-    namespace AiClientNamespace.Providers.Models.Enums {
-        class ModalityEnum {
-            TEXT
-            DOCUMENT
-            IMAGE
-            AUDIO
-            VIDEO
-        }
-        class FinishReasonEnum {
-            STOP
-            LENGTH
-            CONTENT_FILTER
-            TOOL_CALLS
-            ERROR
-        }
-        class OperationStateEnum {
-            STARTING
-            PROCESSING
-            SUCCEEDED
-            FAILED
-            CANCELED
-        }
-    }
-
     namespace AiClientNamespace.Results.Contracts {
         class ResultInterface {
             +getId() string
             +getTokenUsage() TokenUsage
             +getProviderMetadata() array< string, mixed >
             +getJsonSchema() array< string, mixed >$
+        }
+    }
+
+    namespace AiClientNamespace.Results.Enums {
+        class FinishReasonEnum {
+            STOP
+            LENGTH
+            CONTENT_FILTER
+            TOOL_CALLS
+            ERROR
         }
     }
 
@@ -699,10 +705,27 @@ direction LR
             +getArgs() array< string, mixed >
             +getJsonSchema() array< string, mixed >$
         }
+        class FunctionDeclaration {
+            +getName() string
+            +getDescription() string
+            +getParameters() mixed
+            +getJsonSchema() array< string, mixed >$
+        }
         class FunctionResponse {
             +getId() string
             +getName() string
             +getResponse() mixed
+            +getJsonSchema() array< string, mixed >$
+        }
+        class Tool {
+            +getType() ToolType
+            +getFunctionDeclarations() FunctionDeclaration[]?
+            +getWebSearch() WebSearch?
+            +getJsonSchema() array< string, mixed >$
+        }
+        class WebSearch {
+            +getAllowedDomains() string[]
+            +getDisallowedDomains() string[]
             +getJsonSchema() array< string, mixed >$
         }
     }
@@ -778,6 +801,8 @@ direction LR
     OperationInterface <|-- EmbeddingOperation
     ResultInterface <|-- GenerativeAiResult
     ResultInterface <|-- EmbeddingResult
+    Tool "1" o-- "0..*" FunctionDeclaration
+    Tool "1" o-- "0..1" WebSearch
 ```
 
 ### Details: Class diagram for AI extenders
@@ -913,15 +938,15 @@ direction LR
             getRequiredCapabilities() CapabilityEnum[]
             getRequiredOptions() RequiredOption[]
         }
+        class RequiredOption {
+            +getName() string
+            +getValue() mixed
+            +getJsonSchema() array< string, mixed >$
+        }
         class SupportedOption {
             +getName() string
             +isSupportedValue(mixed $value) bool
             +getSupportedValues() mixed[]
-            +getJsonSchema() array< string, mixed >$
-        }
-        class RequiredOption {
-            +getName() string
-            +getValue() mixed
             +getJsonSchema() array< string, mixed >$
         }
     }
