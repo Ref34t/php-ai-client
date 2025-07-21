@@ -217,19 +217,18 @@ abstract class AbstractEnum
     private static function getInstance($value, string $name): self
     {
         $className = static::class;
-        $key = $name;
 
         if (!isset(self::$instances[$className])) {
             self::$instances[$className] = [];
         }
 
-        if (!isset(self::$instances[$className][$key])) {
+        if (!isset(self::$instances[$className][$name])) {
             $instance = new $className($value, $name);
-            self::$instances[$className][$key] = $instance;
+            self::$instances[$className][$name] = $instance;
         }
 
         /** @var static */
-        return self::$instances[$className][$key];
+        return self::$instances[$className][$name];
     }
 
     /**
