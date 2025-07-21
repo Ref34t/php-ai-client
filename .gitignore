@@ -12,5 +12,16 @@ vendor/
 [Dd]esktop.ini
 *.DS_store
 .DS_store?
+
+############
+## AI Tools
+############
+
 .claude/
+CLAUDE.md
+
+############
+## PHPUnit
+############
+
 .phpunit.cache/
