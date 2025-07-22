@@ -19,3 +19,5 @@ vendor/
 
 .claude/
 CLAUDE.md
+.cursor/
+GEMINI.md
