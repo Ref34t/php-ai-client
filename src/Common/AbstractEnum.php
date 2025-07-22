@@ -35,9 +35,9 @@ use ReflectionClass;
 abstract class AbstractEnum
 {
     /**
-     * @var string|int The value of the enum instance
+     * @var string The value of the enum instance
      */
-    private $value;
+    private string $value;
 
     /**
      * @var string The name of the enum constant
@@ -45,7 +45,7 @@ abstract class AbstractEnum
     private string $name;
 
     /**
-     * @var array<string, array<string, string|int>> Cache for reflection data
+     * @var array<string, array<string, string>> Cache for reflection data
      */
     private static array $cache = [];
 
@@ -58,10 +58,10 @@ abstract class AbstractEnum
      * Constructor is private to ensure instances are created through static methods
      *
      * @since n.e.x.t
-     * @param string|int $value The enum value
+     * @param string $value The enum value
      * @param string $name The constant name
      */
-    final private function __construct($value, string $name)
+    final private function __construct(string $value, string $name)
     {
         $this->value = $value;
         $this->name = $name;
@@ -105,16 +105,16 @@ abstract class AbstractEnum
      * Create an enum instance from a value, throws exception if invalid
      *
      * @since n.e.x.t
-     * @param string|int $value The enum value
+     * @param string $value The enum value
      * @return static
      * @throws InvalidArgumentException If the value is not valid
      */
-    final public static function from($value): self
+    final public static function from(string $value): self
     {
         $instance = self::tryFrom($value);
         if ($instance === null) {
             throw new InvalidArgumentException(
-                sprintf('%s is not a valid backing value for enum %s', (string) $value, static::class)
+                sprintf('%s is not a valid backing value for enum %s', $value, static::class)
             );
         }
         return $instance;
@@ -124,10 +124,10 @@ abstract class AbstractEnum
      * Try to create an enum instance from a value, returns null if invalid
      *
      * @since n.e.x.t
-     * @param string|int $value The enum value
+     * @param string $value The enum value
      * @return static|null
      */
-    final public static function tryFrom($value): ?self
+    final public static function tryFrom(string $value): ?self
     {
         $constants = self::getConstants();
         foreach ($constants as $name => $constantValue) {
@@ -158,7 +158,7 @@ abstract class AbstractEnum
      * Check if this enum has the same value as the given value
      *
      * @since n.e.x.t
-     * @param string|int|self $other The value or enum to compare
+     * @param string|self $other The value or enum to compare
      * @return bool
      */
     final public function equals($other): bool
@@ -186,7 +186,7 @@ abstract class AbstractEnum
      * Get all valid values for this enum
      *
      * @since n.e.x.t
-     * @return array<string, string|int>
+     * @return array<string, string>
      */
     final public static function getValues(): array
     {
@@ -197,10 +197,10 @@ abstract class AbstractEnum
      * Check if a value is valid for this enum
      *
      * @since n.e.x.t
-     * @param string|int $value The value to check
+     * @param string $value The value to check
      * @return bool
      */
-    final public static function isValidValue($value): bool
+    final public static function isValidValue(string $value): bool
     {
         return in_array($value, self::getValues(), true);
     }
@@ -209,11 +209,11 @@ abstract class AbstractEnum
      * Get or create a singleton instance for the given value and name
      *
      * @since n.e.x.t
-     * @param string|int $value The enum value
+     * @param string $value The enum value
      * @param string $name The constant name
      * @return static
      */
-    private static function getInstance($value, string $name): self
+    private static function getInstance(string $value, string $name): self
     {
         $className = static::class;
 
@@ -234,7 +234,7 @@ abstract class AbstractEnum
      * Get all constants for this enum class
      *
      * @since n.e.x.t
-     * @return array<string, string|int>
+     * @return array<string, string>
      * @throws \RuntimeException If invalid constant found
      */
     final protected static function getConstants(): array
@@ -260,11 +260,11 @@ abstract class AbstractEnum
                 }
 
                 // Check if value is valid type
-                if (!is_string($value) && !is_int($value)) {
+                if (!is_string($value)) {
                     throw new \RuntimeException(
                         sprintf(
                             'Invalid enum value type for constant %s::%s. ' .
-                            'Only string and int values are allowed, %s given.',
+                            'Only string values are allowed, %s given.',
                             $className,
                             $name,
                             gettype($value)
@@ -354,6 +354,6 @@ abstract class AbstractEnum
      */
     final public function __toString(): string
     {
-        return (string) $this->value;
+        return $this->value;
     }
 }
