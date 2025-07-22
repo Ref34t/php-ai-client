@@ -1,0 +1,109 @@
+<?php
+
+declare(strict_types=1);
+
+namespace WordPress\AiClient\Tools\DTO;
+
+use WordPress\AiClient\Common\Contracts\WithJsonSchema;
+
+/**
+ * Represents a function declaration for AI models
+ *
+ * This DTO describes a function that can be called by the AI model,
+ * including its name, description, and parameter schema.
+ *
+ * @since n.e.x.t
+ */
+class FunctionDeclaration implements WithJsonSchema
+{
+    /**
+     * @var string The name of the function
+     */
+    private string $name;
+
+    /**
+     * @var string A description of what the function does
+     */
+    private string $description;
+
+    /**
+     * @var mixed The JSON schema for the function parameters
+     */
+    private $parameters;
+
+    /**
+     * Constructor
+     *
+     * @since n.e.x.t
+     * @param string $name The name of the function
+     * @param string $description A description of what the function does
+     * @param mixed $parameters The JSON schema for the function parameters
+     */
+    public function __construct(string $name, string $description, $parameters)
+    {
+        $this->name = $name;
+        $this->description = $description;
+        $this->parameters = $parameters;
+    }
+
+    /**
+     * Get the function name
+     *
+     * @since n.e.x.t
+     * @return string The function name
+     */
+    public function getName(): string
+    {
+        return $this->name;
+    }
+
+    /**
+     * Get the function description
+     *
+     * @since n.e.x.t
+     * @return string The function description
+     */
+    public function getDescription(): string
+    {
+        return $this->description;
+    }
+
+    /**
+     * Get the function parameters schema
+     *
+     * @since n.e.x.t
+     * @return mixed The parameters schema
+     */
+    public function getParameters()
+    {
+        return $this->parameters;
+    }
+
+    /**
+     * Get the JSON schema for this DTO
+     *
+     * @since n.e.x.t
+     * @return array<string, mixed> The JSON schema
+     */
+    public static function getJsonSchema(): array
+    {
+        return [
+            'type' => 'object',
+            'properties' => [
+                'name' => [
+                    'type' => 'string',
+                    'description' => 'The name of the function',
+                ],
+                'description' => [
+                    'type' => 'string',
+                    'description' => 'A description of what the function does',
+                ],
+                'parameters' => [
+                    'type' => 'object',
+                    'description' => 'The JSON schema for the function parameters',
+                ],
+            ],
+            'required' => ['name', 'description', 'parameters'],
+        ];
+    }
+}
