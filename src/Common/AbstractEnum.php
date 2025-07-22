@@ -55,11 +55,11 @@ abstract class AbstractEnum
     private static array $instances = [];
 
     /**
-     * Constructor is private to ensure instances are created through static methods
+     * Constructor is private to ensure instances are created through static methods.
      *
      * @since n.e.x.t
-     * @param string $value The enum value
-     * @param string $name The constant name
+     * @param string $value The enum value.
+     * @param string $name The constant name.
      */
     final private function __construct(string $value, string $name)
     {
@@ -68,12 +68,12 @@ abstract class AbstractEnum
     }
 
     /**
-     * Magic getter to provide read-only access to properties
+     * Provides read-only access to properties.
      *
      * @since n.e.x.t
-     * @param string $property The property name
-     * @return mixed
-     * @throws BadMethodCallException If property doesn't exist
+     * @param string $property The property name.
+     * @return mixed The property value.
+     * @throws BadMethodCallException If property doesn't exist.
      */
     final public function __get(string $property)
     {
@@ -87,12 +87,12 @@ abstract class AbstractEnum
     }
 
     /**
-     * Magic setter to prevent property modification
+     * Prevents property modification.
      *
      * @since n.e.x.t
-     * @param string $property The property name
-     * @param mixed $value The value to set
-     * @throws BadMethodCallException Always, as enum properties are read-only
+     * @param string $property The property name.
+     * @param mixed $value The value to set.
+     * @throws BadMethodCallException Always, as enum properties are read-only.
      */
     final public function __set(string $property, $value): void
     {
@@ -102,12 +102,12 @@ abstract class AbstractEnum
     }
 
     /**
-     * Create an enum instance from a value, throws exception if invalid
+     * Creates an enum instance from a value, throws exception if invalid.
      *
      * @since n.e.x.t
-     * @param string $value The enum value
-     * @return static
-     * @throws InvalidArgumentException If the value is not valid
+     * @param string $value The enum value.
+     * @return static The enum instance.
+     * @throws InvalidArgumentException If the value is not valid.
      */
     final public static function from(string $value): self
     {
@@ -121,11 +121,11 @@ abstract class AbstractEnum
     }
 
     /**
-     * Try to create an enum instance from a value, returns null if invalid
+     * Tries to create an enum instance from a value, returns null if invalid.
      *
      * @since n.e.x.t
-     * @param string $value The enum value
-     * @return static|null
+     * @param string $value The enum value.
+     * @return static|null The enum instance or null.
      */
     final public static function tryFrom(string $value): ?self
     {
@@ -139,10 +139,10 @@ abstract class AbstractEnum
     }
 
     /**
-     * Get all enum cases
+     * Gets all enum cases.
      *
      * @since n.e.x.t
-     * @return static[]
+     * @return static[] Array of all enum instances.
      */
     final public static function cases(): array
     {
@@ -155,11 +155,11 @@ abstract class AbstractEnum
     }
 
     /**
-     * Check if this enum has the same value as the given value
+     * Checks if this enum has the same value as the given value.
      *
      * @since n.e.x.t
-     * @param string|self $other The value or enum to compare
-     * @return bool
+     * @param string|self $other The value or enum to compare.
+     * @return bool True if values are equal.
      */
     final public function equals($other): bool
     {
@@ -171,11 +171,11 @@ abstract class AbstractEnum
     }
 
     /**
-     * Check if this enum is the same instance type and value as another enum
+     * Checks if this enum is the same instance type and value as another enum.
      *
      * @since n.e.x.t
-     * @param self $other The other enum to compare
-     * @return bool
+     * @param self $other The other enum to compare.
+     * @return bool True if enums are identical.
      */
     final public function is(self $other): bool
     {
@@ -183,10 +183,10 @@ abstract class AbstractEnum
     }
 
     /**
-     * Get all valid values for this enum
+     * Gets all valid values for this enum.
      *
      * @since n.e.x.t
-     * @return array<string, string>
+     * @return array<string, string> Map of constant names to values.
      */
     final public static function getValues(): array
     {
@@ -194,11 +194,11 @@ abstract class AbstractEnum
     }
 
     /**
-     * Check if a value is valid for this enum
+     * Checks if a value is valid for this enum.
      *
      * @since n.e.x.t
-     * @param string $value The value to check
-     * @return bool
+     * @param string $value The value to check.
+     * @return bool True if value is valid.
      */
     final public static function isValidValue(string $value): bool
     {
@@ -206,12 +206,12 @@ abstract class AbstractEnum
     }
 
     /**
-     * Get or create a singleton instance for the given value and name
+     * Gets or creates a singleton instance for the given value and name.
      *
      * @since n.e.x.t
-     * @param string $value The enum value
-     * @param string $name The constant name
-     * @return static
+     * @param string $value The enum value.
+     * @param string $name The constant name.
+     * @return static The enum instance.
      */
     private static function getInstance(string $value, string $name): self
     {
@@ -231,11 +231,11 @@ abstract class AbstractEnum
     }
 
     /**
-     * Get all constants for this enum class
+     * Gets all constants for this enum class.
      *
      * @since n.e.x.t
-     * @return array<string, string>
-     * @throws \RuntimeException If invalid constant found
+     * @return array<string, string> Map of constant names to values.
+     * @throws \RuntimeException If invalid constant found.
      */
     final protected static function getConstants(): array
     {
@@ -282,13 +282,13 @@ abstract class AbstractEnum
     }
 
     /**
-     * Handle dynamic method calls for enum checking
+     * Handles dynamic method calls for enum checking.
      *
      * @since n.e.x.t
-     * @param string $name The method name
-     * @param array<mixed> $arguments The method arguments
-     * @return bool
-     * @throws BadMethodCallException If the method doesn't exist
+     * @param string $name The method name.
+     * @param array<mixed> $arguments The method arguments.
+     * @return bool True if the enum value matches.
+     * @throws BadMethodCallException If the method doesn't exist.
      */
     final public function __call(string $name, array $arguments): bool
     {
@@ -308,13 +308,13 @@ abstract class AbstractEnum
     }
 
     /**
-     * Handle static method calls for enum creation
+     * Handles static method calls for enum creation.
      *
      * @since n.e.x.t
-     * @param string $name The method name
-     * @param array<mixed> $arguments The method arguments
-     * @return static
-     * @throws BadMethodCallException If the method doesn't exist
+     * @param string $name The method name.
+     * @param array<mixed> $arguments The method arguments.
+     * @return static The enum instance.
+     * @throws BadMethodCallException If the method doesn't exist.
      */
     final public static function __callStatic(string $name, array $arguments): self
     {
@@ -331,11 +331,11 @@ abstract class AbstractEnum
     }
 
     /**
-     * Convert camelCase to CONSTANT_CASE
+     * Converts camelCase to CONSTANT_CASE.
      *
      * @since n.e.x.t
-     * @param string $camelCase The camelCase string
-     * @return string The CONSTANT_CASE version
+     * @param string $camelCase The camelCase string.
+     * @return string The CONSTANT_CASE version.
      */
     private static function camelCaseToConstant(string $camelCase): string
     {
@@ -347,10 +347,10 @@ abstract class AbstractEnum
     }
 
     /**
-     * String representation of the enum
+     * Returns string representation of the enum.
      *
      * @since n.e.x.t
-     * @return string
+     * @return string The enum value.
      */
     final public function __toString(): string
     {
