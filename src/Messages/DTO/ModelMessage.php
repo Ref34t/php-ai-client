@@ -34,7 +34,7 @@ class ModelMessage extends Message
      * @param string $text The text content
      * @return self
      */
-    public static function fromText(string $text): self
+    public static function text(string $text): self
     {
         return new self([MessagePart::text($text)]);
     }
