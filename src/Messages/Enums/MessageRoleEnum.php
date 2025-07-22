@@ -9,6 +9,7 @@ use WordPress\AiClient\Common\AbstractEnum;
 /**
  * Enum for message roles in AI conversations
  *
+ * @since n.e.x.t
  * @method static self user() Create an instance for USER role
  * @method static self model() Create an instance for MODEL role
  * @method static self system() Create an instance for SYSTEM role

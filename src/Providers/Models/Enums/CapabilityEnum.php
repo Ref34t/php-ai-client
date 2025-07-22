@@ -9,6 +9,8 @@ use WordPress\AiClient\Common\AbstractEnum;
 /**
  * Enum for model capabilities
  *
+ * @since n.e.x.t
+ *
  * @method static self textGeneration() Create an instance for TEXT_GENERATION capability
  * @method static self imageGeneration() Create an instance for IMAGE_GENERATION capability
  * @method static self textToSpeechConversion() Create an instance for TEXT_TO_SPEECH_CONVERSION capability

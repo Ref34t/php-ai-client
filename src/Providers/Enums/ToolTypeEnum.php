@@ -9,6 +9,7 @@ use WordPress\AiClient\Common\AbstractEnum;
 /**
  * Enum for tool types
  *
+ * @since n.e.x.t
  * @method static self functionDeclarations() Create an instance for FUNCTION_DECLARATIONS type
  * @method static self webSearch() Create an instance for WEB_SEARCH type
  * @method bool isFunctionDeclarations() Check if the type is FUNCTION_DECLARATIONS

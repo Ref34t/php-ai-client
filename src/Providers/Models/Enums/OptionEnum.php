@@ -9,6 +9,8 @@ use WordPress\AiClient\Common\AbstractEnum;
 /**
  * Enum for model options
  *
+ * @since n.e.x.t
+ *
  * @method static self inputModalities() Create an instance for INPUT_MODALITIES option
  * @method static self outputModalities() Create an instance for OUTPUT_MODALITIES option
  * @method static self systemInstruction() Create an instance for SYSTEM_INSTRUCTION option

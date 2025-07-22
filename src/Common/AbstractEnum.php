@@ -29,6 +29,8 @@ use ReflectionClass;
  * $enum->equals('first'); // Returns true
  * $enum->is(PersonEnum::firstName()); // Returns true
  * PersonEnum::cases(); // Returns array of all enum instances
+ *
+ * @since n.e.x.t
  */
 abstract class AbstractEnum
 {
@@ -55,6 +57,7 @@ abstract class AbstractEnum
     /**
      * Constructor is private to ensure instances are created through static methods
      *
+     * @since n.e.x.t
      * @param string|int $value The enum value
      * @param string $name The constant name
      */
@@ -67,6 +70,7 @@ abstract class AbstractEnum
     /**
      * Magic getter to provide read-only access to properties
      *
+     * @since n.e.x.t
      * @param string $property The property name
      * @return mixed
      * @throws BadMethodCallException If property doesn't exist
@@ -85,6 +89,7 @@ abstract class AbstractEnum
     /**
      * Magic setter to prevent property modification
      *
+     * @since n.e.x.t
      * @param string $property The property name
      * @param mixed $value The value to set
      * @throws BadMethodCallException Always, as enum properties are read-only
@@ -99,6 +104,7 @@ abstract class AbstractEnum
     /**
      * Create an enum instance from a value, throws exception if invalid
      *
+     * @since n.e.x.t
      * @param string|int $value The enum value
      * @return static
      * @throws InvalidArgumentException If the value is not valid
@@ -117,6 +123,7 @@ abstract class AbstractEnum
     /**
      * Try to create an enum instance from a value, returns null if invalid
      *
+     * @since n.e.x.t
      * @param string|int $value The enum value
      * @return static|null
      */
@@ -134,6 +141,7 @@ abstract class AbstractEnum
     /**
      * Get all enum cases
      *
+     * @since n.e.x.t
      * @return static[]
      */
     final public static function cases(): array
@@ -149,6 +157,7 @@ abstract class AbstractEnum
     /**
      * Check if this enum has the same value as the given value
      *
+     * @since n.e.x.t
      * @param string|int|self $other The value or enum to compare
      * @return bool
      */
@@ -164,6 +173,7 @@ abstract class AbstractEnum
     /**
      * Check if this enum is the same instance type and value as another enum
      *
+     * @since n.e.x.t
      * @param self $other The other enum to compare
      * @return bool
      */
@@ -175,6 +185,7 @@ abstract class AbstractEnum
     /**
      * Get all valid values for this enum
      *
+     * @since n.e.x.t
      * @return array<string, string|int>
      */
     final public static function getValues(): array
@@ -185,6 +196,7 @@ abstract class AbstractEnum
     /**
      * Check if a value is valid for this enum
      *
+     * @since n.e.x.t
      * @param string|int $value The value to check
      * @return bool
      */
@@ -196,6 +208,7 @@ abstract class AbstractEnum
     /**
      * Get or create a singleton instance for the given value and name
      *
+     * @since n.e.x.t
      * @param string|int $value The enum value
      * @param string $name The constant name
      * @return static
@@ -220,6 +233,7 @@ abstract class AbstractEnum
     /**
      * Get all constants for this enum class
      *
+     * @since n.e.x.t
      * @return array<string, string|int>
      * @throws \RuntimeException If invalid constant found
      */
@@ -270,6 +284,7 @@ abstract class AbstractEnum
     /**
      * Handle dynamic method calls for enum checking
      *
+     * @since n.e.x.t
      * @param string $name The method name
      * @param array<mixed> $arguments The method arguments
      * @return bool
@@ -295,6 +310,7 @@ abstract class AbstractEnum
     /**
      * Handle static method calls for enum creation
      *
+     * @since n.e.x.t
      * @param string $name The method name
      * @param array<mixed> $arguments The method arguments
      * @return static
@@ -317,6 +333,7 @@ abstract class AbstractEnum
     /**
      * Convert camelCase to CONSTANT_CASE
      *
+     * @since n.e.x.t
      * @param string $camelCase The camelCase string
      * @return string The CONSTANT_CASE version
      */
@@ -332,6 +349,7 @@ abstract class AbstractEnum
     /**
      * String representation of the enum
      *
+     * @since n.e.x.t
      * @return string
      */
     final public function __toString(): string
