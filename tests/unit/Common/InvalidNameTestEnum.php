@@ -7,7 +7,7 @@ namespace WordPress\AiClient\Tests\unit\Common;
 use WordPress\AiClient\Common\AbstractEnum;
 
 /**
- * Invalid test enum with lowercase constant name
+ * Invalid test enum with lowercase constant name.
  */
 class InvalidNameTestEnum extends AbstractEnum
 {
