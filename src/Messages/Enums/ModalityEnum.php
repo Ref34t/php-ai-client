@@ -9,6 +9,7 @@ use WordPress\AiClient\Common\AbstractEnum;
 /**
  * Enum for input/output modalities
  *
+ * @since n.e.x.t
  * @method static self text() Create an instance for TEXT modality
  * @method static self document() Create an instance for DOCUMENT modality
  * @method static self image() Create an instance for IMAGE modality
