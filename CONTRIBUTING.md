@@ -39,7 +39,7 @@ All code must be properly documented with PHPDoc blocks following these standard
 ### Example
 ```php
 /**
- * Handles user authentication requests.
+ * Class for handling user authentication requests.
  *
  * @since n.e.x.t
  */
