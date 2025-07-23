@@ -8,6 +8,9 @@ use BadMethodCallException;
 use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
+use WordPress\AiClient\Tests\mocks\Enums\InvalidNameTestEnum;
+use WordPress\AiClient\Tests\mocks\Enums\InvalidTypeTestEnum;
+use WordPress\AiClient\Tests\mocks\Enums\ValidTestEnum;
 
 /**
  * @covers \WordPress\AiClient\Common\AbstractEnum
@@ -32,7 +35,7 @@ class AbstractEnumTest extends TestCase
     public function testFromWithInvalidValueThrowsException(): void
     {
         $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('invalid is not a valid backing value for enum WordPress\AiClient\Tests\unit\Common\ValidTestEnum');
+        $this->expectExceptionMessage('invalid is not a valid backing value for enum WordPress\AiClient\Tests\mocks\Enums\ValidTestEnum');
         ValidTestEnum::from('invalid');
     }
 
@@ -106,7 +109,7 @@ class AbstractEnumTest extends TestCase
     {
         $this->expectException(BadMethodCallException::class);
         $this->expectExceptionMessage(
-            'Method WordPress\AiClient\Tests\unit\Common\ValidTestEnum::invalidMethod does not exist'
+            'Method WordPress\AiClient\Tests\mocks\Enums\ValidTestEnum::invalidMethod does not exist'
         );
         ValidTestEnum::invalidMethod();
     }
@@ -131,7 +134,7 @@ class AbstractEnumTest extends TestCase
 
         $this->expectException(BadMethodCallException::class);
         $this->expectExceptionMessage(
-            'Method WordPress\AiClient\Tests\unit\Common\ValidTestEnum::isInvalidMethod does not exist'
+            'Method WordPress\AiClient\Tests\mocks\Enums\ValidTestEnum::isInvalidMethod does not exist'
         );
         $enum->isInvalidMethod();
     }
@@ -196,7 +199,7 @@ class AbstractEnumTest extends TestCase
 
         $this->expectException(BadMethodCallException::class);
         $this->expectExceptionMessage(
-            'Cannot modify property WordPress\AiClient\Tests\unit\Common\ValidTestEnum::value - enum properties are read-only'
+            'Cannot modify property WordPress\AiClient\Tests\mocks\Enums\ValidTestEnum::value - enum properties are read-only'
         );
         $enum->value = 'modified';
     }
@@ -210,7 +213,7 @@ class AbstractEnumTest extends TestCase
 
         $this->expectException(BadMethodCallException::class);
         $this->expectExceptionMessage(
-            'Property WordPress\AiClient\Tests\unit\Common\ValidTestEnum::invalid does not exist'
+            'Property WordPress\AiClient\Tests\mocks\Enums\ValidTestEnum::invalid does not exist'
         );
         $enum->invalid;
     }
@@ -233,7 +236,7 @@ class AbstractEnumTest extends TestCase
         $this->expectException(RuntimeException::class);
         $this->expectExceptionMessage(
             'Invalid enum constant name "invalid_name" in ' .
-            'WordPress\AiClient\Tests\unit\Common\InvalidNameTestEnum. Constants must be UPPER_SNAKE_CASE.'
+            'WordPress\AiClient\Tests\mocks\Enums\InvalidNameTestEnum. Constants must be UPPER_SNAKE_CASE.'
         );
 
         InvalidNameTestEnum::cases();
@@ -247,7 +250,7 @@ class AbstractEnumTest extends TestCase
         $this->expectException(RuntimeException::class);
         $this->expectExceptionMessage(
             'Invalid enum value type for constant ' .
-            'WordPress\AiClient\Tests\unit\Common\InvalidTypeTestEnum::INT_VALUE. ' .
+            'WordPress\AiClient\Tests\mocks\Enums\InvalidTypeTestEnum::INT_VALUE. ' .
             'Only string values are allowed, integer given.'
         );
 
