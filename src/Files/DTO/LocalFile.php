@@ -8,7 +8,7 @@ use WordPress\AiClient\Common\Contracts\WithJsonSchema;
 use WordPress\AiClient\Files\Contracts\FileInterface;
 
 /**
- * Represents a file stored locally on the filesystem
+ * Represents a file stored locally on the filesystem.
  *
  * This DTO is used for files that are referenced by their local path,
  * typically used when working with files already present on the server.
@@ -18,21 +18,22 @@ use WordPress\AiClient\Files\Contracts\FileInterface;
 class LocalFile implements FileInterface, WithJsonSchema
 {
     /**
-     * @var string The MIME type of the file
+     * @var string The MIME type of the file.
      */
     private string $mimeType;
 
     /**
-     * @var string The local filesystem path to the file
+     * @var string The local filesystem path to the file.
      */
     private string $path;
 
     /**
-     * Constructor
+     * Constructor.
      *
      * @since n.e.x.t
-     * @param string $mimeType The MIME type of the file
-     * @param string $path The local filesystem path to the file
+     *
+     * @param string $mimeType The MIME type of the file.
+     * @param string $path The local filesystem path to the file.
      */
     public function __construct(string $mimeType, string $path)
     {
@@ -41,10 +42,11 @@ class LocalFile implements FileInterface, WithJsonSchema
     }
 
     /**
-     * Get the MIME type of the file
+     * Gets the MIME type of the file.
      *
      * @since n.e.x.t
-     * @return string The MIME type
+     *
+     * @return string The MIME type.
      */
     public function getMimeType(): string
     {
@@ -52,10 +54,11 @@ class LocalFile implements FileInterface, WithJsonSchema
     }
 
     /**
-     * Get the local filesystem path
+     * Gets the local filesystem path.
      *
      * @since n.e.x.t
-     * @return string The local path
+     *
+     * @return string The local path.
      */
     public function getPath(): string
     {
@@ -74,11 +77,11 @@ class LocalFile implements FileInterface, WithJsonSchema
             'properties' => [
                 'mimeType' => [
                     'type' => 'string',
-                    'description' => 'The MIME type of the file',
+                    'description' => 'The MIME type of the file.',
                 ],
                 'path' => [
                     'type' => 'string',
-                    'description' => 'The local filesystem path to the file',
+                    'description' => 'The local filesystem path to the file.',
                 ],
             ],
             'required' => ['mimeType', 'path'],

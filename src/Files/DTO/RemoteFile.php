@@ -8,7 +8,7 @@ use WordPress\AiClient\Common\Contracts\WithJsonSchema;
 use WordPress\AiClient\Files\Contracts\FileInterface;
 
 /**
- * Represents a file accessible via a remote URL
+ * Represents a file accessible via a remote URL.
  *
  * This DTO is used for files that are hosted remotely and accessed via HTTP/HTTPS,
  * commonly used for media files stored on CDNs or external services.
@@ -18,21 +18,22 @@ use WordPress\AiClient\Files\Contracts\FileInterface;
 class RemoteFile implements FileInterface, WithJsonSchema
 {
     /**
-     * @var string The MIME type of the file
+     * @var string The MIME type of the file.
      */
     private string $mimeType;
 
     /**
-     * @var string The URL to the remote file
+     * @var string The URL to the remote file.
      */
     private string $url;
 
     /**
-     * Constructor
+     * Constructor.
      *
      * @since n.e.x.t
-     * @param string $mimeType The MIME type of the file
-     * @param string $url The URL to the remote file
+     *
+     * @param string $mimeType The MIME type of the file.
+     * @param string $url The URL to the remote file.
      */
     public function __construct(string $mimeType, string $url)
     {
@@ -41,10 +42,11 @@ class RemoteFile implements FileInterface, WithJsonSchema
     }
 
     /**
-     * Get the MIME type of the file
+     * Gets the MIME type of the file.
      *
      * @since n.e.x.t
-     * @return string The MIME type
+     *
+     * @return string The MIME type.
      */
     public function getMimeType(): string
     {
@@ -52,10 +54,11 @@ class RemoteFile implements FileInterface, WithJsonSchema
     }
 
     /**
-     * Get the URL to the remote file
+     * Gets the URL to the remote file.
      *
      * @since n.e.x.t
-     * @return string The URL
+     *
+     * @return string The URL.
      */
     public function getUrl(): string
     {
@@ -74,12 +77,12 @@ class RemoteFile implements FileInterface, WithJsonSchema
             'properties' => [
                 'mimeType' => [
                     'type' => 'string',
-                    'description' => 'The MIME type of the file',
+                    'description' => 'The MIME type of the file.',
                 ],
                 'url' => [
                     'type' => 'string',
                     'format' => 'uri',
-                    'description' => 'The URL to the remote file',
+                    'description' => 'The URL to the remote file.',
                 ],
             ],
             'required' => ['mimeType', 'url'],

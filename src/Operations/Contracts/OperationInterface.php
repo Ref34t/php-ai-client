@@ -8,7 +8,7 @@ use WordPress\AiClient\Common\Contracts\WithJsonSchema;
 use WordPress\AiClient\Operations\Enums\OperationStateEnum;
 
 /**
- * Interface for AI operations
+ * Interface for AI operations.
  *
  * Operations represent long-running AI tasks that may not complete immediately.
  * They provide a way to track the progress and retrieve results asynchronously.
@@ -18,18 +18,20 @@ use WordPress\AiClient\Operations\Enums\OperationStateEnum;
 interface OperationInterface extends WithJsonSchema
 {
     /**
-     * Get the operation ID
+     * Gets the operation ID.
      *
      * @since n.e.x.t
-     * @return string The unique operation identifier
+     *
+     * @return string The unique operation identifier.
      */
     public function getId(): string;
 
     /**
-     * Get the current state of the operation
+     * Gets the current state of the operation.
      *
      * @since n.e.x.t
-     * @return OperationStateEnum The operation state
+     *
+     * @return OperationStateEnum The operation state.
      */
     public function getState(): OperationStateEnum;
 }

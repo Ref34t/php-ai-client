@@ -7,7 +7,7 @@ namespace WordPress\AiClient\Tools\DTO;
 use WordPress\AiClient\Common\Contracts\WithJsonSchema;
 
 /**
- * Represents a function declaration for AI models
+ * Represents a function declaration for AI models.
  *
  * This DTO describes a function that can be called by the AI model,
  * including its name, description, and parameter schema.
@@ -17,27 +17,28 @@ use WordPress\AiClient\Common\Contracts\WithJsonSchema;
 class FunctionDeclaration implements WithJsonSchema
 {
     /**
-     * @var string The name of the function
+     * @var string The name of the function.
      */
     private string $name;
 
     /**
-     * @var string A description of what the function does
+     * @var string A description of what the function does.
      */
     private string $description;
 
     /**
-     * @var mixed The JSON schema for the function parameters
+     * @var mixed The JSON schema for the function parameters.
      */
     private $parameters;
 
     /**
-     * Constructor
+     * Constructor.
      *
      * @since n.e.x.t
-     * @param string $name The name of the function
-     * @param string $description A description of what the function does
-     * @param mixed $parameters The JSON schema for the function parameters
+     *
+     * @param string $name The name of the function.
+     * @param string $description A description of what the function does.
+     * @param mixed $parameters The JSON schema for the function parameters.
      */
     public function __construct(string $name, string $description, $parameters)
     {
@@ -47,10 +48,11 @@ class FunctionDeclaration implements WithJsonSchema
     }
 
     /**
-     * Get the function name
+     * Gets the function name.
      *
      * @since n.e.x.t
-     * @return string The function name
+     *
+     * @return string The function name.
      */
     public function getName(): string
     {
@@ -58,10 +60,11 @@ class FunctionDeclaration implements WithJsonSchema
     }
 
     /**
-     * Get the function description
+     * Gets the function description.
      *
      * @since n.e.x.t
-     * @return string The function description
+     *
+     * @return string The function description.
      */
     public function getDescription(): string
     {
@@ -69,10 +72,11 @@ class FunctionDeclaration implements WithJsonSchema
     }
 
     /**
-     * Get the function parameters schema
+     * Gets the function parameters schema.
      *
      * @since n.e.x.t
-     * @return mixed The parameters schema
+     *
+     * @return mixed The parameters schema.
      */
     public function getParameters()
     {
@@ -91,15 +95,15 @@ class FunctionDeclaration implements WithJsonSchema
             'properties' => [
                 'name' => [
                     'type' => 'string',
-                    'description' => 'The name of the function',
+                    'description' => 'The name of the function.',
                 ],
                 'description' => [
                     'type' => 'string',
-                    'description' => 'A description of what the function does',
+                    'description' => 'A description of what the function does.',
                 ],
                 'parameters' => [
                     'type' => 'object',
-                    'description' => 'The JSON schema for the function parameters',
+                    'description' => 'The JSON schema for the function parameters.',
                 ],
             ],
             'required' => ['name', 'description', 'parameters'],

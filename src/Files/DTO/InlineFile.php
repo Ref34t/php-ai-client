@@ -8,7 +8,7 @@ use WordPress\AiClient\Common\Contracts\WithJsonSchema;
 use WordPress\AiClient\Files\Contracts\FileInterface;
 
 /**
- * Represents a file with inline base64-encoded data
+ * Represents a file with inline base64-encoded data.
  *
  * This DTO is used for files that are embedded directly in the request as base64 data,
  * commonly used for small files or when direct data transfer is preferred.
@@ -18,21 +18,22 @@ use WordPress\AiClient\Files\Contracts\FileInterface;
 class InlineFile implements FileInterface, WithJsonSchema
 {
     /**
-     * @var string The MIME type of the file
+     * @var string The MIME type of the file.
      */
     private string $mimeType;
 
     /**
-     * @var string The base64-encoded file data
+     * @var string The base64-encoded file data.
      */
     private string $base64Data;
 
     /**
-     * Constructor
+     * Constructor.
      *
      * @since n.e.x.t
-     * @param string $mimeType The MIME type of the file
-     * @param string $base64Data The base64-encoded file data
+     *
+     * @param string $mimeType The MIME type of the file.
+     * @param string $base64Data The base64-encoded file data.
      */
     public function __construct(string $mimeType, string $base64Data)
     {
@@ -41,10 +42,11 @@ class InlineFile implements FileInterface, WithJsonSchema
     }
 
     /**
-     * Get the MIME type of the file
+     * Gets the MIME type of the file.
      *
      * @since n.e.x.t
-     * @return string The MIME type
+     *
+     * @return string The MIME type.
      */
     public function getMimeType(): string
     {
@@ -52,10 +54,11 @@ class InlineFile implements FileInterface, WithJsonSchema
     }
 
     /**
-     * Get the base64-encoded data
+     * Gets the base64-encoded data.
      *
      * @since n.e.x.t
-     * @return string The base64-encoded data
+     *
+     * @return string The base64-encoded data.
      */
     public function getBase64Data(): string
     {
@@ -74,11 +77,11 @@ class InlineFile implements FileInterface, WithJsonSchema
             'properties' => [
                 'mimeType' => [
                     'type' => 'string',
-                    'description' => 'The MIME type of the file',
+                    'description' => 'The MIME type of the file.',
                 ],
                 'base64Data' => [
                     'type' => 'string',
-                    'description' => 'The base64-encoded file data',
+                    'description' => 'The base64-encoded file data.',
                 ],
             ],
             'required' => ['mimeType', 'base64Data'],

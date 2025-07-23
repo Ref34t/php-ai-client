@@ -7,7 +7,7 @@ namespace WordPress\AiClient\Tools\DTO;
 use WordPress\AiClient\Common\Contracts\WithJsonSchema;
 
 /**
- * Represents a function call request from an AI model
+ * Represents a function call request from an AI model.
  *
  * This DTO encapsulates information about a function that the AI model
  * wants to invoke, including the function name and its arguments.
@@ -17,27 +17,28 @@ use WordPress\AiClient\Common\Contracts\WithJsonSchema;
 class FunctionCall implements WithJsonSchema
 {
     /**
-     * @var string Unique identifier for this function call
+     * @var string Unique identifier for this function call.
      */
     private string $id;
 
     /**
-     * @var string The name of the function to call
+     * @var string The name of the function to call.
      */
     private string $name;
 
     /**
-     * @var array<string, mixed> The arguments to pass to the function
+     * @var array<string, mixed> The arguments to pass to the function.
      */
     private array $args;
 
     /**
-     * Constructor
+     * Constructor.
      *
      * @since n.e.x.t
-     * @param string $id Unique identifier for this function call
-     * @param string $name The name of the function to call
-     * @param array<string, mixed> $args The arguments to pass to the function
+     *
+     * @param string $id Unique identifier for this function call.
+     * @param string $name The name of the function to call.
+     * @param array<string, mixed> $args The arguments to pass to the function.
      */
     public function __construct(string $id, string $name, array $args)
     {
@@ -47,10 +48,11 @@ class FunctionCall implements WithJsonSchema
     }
 
     /**
-     * Get the function call ID
+     * Gets the function call ID.
      *
      * @since n.e.x.t
-     * @return string The unique identifier
+     *
+     * @return string The unique identifier.
      */
     public function getId(): string
     {
@@ -58,10 +60,11 @@ class FunctionCall implements WithJsonSchema
     }
 
     /**
-     * Get the function name
+     * Gets the function name.
      *
      * @since n.e.x.t
-     * @return string The function name
+     *
+     * @return string The function name.
      */
     public function getName(): string
     {
@@ -69,10 +72,11 @@ class FunctionCall implements WithJsonSchema
     }
 
     /**
-     * Get the function arguments
+     * Gets the function arguments.
      *
      * @since n.e.x.t
-     * @return array<string, mixed> The function arguments
+     *
+     * @return array<string, mixed> The function arguments.
      */
     public function getArgs(): array
     {
@@ -91,15 +95,15 @@ class FunctionCall implements WithJsonSchema
             'properties' => [
                 'id' => [
                     'type' => 'string',
-                    'description' => 'Unique identifier for this function call',
+                    'description' => 'Unique identifier for this function call.',
                 ],
                 'name' => [
                     'type' => 'string',
-                    'description' => 'The name of the function to call',
+                    'description' => 'The name of the function to call.',
                 ],
                 'args' => [
                     'type' => 'object',
-                    'description' => 'The arguments to pass to the function',
+                    'description' => 'The arguments to pass to the function.',
                     'additionalProperties' => true,
                 ],
             ],

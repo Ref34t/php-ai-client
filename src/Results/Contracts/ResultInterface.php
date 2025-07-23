@@ -8,7 +8,7 @@ use WordPress\AiClient\Common\Contracts\WithJsonSchema;
 use WordPress\AiClient\Results\DTO\TokenUsage;
 
 /**
- * Interface for AI operation results
+ * Interface for AI operation results.
  *
  * Results contain the output from AI operations along with metadata
  * such as token usage and provider-specific information.
@@ -18,26 +18,29 @@ use WordPress\AiClient\Results\DTO\TokenUsage;
 interface ResultInterface extends WithJsonSchema
 {
     /**
-     * Get the result ID
+     * Gets the result ID.
      *
      * @since n.e.x.t
-     * @return string The unique result identifier
+     *
+     * @return string The unique result identifier.
      */
     public function getId(): string;
 
     /**
-     * Get token usage information
+     * Gets token usage information.
      *
      * @since n.e.x.t
-     * @return TokenUsage Token usage statistics
+     *
+     * @return TokenUsage Token usage statistics.
      */
     public function getTokenUsage(): TokenUsage;
 
     /**
-     * Get provider-specific metadata
+     * Gets provider-specific metadata.
      *
      * @since n.e.x.t
-     * @return array<string, mixed> Provider metadata
+     *
+     * @return array<string, mixed> Provider metadata.
      */
     public function getProviderMetadata(): array;
 }

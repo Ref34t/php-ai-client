@@ -7,7 +7,7 @@ namespace WordPress\AiClient\Messages\DTO;
 use WordPress\AiClient\Messages\Enums\MessageRoleEnum;
 
 /**
- * Represents a system instruction message
+ * Represents a system instruction message.
  *
  * This is a convenience class that automatically sets the role to SYSTEM.
  * System messages are typically used to provide instructions or context to the AI model.
@@ -17,10 +17,11 @@ use WordPress\AiClient\Messages\Enums\MessageRoleEnum;
 class SystemMessage extends Message
 {
     /**
-     * Constructor
+     * Constructor.
      *
      * @since n.e.x.t
-     * @param MessagePart[] $parts The parts that make up this message
+     *
+     * @param MessagePart[] $parts The parts that make up this message.
      */
     public function __construct(array $parts)
     {
@@ -28,10 +29,11 @@ class SystemMessage extends Message
     }
 
     /**
-     * Create a system message from a simple text string
+     * Creates a system message from a simple text string.
      *
      * @since n.e.x.t
-     * @param string $text The text content
+     *
+     * @param string $text The text content.
      * @return self
      */
     public static function text(string $text): self

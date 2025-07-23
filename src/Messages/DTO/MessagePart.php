@@ -12,7 +12,7 @@ use WordPress\AiClient\Tools\DTO\FunctionCall;
 use WordPress\AiClient\Tools\DTO\FunctionResponse;
 
 /**
- * Represents a part of a message
+ * Represents a part of a message.
  *
  * Messages can contain multiple parts of different types, such as text, files,
  * function calls, etc. This DTO encapsulates one such part.
@@ -22,40 +22,41 @@ use WordPress\AiClient\Tools\DTO\FunctionResponse;
 class MessagePart implements WithJsonSchema
 {
     /**
-     * @var MessagePartTypeEnum The type of this message part
+     * @var MessagePartTypeEnum The type of this message part.
      */
     private MessagePartTypeEnum $type;
 
     /**
-     * @var string|null Text content (when type is TEXT)
+     * @var string|null Text content (when type is TEXT).
      */
     private ?string $text = null;
 
     /**
-     * @var InlineFile|null Inline file data (when type is INLINE_FILE)
+     * @var InlineFile|null Inline file data (when type is INLINE_FILE).
      */
     private ?InlineFile $inlineFile = null;
 
     /**
-     * @var RemoteFile|null Remote file reference (when type is REMOTE_FILE)
+     * @var RemoteFile|null Remote file reference (when type is REMOTE_FILE).
      */
     private ?RemoteFile $remoteFile = null;
 
     /**
-     * @var FunctionCall|null Function call request (when type is FUNCTION_CALL)
+     * @var FunctionCall|null Function call request (when type is FUNCTION_CALL).
      */
     private ?FunctionCall $functionCall = null;
 
     /**
-     * @var FunctionResponse|null Function response (when type is FUNCTION_RESPONSE)
+     * @var FunctionResponse|null Function response (when type is FUNCTION_RESPONSE).
      */
     private ?FunctionResponse $functionResponse = null;
 
     /**
-     * Private constructor to enforce factory method usage
+     * Private constructor to enforce factory method usage.
      *
      * @since n.e.x.t
-     * @param MessagePartTypeEnum $type The type of this message part
+     *
+     * @param MessagePartTypeEnum $type The type of this message part.
      */
     private function __construct(MessagePartTypeEnum $type)
     {
@@ -63,10 +64,11 @@ class MessagePart implements WithJsonSchema
     }
 
     /**
-     * Create a text message part
+     * Creates a text message part.
      *
      * @since n.e.x.t
-     * @param string $text The text content
+     *
+     * @param string $text The text content.
      * @return self
      */
     public static function text(string $text): self
@@ -77,10 +79,11 @@ class MessagePart implements WithJsonSchema
     }
 
     /**
-     * Create an inline file message part
+     * Creates an inline file message part.
      *
      * @since n.e.x.t
-     * @param InlineFile $file The inline file
+     *
+     * @param InlineFile $file The inline file.
      * @return self
      */
     public static function inlineFile(InlineFile $file): self
@@ -91,10 +94,11 @@ class MessagePart implements WithJsonSchema
     }
 
     /**
-     * Create a remote file message part
+     * Creates a remote file message part.
      *
      * @since n.e.x.t
-     * @param RemoteFile $file The remote file
+     *
+     * @param RemoteFile $file The remote file.
      * @return self
      */
     public static function remoteFile(RemoteFile $file): self
@@ -105,10 +109,11 @@ class MessagePart implements WithJsonSchema
     }
 
     /**
-     * Create a function call message part
+     * Creates a function call message part.
      *
      * @since n.e.x.t
-     * @param FunctionCall $functionCall The function call
+     *
+     * @param FunctionCall $functionCall The function call.
      * @return self
      */
     public static function functionCall(FunctionCall $functionCall): self
@@ -119,10 +124,11 @@ class MessagePart implements WithJsonSchema
     }
 
     /**
-     * Create a function response message part
+     * Creates a function response message part.
      *
      * @since n.e.x.t
-     * @param FunctionResponse $functionResponse The function response
+     *
+     * @param FunctionResponse $functionResponse The function response.
      * @return self
      */
     public static function functionResponse(FunctionResponse $functionResponse): self
@@ -133,10 +139,11 @@ class MessagePart implements WithJsonSchema
     }
 
     /**
-     * Get the type of this message part
+     * Gets the type of this message part.
      *
      * @since n.e.x.t
-     * @return MessagePartTypeEnum The type
+     *
+     * @return MessagePartTypeEnum The type.
      */
     public function getType(): MessagePartTypeEnum
     {
@@ -144,10 +151,11 @@ class MessagePart implements WithJsonSchema
     }
 
     /**
-     * Get the text content
+     * Gets the text content.
      *
      * @since n.e.x.t
-     * @return string|null The text content or null if not a text part
+     *
+     * @return string|null The text content or null if not a text part.
      */
     public function getText(): ?string
     {
@@ -155,10 +163,11 @@ class MessagePart implements WithJsonSchema
     }
 
     /**
-     * Get the inline file
+     * Gets the inline file.
      *
      * @since n.e.x.t
-     * @return InlineFile|null The inline file or null if not an inline file part
+     *
+     * @return InlineFile|null The inline file or null if not an inline file part.
      */
     public function getInlineFile(): ?InlineFile
     {
@@ -166,10 +175,11 @@ class MessagePart implements WithJsonSchema
     }
 
     /**
-     * Get the remote file
+     * Gets the remote file.
      *
      * @since n.e.x.t
-     * @return RemoteFile|null The remote file or null if not a remote file part
+     *
+     * @return RemoteFile|null The remote file or null if not a remote file part.
      */
     public function getRemoteFile(): ?RemoteFile
     {
@@ -177,10 +187,11 @@ class MessagePart implements WithJsonSchema
     }
 
     /**
-     * Get the function call
+     * Gets the function call.
      *
      * @since n.e.x.t
-     * @return FunctionCall|null The function call or null if not a function call part
+     *
+     * @return FunctionCall|null The function call or null if not a function call part.
      */
     public function getFunctionCall(): ?FunctionCall
     {
@@ -188,10 +199,11 @@ class MessagePart implements WithJsonSchema
     }
 
     /**
-     * Get the function response
+     * Gets the function response.
      *
      * @since n.e.x.t
-     * @return FunctionResponse|null The function response or null if not a function response part
+     *
+     * @return FunctionResponse|null The function response or null if not a function response part.
      */
     public function getFunctionResponse(): ?FunctionResponse
     {
@@ -211,39 +223,39 @@ class MessagePart implements WithJsonSchema
                 'type' => [
                     'type' => 'string',
                     'enum' => ['text', 'inline_file', 'remote_file', 'function_call', 'function_response'],
-                    'description' => 'The type of this message part',
+                    'description' => 'The type of this message part.',
                 ],
                 'text' => [
                     'type' => ['string', 'null'],
-                    'description' => 'Text content (when type is text)',
+                    'description' => 'Text content (when type is text).',
                 ],
                 'inlineFile' => [
                     'oneOf' => [
                         ['type' => 'null'],
                         InlineFile::getJsonSchema(),
                     ],
-                    'description' => 'Inline file data (when type is inline_file)',
+                    'description' => 'Inline file data (when type is inline_file).',
                 ],
                 'remoteFile' => [
                     'oneOf' => [
                         ['type' => 'null'],
                         RemoteFile::getJsonSchema(),
                     ],
-                    'description' => 'Remote file reference (when type is remote_file)',
+                    'description' => 'Remote file reference (when type is remote_file).',
                 ],
                 'functionCall' => [
                     'oneOf' => [
                         ['type' => 'null'],
                         FunctionCall::getJsonSchema(),
                     ],
-                    'description' => 'Function call request (when type is function_call)',
+                    'description' => 'Function call request (when type is function_call).',
                 ],
                 'functionResponse' => [
                     'oneOf' => [
                         ['type' => 'null'],
                         FunctionResponse::getJsonSchema(),
                     ],
-                    'description' => 'Function response (when type is function_response)',
+                    'description' => 'Function response (when type is function_response).',
                 ],
             ],
             'required' => ['type'],

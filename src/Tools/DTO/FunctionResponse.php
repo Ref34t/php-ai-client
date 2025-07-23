@@ -7,7 +7,7 @@ namespace WordPress\AiClient\Tools\DTO;
 use WordPress\AiClient\Common\Contracts\WithJsonSchema;
 
 /**
- * Represents a response to a function call
+ * Represents a response to a function call.
  *
  * This DTO encapsulates the result of executing a function that was
  * requested by the AI model through a FunctionCall.
@@ -17,27 +17,28 @@ use WordPress\AiClient\Common\Contracts\WithJsonSchema;
 class FunctionResponse implements WithJsonSchema
 {
     /**
-     * @var string The ID of the function call this is responding to
+     * @var string The ID of the function call this is responding to.
      */
     private string $id;
 
     /**
-     * @var string The name of the function that was called
+     * @var string The name of the function that was called.
      */
     private string $name;
 
     /**
-     * @var mixed The response data from the function
+     * @var mixed The response data from the function.
      */
     private $response;
 
     /**
-     * Constructor
+     * Constructor.
      *
      * @since n.e.x.t
-     * @param string $id The ID of the function call this is responding to
-     * @param string $name The name of the function that was called
-     * @param mixed $response The response data from the function
+     *
+     * @param string $id The ID of the function call this is responding to.
+     * @param string $name The name of the function that was called.
+     * @param mixed $response The response data from the function.
      */
     public function __construct(string $id, string $name, $response)
     {
@@ -47,10 +48,11 @@ class FunctionResponse implements WithJsonSchema
     }
 
     /**
-     * Get the function call ID
+     * Gets the function call ID.
      *
      * @since n.e.x.t
-     * @return string The function call ID
+     *
+     * @return string The function call ID.
      */
     public function getId(): string
     {
@@ -58,10 +60,11 @@ class FunctionResponse implements WithJsonSchema
     }
 
     /**
-     * Get the function name
+     * Gets the function name.
      *
      * @since n.e.x.t
-     * @return string The function name
+     *
+     * @return string The function name.
      */
     public function getName(): string
     {
@@ -69,10 +72,11 @@ class FunctionResponse implements WithJsonSchema
     }
 
     /**
-     * Get the function response
+     * Gets the function response.
      *
      * @since n.e.x.t
-     * @return mixed The response data
+     *
+     * @return mixed The response data.
      */
     public function getResponse()
     {
@@ -91,14 +95,14 @@ class FunctionResponse implements WithJsonSchema
             'properties' => [
                 'id' => [
                     'type' => 'string',
-                    'description' => 'The ID of the function call this is responding to',
+                    'description' => 'The ID of the function call this is responding to.',
                 ],
                 'name' => [
                     'type' => 'string',
-                    'description' => 'The name of the function that was called',
+                    'description' => 'The name of the function that was called.',
                 ],
                 'response' => [
-                    'description' => 'The response data from the function',
+                    'description' => 'The response data from the function.',
                 ],
             ],
             'required' => ['id', 'name', 'response'],

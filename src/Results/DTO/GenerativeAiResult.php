@@ -10,7 +10,7 @@ use WordPress\AiClient\Messages\Enums\MessagePartTypeEnum;
 use WordPress\AiClient\Results\Contracts\ResultInterface;
 
 /**
- * Represents the result of a generative AI operation
+ * Represents the result of a generative AI operation.
  *
  * This DTO contains the generated candidates along with usage statistics
  * and metadata from the AI provider.
@@ -20,33 +20,34 @@ use WordPress\AiClient\Results\Contracts\ResultInterface;
 class GenerativeAiResult implements ResultInterface
 {
     /**
-     * @var string Unique identifier for this result
+     * @var string Unique identifier for this result.
      */
     private string $id;
 
     /**
-     * @var Candidate[] The generated candidates
+     * @var Candidate[] The generated candidates.
      */
     private array $candidates;
 
     /**
-     * @var TokenUsage Token usage statistics
+     * @var TokenUsage Token usage statistics.
      */
     private TokenUsage $tokenUsage;
 
     /**
-     * @var array<string, mixed> Provider-specific metadata
+     * @var array<string, mixed> Provider-specific metadata.
      */
     private array $providerMetadata;
 
     /**
-     * Constructor
+     * Constructor.
      *
      * @since n.e.x.t
-     * @param string $id Unique identifier for this result
-     * @param Candidate[] $candidates The generated candidates
-     * @param TokenUsage $tokenUsage Token usage statistics
-     * @param array<string, mixed> $providerMetadata Provider-specific metadata
+     *
+     * @param string $id Unique identifier for this result.
+     * @param Candidate[] $candidates The generated candidates.
+     * @param TokenUsage $tokenUsage Token usage statistics.
+     * @param array<string, mixed> $providerMetadata Provider-specific metadata.
      */
     public function __construct(string $id, array $candidates, TokenUsage $tokenUsage, array $providerMetadata = [])
     {
@@ -67,10 +68,11 @@ class GenerativeAiResult implements ResultInterface
     }
 
     /**
-     * Get the generated candidates
+     * Gets the generated candidates.
      *
      * @since n.e.x.t
-     * @return Candidate[] The candidates
+     *
+     * @return Candidate[] The candidates.
      */
     public function getCandidates(): array
     {
@@ -98,11 +100,12 @@ class GenerativeAiResult implements ResultInterface
     }
 
     /**
-     * Convert the first candidate to text
+     * Converts the first candidate to text.
      *
      * @since n.e.x.t
-     * @return string The text content
-     * @throws \RuntimeException If no candidates or no text content
+     *
+     * @return string The text content.
+     * @throws \RuntimeException If no candidates or no text content.
      */
     public function toText(): string
     {
@@ -121,11 +124,12 @@ class GenerativeAiResult implements ResultInterface
     }
 
     /**
-     * Convert the first candidate to an image file
+     * Converts the first candidate to an image file.
      *
      * @since n.e.x.t
-     * @return FileInterface The image file
-     * @throws \RuntimeException If no candidates or no image content
+     *
+     * @return FileInterface The image file.
+     * @throws \RuntimeException If no candidates or no image content.
      */
     public function toImageFile(): FileInterface
     {
@@ -147,11 +151,12 @@ class GenerativeAiResult implements ResultInterface
     }
 
     /**
-     * Convert the first candidate to an audio file
+     * Converts the first candidate to an audio file.
      *
      * @since n.e.x.t
-     * @return FileInterface The audio file
-     * @throws \RuntimeException If no candidates or no audio content
+     *
+     * @return FileInterface The audio file.
+     * @throws \RuntimeException If no candidates or no audio content.
      */
     public function toAudioFile(): FileInterface
     {
@@ -160,11 +165,12 @@ class GenerativeAiResult implements ResultInterface
     }
 
     /**
-     * Convert the first candidate to a video file
+     * Converts the first candidate to a video file.
      *
      * @since n.e.x.t
-     * @return FileInterface The video file
-     * @throws \RuntimeException If no candidates or no video content
+     *
+     * @return FileInterface The video file.
+     * @throws \RuntimeException If no candidates or no video content.
      */
     public function toVideoFile(): FileInterface
     {
@@ -173,11 +179,12 @@ class GenerativeAiResult implements ResultInterface
     }
 
     /**
-     * Convert the first candidate to a message
+     * Converts the first candidate to a message.
      *
      * @since n.e.x.t
-     * @return Message The message
-     * @throws \RuntimeException If no candidates available
+     *
+     * @return Message The message.
+     * @throws \RuntimeException If no candidates available.
      */
     public function toMessage(): Message
     {
@@ -189,10 +196,11 @@ class GenerativeAiResult implements ResultInterface
     }
 
     /**
-     * Convert all candidates to text array
+     * Converts all candidates to text array.
      *
      * @since n.e.x.t
-     * @return string[] Array of text content
+     *
+     * @return string[] Array of text content.
      */
     public function toTexts(): array
     {
@@ -210,10 +218,11 @@ class GenerativeAiResult implements ResultInterface
     }
 
     /**
-     * Convert all candidates to image files
+     * Converts all candidates to image files.
      *
      * @since n.e.x.t
-     * @return FileInterface[] Array of image files
+     *
+     * @return FileInterface[] Array of image files.
      */
     public function toImageFiles(): array
     {
@@ -235,10 +244,11 @@ class GenerativeAiResult implements ResultInterface
     }
 
     /**
-     * Convert all candidates to audio files
+     * Converts all candidates to audio files.
      *
      * @since n.e.x.t
-     * @return FileInterface[] Array of audio files
+     *
+     * @return FileInterface[] Array of audio files.
      */
     public function toAudioFiles(): array
     {
@@ -247,10 +257,11 @@ class GenerativeAiResult implements ResultInterface
     }
 
     /**
-     * Convert all candidates to video files
+     * Converts all candidates to video files.
      *
      * @since n.e.x.t
-     * @return FileInterface[] Array of video files
+     *
+     * @return FileInterface[] Array of video files.
      */
     public function toVideoFiles(): array
     {
@@ -259,10 +270,11 @@ class GenerativeAiResult implements ResultInterface
     }
 
     /**
-     * Convert all candidates to messages
+     * Converts all candidates to messages.
      *
      * @since n.e.x.t
-     * @return Message[] Array of messages
+     *
+     * @return Message[] Array of messages.
      */
     public function toMessages(): array
     {
@@ -281,18 +293,18 @@ class GenerativeAiResult implements ResultInterface
             'properties' => [
                 'id' => [
                     'type' => 'string',
-                    'description' => 'Unique identifier for this result',
+                    'description' => 'Unique identifier for this result.',
                 ],
                 'candidates' => [
                     'type' => 'array',
                     'items' => Candidate::getJsonSchema(),
-                    'description' => 'The generated candidates',
+                    'description' => 'The generated candidates.',
                 ],
                 'tokenUsage' => TokenUsage::getJsonSchema(),
                 'providerMetadata' => [
                     'type' => 'object',
                     'additionalProperties' => true,
-                    'description' => 'Provider-specific metadata',
+                    'description' => 'Provider-specific metadata.',
                 ],
             ],
             'required' => ['id', 'candidates', 'tokenUsage'],

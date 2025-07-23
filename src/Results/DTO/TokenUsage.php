@@ -7,7 +7,7 @@ namespace WordPress\AiClient\Results\DTO;
 use WordPress\AiClient\Common\Contracts\WithJsonSchema;
 
 /**
- * Represents token usage statistics for an AI operation
+ * Represents token usage statistics for an AI operation.
  *
  * This DTO tracks the number of tokens used in prompts and completions,
  * which is important for monitoring usage and costs.
@@ -17,27 +17,28 @@ use WordPress\AiClient\Common\Contracts\WithJsonSchema;
 class TokenUsage implements WithJsonSchema
 {
     /**
-     * @var int Number of tokens in the prompt
+     * @var int Number of tokens in the prompt.
      */
     private int $promptTokens;
 
     /**
-     * @var int Number of tokens in the completion
+     * @var int Number of tokens in the completion.
      */
     private int $completionTokens;
 
     /**
-     * @var int Total number of tokens used
+     * @var int Total number of tokens used.
      */
     private int $totalTokens;
 
     /**
-     * Constructor
+     * Constructor.
      *
      * @since n.e.x.t
-     * @param int $promptTokens Number of tokens in the prompt
-     * @param int $completionTokens Number of tokens in the completion
-     * @param int $totalTokens Total number of tokens used
+     *
+     * @param int $promptTokens Number of tokens in the prompt.
+     * @param int $completionTokens Number of tokens in the completion.
+     * @param int $totalTokens Total number of tokens used.
      */
     public function __construct(int $promptTokens, int $completionTokens, int $totalTokens)
     {
@@ -47,10 +48,11 @@ class TokenUsage implements WithJsonSchema
     }
 
     /**
-     * Get the number of prompt tokens
+     * Gets the number of prompt tokens.
      *
      * @since n.e.x.t
-     * @return int The prompt token count
+     *
+     * @return int The prompt token count.
      */
     public function getPromptTokens(): int
     {
@@ -58,10 +60,11 @@ class TokenUsage implements WithJsonSchema
     }
 
     /**
-     * Get the number of completion tokens
+     * Gets the number of completion tokens.
      *
      * @since n.e.x.t
-     * @return int The completion token count
+     *
+     * @return int The completion token count.
      */
     public function getCompletionTokens(): int
     {
@@ -69,10 +72,11 @@ class TokenUsage implements WithJsonSchema
     }
 
     /**
-     * Get the total number of tokens
+     * Gets the total number of tokens.
      *
      * @since n.e.x.t
-     * @return int The total token count
+     *
+     * @return int The total token count.
      */
     public function getTotalTokens(): int
     {
@@ -91,15 +95,15 @@ class TokenUsage implements WithJsonSchema
             'properties' => [
                 'promptTokens' => [
                     'type' => 'integer',
-                    'description' => 'Number of tokens in the prompt',
+                    'description' => 'Number of tokens in the prompt.',
                 ],
                 'completionTokens' => [
                     'type' => 'integer',
-                    'description' => 'Number of tokens in the completion',
+                    'description' => 'Number of tokens in the completion.',
                 ],
                 'totalTokens' => [
                     'type' => 'integer',
-                    'description' => 'Total number of tokens used',
+                    'description' => 'Total number of tokens used.',
                 ],
             ],
             'required' => ['promptTokens', 'completionTokens', 'totalTokens'],

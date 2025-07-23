@@ -9,7 +9,7 @@ use WordPress\AiClient\Messages\DTO\Message;
 use WordPress\AiClient\Results\Enums\FinishReasonEnum;
 
 /**
- * Represents a candidate response from an AI model
+ * Represents a candidate response from an AI model.
  *
  * When generating content, AI models can produce multiple candidates.
  * Each candidate contains a message and metadata about why generation stopped.
@@ -19,27 +19,28 @@ use WordPress\AiClient\Results\Enums\FinishReasonEnum;
 class Candidate implements WithJsonSchema
 {
     /**
-     * @var Message The generated message
+     * @var Message The generated message.
      */
     private Message $message;
 
     /**
-     * @var FinishReasonEnum The reason generation stopped
+     * @var FinishReasonEnum The reason generation stopped.
      */
     private FinishReasonEnum $finishReason;
 
     /**
-     * @var int The number of tokens in this candidate
+     * @var int The number of tokens in this candidate.
      */
     private int $tokenCount;
 
     /**
-     * Constructor
+     * Constructor.
      *
      * @since n.e.x.t
-     * @param Message $message The generated message
-     * @param FinishReasonEnum $finishReason The reason generation stopped
-     * @param int $tokenCount The number of tokens in this candidate
+     *
+     * @param Message $message The generated message.
+     * @param FinishReasonEnum $finishReason The reason generation stopped.
+     * @param int $tokenCount The number of tokens in this candidate.
      */
     public function __construct(Message $message, FinishReasonEnum $finishReason, int $tokenCount)
     {
@@ -49,10 +50,11 @@ class Candidate implements WithJsonSchema
     }
 
     /**
-     * Get the generated message
+     * Gets the generated message.
      *
      * @since n.e.x.t
-     * @return Message The message
+     *
+     * @return Message The message.
      */
     public function getMessage(): Message
     {
@@ -60,10 +62,11 @@ class Candidate implements WithJsonSchema
     }
 
     /**
-     * Get the finish reason
+     * Gets the finish reason.
      *
      * @since n.e.x.t
-     * @return FinishReasonEnum The finish reason
+     *
+     * @return FinishReasonEnum The finish reason.
      */
     public function getFinishReason(): FinishReasonEnum
     {
@@ -71,10 +74,11 @@ class Candidate implements WithJsonSchema
     }
 
     /**
-     * Get the token count
+     * Gets the token count.
      *
      * @since n.e.x.t
-     * @return int The token count
+     *
+     * @return int The token count.
      */
     public function getTokenCount(): int
     {
@@ -95,11 +99,11 @@ class Candidate implements WithJsonSchema
                 'finishReason' => [
                     'type' => 'string',
                     'enum' => ['stop', 'length', 'content_filter', 'tool_calls', 'error'],
-                    'description' => 'The reason generation stopped',
+                    'description' => 'The reason generation stopped.',
                 ],
                 'tokenCount' => [
                     'type' => 'integer',
-                    'description' => 'The number of tokens in this candidate',
+                    'description' => 'The number of tokens in this candidate.',
                 ],
             ],
             'required' => ['message', 'finishReason', 'tokenCount'],

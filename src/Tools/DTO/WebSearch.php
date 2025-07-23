@@ -7,7 +7,7 @@ namespace WordPress\AiClient\Tools\DTO;
 use WordPress\AiClient\Common\Contracts\WithJsonSchema;
 
 /**
- * Represents web search configuration for AI models
+ * Represents web search configuration for AI models.
  *
  * This DTO defines constraints for web searches that AI models can perform,
  * including allowed and disallowed domains.
@@ -17,21 +17,22 @@ use WordPress\AiClient\Common\Contracts\WithJsonSchema;
 class WebSearch implements WithJsonSchema
 {
     /**
-     * @var string[] List of domains that are allowed for web search
+     * @var string[] List of domains that are allowed for web search.
      */
     private array $allowedDomains;
 
     /**
-     * @var string[] List of domains that are disallowed for web search
+     * @var string[] List of domains that are disallowed for web search.
      */
     private array $disallowedDomains;
 
     /**
-     * Constructor
+     * Constructor.
      *
      * @since n.e.x.t
-     * @param string[] $allowedDomains List of domains that are allowed for web search
-     * @param string[] $disallowedDomains List of domains that are disallowed for web search
+     *
+     * @param string[] $allowedDomains List of domains that are allowed for web search.
+     * @param string[] $disallowedDomains List of domains that are disallowed for web search.
      */
     public function __construct(array $allowedDomains = [], array $disallowedDomains = [])
     {
@@ -40,10 +41,11 @@ class WebSearch implements WithJsonSchema
     }
 
     /**
-     * Get the allowed domains
+     * Gets the allowed domains.
      *
      * @since n.e.x.t
-     * @return string[] The allowed domains
+     *
+     * @return string[] The allowed domains.
      */
     public function getAllowedDomains(): array
     {
@@ -51,10 +53,11 @@ class WebSearch implements WithJsonSchema
     }
 
     /**
-     * Get the disallowed domains
+     * Gets the disallowed domains.
      *
      * @since n.e.x.t
-     * @return string[] The disallowed domains
+     *
+     * @return string[] The disallowed domains.
      */
     public function getDisallowedDomains(): array
     {
@@ -76,14 +79,14 @@ class WebSearch implements WithJsonSchema
                     'items' => [
                         'type' => 'string',
                     ],
-                    'description' => 'List of domains that are allowed for web search',
+                    'description' => 'List of domains that are allowed for web search.',
                 ],
                 'disallowedDomains' => [
                     'type' => 'array',
                     'items' => [
                         'type' => 'string',
                     ],
-                    'description' => 'List of domains that are disallowed for web search',
+                    'description' => 'List of domains that are disallowed for web search.',
                 ],
             ],
             'required' => [],

@@ -8,7 +8,7 @@ use WordPress\AiClient\Common\Contracts\WithJsonSchema;
 use WordPress\AiClient\Messages\Enums\MessageRoleEnum;
 
 /**
- * Represents a message in an AI conversation
+ * Represents a message in an AI conversation.
  *
  * Messages are the fundamental unit of communication with AI models,
  * containing a role and one or more parts with different content types.
@@ -18,21 +18,22 @@ use WordPress\AiClient\Messages\Enums\MessageRoleEnum;
 class Message implements WithJsonSchema
 {
     /**
-     * @var MessageRoleEnum The role of the message sender
+     * @var MessageRoleEnum The role of the message sender.
      */
     protected MessageRoleEnum $role;
 
     /**
-     * @var MessagePart[] The parts that make up this message
+     * @var MessagePart[] The parts that make up this message.
      */
     protected array $parts;
 
     /**
-     * Constructor
+     * Constructor.
      *
      * @since n.e.x.t
-     * @param MessageRoleEnum $role The role of the message sender
-     * @param MessagePart[] $parts The parts that make up this message
+     *
+     * @param MessageRoleEnum $role The role of the message sender.
+     * @param MessagePart[] $parts The parts that make up this message.
      */
     public function __construct(MessageRoleEnum $role, array $parts)
     {
@@ -41,11 +42,12 @@ class Message implements WithJsonSchema
     }
 
     /**
-     * Create a message from a simple text string
+     * Creates a message from a simple text string.
      *
      * @since n.e.x.t
-     * @param MessageRoleEnum $role The role of the message sender
-     * @param string $text The text content
+     *
+     * @param MessageRoleEnum $role The role of the message sender.
+     * @param string $text The text content.
      * @return self
      */
     public static function fromText(MessageRoleEnum $role, string $text): self
@@ -54,10 +56,11 @@ class Message implements WithJsonSchema
     }
 
     /**
-     * Get the role of the message sender
+     * Gets the role of the message sender.
      *
      * @since n.e.x.t
-     * @return MessageRoleEnum The role
+     *
+     * @return MessageRoleEnum The role.
      */
     public function getRole(): MessageRoleEnum
     {
@@ -65,10 +68,11 @@ class Message implements WithJsonSchema
     }
 
     /**
-     * Get the message parts
+     * Gets the message parts.
      *
      * @since n.e.x.t
-     * @return MessagePart[] The message parts
+     *
+     * @return MessagePart[] The message parts.
      */
     public function getParts(): array
     {
@@ -88,13 +92,13 @@ class Message implements WithJsonSchema
                 'role' => [
                     'type' => 'string',
                     'enum' => ['user', 'model', 'system'],
-                    'description' => 'The role of the message sender',
+                    'description' => 'The role of the message sender.',
                 ],
                 'parts' => [
                     'type' => 'array',
                     'items' => MessagePart::getJsonSchema(),
                     'minItems' => 1,
-                    'description' => 'The parts that make up this message',
+                    'description' => 'The parts that make up this message.',
                 ],
             ],
             'required' => ['role', 'parts'],
