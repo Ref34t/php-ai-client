@@ -89,26 +89,47 @@ class GenerativeAiOperation implements OperationInterface
     public static function getJsonSchema(): array
     {
         return [
-            'type' => 'object',
-            'properties' => [
-                'id' => [
-                    'type' => 'string',
-                    'description' => 'Unique identifier for this operation.',
-                ],
-                'state' => [
-                    'type' => 'string',
-                    'enum' => ['starting', 'processing', 'succeeded', 'failed', 'canceled'],
-                    'description' => 'The current state of the operation.',
-                ],
-                'result' => [
-                    'oneOf' => [
-                        ['type' => 'null'],
-                        GenerativeAiResult::getJsonSchema(),
+            'oneOf' => [
+                // Succeeded state - has result
+                [
+                    'type' => 'object',
+                    'properties' => [
+                        'id' => [
+                            'type' => 'string',
+                            'description' => 'Unique identifier for this operation.',
+                        ],
+                        'state' => [
+                            'type' => 'string',
+                            'const' => OperationStateEnum::succeeded()->value,
+                        ],
+                        'result' => GenerativeAiResult::getJsonSchema(),
                     ],
-                    'description' => 'The result once the operation completes.',
+                    'required' => ['id', 'state', 'result'],
+                    'additionalProperties' => false,
+                ],
+                // All other states - no result
+                [
+                    'type' => 'object',
+                    'properties' => [
+                        'id' => [
+                            'type' => 'string',
+                            'description' => 'Unique identifier for this operation.',
+                        ],
+                        'state' => [
+                            'type' => 'string',
+                            'enum' => [
+                                OperationStateEnum::starting()->value,
+                                OperationStateEnum::processing()->value,
+                                OperationStateEnum::failed()->value,
+                                OperationStateEnum::canceled()->value,
+                            ],
+                            'description' => 'The current state of the operation.',
+                        ],
+                    ],
+                    'required' => ['id', 'state'],
+                    'additionalProperties' => false,
                 ],
             ],
-            'required' => ['id', 'state'],
         ];
     }
 }
