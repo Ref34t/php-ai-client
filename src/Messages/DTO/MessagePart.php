@@ -52,15 +52,40 @@ class MessagePart implements WithJsonSchemaInterface
     private ?FunctionResponse $functionResponse = null;
 
     /**
-     * Private constructor to enforce factory method usage.
+     * Constructor that accepts various content types and infers the message part type.
      *
      * @since n.e.x.t
      *
-     * @param MessagePartTypeEnum $type The type of this message part.
+     * @param mixed $content The content of this message part.
+     * @throws \InvalidArgumentException If an unsupported content type is provided.
      */
-    private function __construct(MessagePartTypeEnum $type)
+    public function __construct($content)
     {
-        $this->type = $type;
+        if (is_string($content)) {
+            $this->type = MessagePartTypeEnum::text();
+            $this->text = $content;
+        } elseif ($content instanceof InlineFile) {
+            $this->type = MessagePartTypeEnum::inlineFile();
+            $this->inlineFile = $content;
+        } elseif ($content instanceof RemoteFile) {
+            $this->type = MessagePartTypeEnum::remoteFile();
+            $this->remoteFile = $content;
+        } elseif ($content instanceof FunctionCall) {
+            $this->type = MessagePartTypeEnum::functionCall();
+            $this->functionCall = $content;
+        } elseif ($content instanceof FunctionResponse) {
+            $this->type = MessagePartTypeEnum::functionResponse();
+            $this->functionResponse = $content;
+        } else {
+            $type = is_object($content) ? get_class($content) : gettype($content);
+            throw new \InvalidArgumentException(
+                sprintf(
+                    'Unsupported content type %s. Expected string, InlineFile, RemoteFile, '
+                    . 'FunctionCall, or FunctionResponse.',
+                    $type
+                )
+            );
+        }
     }
 
     /**
@@ -143,47 +168,71 @@ class MessagePart implements WithJsonSchemaInterface
     public static function getJsonSchema(): array
     {
         return [
-            'type' => 'object',
-            'properties' => [
-                'type' => [
-                    'type' => 'string',
-                    'enum' => ['text', 'inline_file', 'remote_file', 'function_call', 'function_response'],
-                    'description' => 'The type of this message part.',
-                ],
-                'text' => [
-                    'type' => ['string', 'null'],
-                    'description' => 'Text content (when type is text).',
-                ],
-                'inlineFile' => [
-                    'oneOf' => [
-                        ['type' => 'null'],
-                        InlineFile::getJsonSchema(),
+            'oneOf' => [
+                [
+                    'type' => 'object',
+                    'properties' => [
+                        'type' => [
+                            'type' => 'string',
+                            'const' => MessagePartTypeEnum::text()->value,
+                        ],
+                        'text' => [
+                            'type' => 'string',
+                            'description' => 'Text content.',
+                        ],
                     ],
-                    'description' => 'Inline file data (when type is inline_file).',
+                    'required' => ['type', 'text'],
+                    'additionalProperties' => false,
                 ],
-                'remoteFile' => [
-                    'oneOf' => [
-                        ['type' => 'null'],
-                        RemoteFile::getJsonSchema(),
+                [
+                    'type' => 'object',
+                    'properties' => [
+                        'type' => [
+                            'type' => 'string',
+                            'const' => MessagePartTypeEnum::inlineFile()->value,
+                        ],
+                        'inlineFile' => InlineFile::getJsonSchema(),
                     ],
-                    'description' => 'Remote file reference (when type is remote_file).',
+                    'required' => ['type', 'inlineFile'],
+                    'additionalProperties' => false,
                 ],
-                'functionCall' => [
-                    'oneOf' => [
-                        ['type' => 'null'],
-                        FunctionCall::getJsonSchema(),
+                [
+                    'type' => 'object',
+                    'properties' => [
+                        'type' => [
+                            'type' => 'string',
+                            'const' => MessagePartTypeEnum::remoteFile()->value,
+                        ],
+                        'remoteFile' => RemoteFile::getJsonSchema(),
                     ],
-                    'description' => 'Function call request (when type is function_call).',
+                    'required' => ['type', 'remoteFile'],
+                    'additionalProperties' => false,
                 ],
-                'functionResponse' => [
-                    'oneOf' => [
-                        ['type' => 'null'],
-                        FunctionResponse::getJsonSchema(),
+                [
+                    'type' => 'object',
+                    'properties' => [
+                        'type' => [
+                            'type' => 'string',
+                            'const' => MessagePartTypeEnum::functionCall()->value,
+                        ],
+                        'functionCall' => FunctionCall::getJsonSchema(),
                     ],
-                    'description' => 'Function response (when type is function_response).',
+                    'required' => ['type', 'functionCall'],
+                    'additionalProperties' => false,
+                ],
+                [
+                    'type' => 'object',
+                    'properties' => [
+                        'type' => [
+                            'type' => 'string',
+                            'const' => MessagePartTypeEnum::functionResponse()->value,
+                        ],
+                        'functionResponse' => FunctionResponse::getJsonSchema(),
+                    ],
+                    'required' => ['type', 'functionResponse'],
+                    'additionalProperties' => false,
                 ],
             ],
-            'required' => ['type'],
         ];
     }
 }
