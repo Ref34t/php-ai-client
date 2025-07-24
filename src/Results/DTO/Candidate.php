@@ -44,6 +44,12 @@ class Candidate implements WithJsonSchemaInterface
      */
     public function __construct(Message $message, FinishReasonEnum $finishReason, int $tokenCount)
     {
+        if (!$message->getRole()->isModel()) {
+            throw new \InvalidArgumentException(
+                'Message must be a model message.'
+            );
+        }
+
         $this->message = $message;
         $this->finishReason = $finishReason;
         $this->tokenCount = $tokenCount;
