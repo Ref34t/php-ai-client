@@ -22,7 +22,7 @@ class InlineFile implements FileInterface, WithJsonSchemaInterface
     use HasMimeType;
 
     /**
-     * @var string The base64-encoded file data.
+     * @var string The plain base64-encoded file data (without data URI prefix).
      */
     private string $base64Data;
 
@@ -32,29 +32,37 @@ class InlineFile implements FileInterface, WithJsonSchemaInterface
      * @since n.e.x.t
      *
      * @param string $base64Data The base64-encoded file data.
-     * @param MimeType|string $mimeType The MIME type of the file.
+     * @param MimeType|string|null $mimeType The MIME type of the file.
      */
-    public function __construct(string $base64Data, $mimeType)
+    public function __construct(string $base64Data, $mimeType = null)
     {
         // RFC 2397: dataurl := "data:" [ mediatype ] ";base64," data
-        // mediatype is optional; if omitted, defaults to text/plain;charset=US-ASCII
-        // We'll be more permissive and accept data URLs with or without MIME type
-        $pattern = '/^data:(?:([a-zA-Z0-9][a-zA-Z0-9!#$&\-\^_+.]*\/[a-zA-Z0-9][a-zA-Z0-9!#$&\-\^_+.]*'
+        $dataUriPattern = '/^data:(?:([a-zA-Z0-9][a-zA-Z0-9!#$&\-\^_+.]*\/[a-zA-Z0-9][a-zA-Z0-9!#$&\-\^_+.]*'
             . '(?:;[a-zA-Z0-9\-]+=[a-zA-Z0-9\-]+)*)?;)?base64,([A-Za-z0-9+\/]*={0,2})$/';
 
-        if (!preg_match($pattern, $base64Data, $matches)) {
-            throw new \InvalidArgumentException(
-                'Invalid base64 data provided. Expected format: data:[mimeType];base64,[data]'
-            );
+        // Check if this is a data URI
+        if (preg_match($dataUriPattern, $base64Data, $matches)) {
+            $this->base64Data = $matches[2];
+            $this->mimeType = $this->parseMimeType($mimeType, empty($matches[1]) ? null : $matches[1]);
+            return;
         }
 
-        $this->base64Data = $base64Data;
-
-        if ($mimeType instanceof MimeType) {
-            $this->mimeType = $mimeType;
-        } else {
-            $this->mimeType = new MimeType($mimeType);
+        // Check if this is plain base64 data
+        if (preg_match('/^[A-Za-z0-9+\/]*={0,2}$/', $base64Data)) {
+            if ($mimeType === null) {
+                throw new \InvalidArgumentException(
+                    'MIME type is required when providing plain base64 data without data URI format.'
+                );
+            }
+            $this->base64Data = $base64Data;
+            $this->mimeType = $this->parseMimeType($mimeType);
+            return;
         }
+
+        throw new \InvalidArgumentException(
+            'Invalid base64 data provided. Expected either data URI format '
+            . '(data:[mimeType];base64,[data]) or plain base64 string.'
+        );
     }
 
     /**
@@ -62,11 +70,23 @@ class InlineFile implements FileInterface, WithJsonSchemaInterface
      *
      * @since n.e.x.t
      *
-     * @return string The base64-encoded data.
+     * @return string The plain base64-encoded data (without data URI prefix).
      */
     public function getBase64Data(): string
     {
         return $this->base64Data;
+    }
+
+    /**
+     * Gets the data as a data URL.
+     *
+     * @since n.e.x.t
+     *
+     * @return string The data URL in format: data:[mimeType];base64,[data].
+     */
+    public function getDataUrl(): string
+    {
+        return sprintf('data:%s;base64,%s', (string) $this->mimeType, $this->base64Data);
     }
 
     /**
@@ -87,5 +107,34 @@ class InlineFile implements FileInterface, WithJsonSchemaInterface
             ],
             'required' => ['mimeType', 'base64Data'],
         ];
+    }
+
+    /**
+     * Parses and validates the MIME type.
+     *
+     * @since n.e.x.t
+     *
+     * @param MimeType|string|null $providedMimeType The explicitly provided MIME type.
+     * @param string|null $extractedMimeType The MIME type extracted from data URI.
+     * @return MimeType The parsed MIME type.
+     */
+    private function parseMimeType($providedMimeType, ?string $extractedMimeType = null): MimeType
+    {
+        // Prefer explicitly provided MIME type
+        if ($providedMimeType instanceof MimeType) {
+            return $providedMimeType;
+        }
+
+        if ($providedMimeType !== null) {
+            return new MimeType($providedMimeType);
+        }
+
+        // Use extracted MIME type from data URI
+        if ($extractedMimeType !== null) {
+            return new MimeType($extractedMimeType);
+        }
+
+        // RFC 2397: if mediatype is omitted in data URI, defaults to text/plain
+        return new MimeType('text/plain');
     }
 }
