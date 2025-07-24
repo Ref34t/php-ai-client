@@ -111,7 +111,7 @@ class GenerativeAiResult implements ResultInterface
      *
      * @return int The total number of candidates.
      */
-    public function getTotalCandidates(): int
+    public function getCandidateCount(): int
     {
         return count($this->candidates);
     }
@@ -125,7 +125,7 @@ class GenerativeAiResult implements ResultInterface
      */
     public function hasMultipleCandidates(): bool
     {
-        return count($this->candidates) > 1;
+        return $this->getCandidateCount() > 1;
     }
 
     /**
