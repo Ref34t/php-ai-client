@@ -42,20 +42,6 @@ class Message implements WithJsonSchemaInterface
     }
 
     /**
-     * Creates a message from a simple text string.
-     *
-     * @since n.e.x.t
-     *
-     * @param MessageRoleEnum $role The role of the message sender.
-     * @param string $text The text content.
-     * @return self
-     */
-    public static function fromText(MessageRoleEnum $role, string $text): self
-    {
-        return new self($role, [MessagePart::text($text)]);
-    }
-
-    /**
      * Gets the role of the message sender.
      *
      * @since n.e.x.t
@@ -91,7 +77,7 @@ class Message implements WithJsonSchemaInterface
             'properties' => [
                 'role' => [
                     'type' => 'string',
-                    'enum' => ['user', 'model', 'system'],
+                    'enum' => MessageRoleEnum::getValues(),
                     'description' => 'The role of the message sender.',
                 ],
                 'parts' => [
