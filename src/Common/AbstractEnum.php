@@ -195,11 +195,11 @@ abstract class AbstractEnum
      *
      * @since n.e.x.t
      *
-     * @return array<string, string> Map of constant names to values.
+     * @return string[] List of all enum values.
      */
     final public static function getValues(): array
     {
-        return self::getConstants();
+        return array_values(self::getConstants());
     }
 
     /**
