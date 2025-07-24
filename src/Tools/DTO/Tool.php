@@ -33,46 +33,28 @@ class Tool implements WithJsonSchemaInterface
     private ?WebSearch $webSearch = null;
 
     /**
-     * Private constructor to enforce factory method usage.
+     * Constructor.
      *
      * @since n.e.x.t
      *
-     * @param ToolTypeEnum $type The type of tool.
+     * @param FunctionDeclaration[]|WebSearch $content The tool content.
+     * @throws \InvalidArgumentException If content type is not supported.
      */
-    private function __construct(ToolTypeEnum $type)
+    public function __construct($content)
     {
-        $this->type = $type;
+        if (is_array($content)) {
+            $this->type = ToolTypeEnum::functionDeclarations();
+            $this->functionDeclarations = $content;
+        } elseif ($content instanceof WebSearch) {
+            $this->type = ToolTypeEnum::webSearch();
+            $this->webSearch = $content;
+        } else {
+            throw new \InvalidArgumentException(
+                'Tool content must be an array of FunctionDeclaration instances or a WebSearch instance'
+            );
+        }
     }
 
-    /**
-     * Creates a function declarations tool.
-     *
-     * @since n.e.x.t
-     *
-     * @param FunctionDeclaration[] $declarations The function declarations.
-     * @return self
-     */
-    public static function functionDeclarations(array $declarations): self
-    {
-        $tool = new self(ToolTypeEnum::functionDeclarations());
-        $tool->functionDeclarations = $declarations;
-        return $tool;
-    }
-
-    /**
-     * Creates a web search tool.
-     *
-     * @since n.e.x.t
-     *
-     * @param WebSearch $webSearch The web search configuration.
-     * @return self
-     */
-    public static function webSearch(WebSearch $webSearch): self
-    {
-        $tool = new self(ToolTypeEnum::webSearch());
-        $tool->webSearch = $webSearch;
-        return $tool;
-    }
 
     /**
      * Gets the tool type.
@@ -118,27 +100,36 @@ class Tool implements WithJsonSchemaInterface
     public static function getJsonSchema(): array
     {
         return [
-            'type' => 'object',
-            'properties' => [
-                'type' => [
-                    'type' => 'string',
-                    'enum' => ['function_declarations', 'web_search'],
-                    'description' => 'The type of tool.',
-                ],
-                'functionDeclarations' => [
-                    'type' => ['array', 'null'],
-                    'items' => FunctionDeclaration::getJsonSchema(),
-                    'description' => 'Function declarations (when type is function_declarations).',
-                ],
-                'webSearch' => [
-                    'oneOf' => [
-                        ['type' => 'null'],
-                        WebSearch::getJsonSchema(),
+            'oneOf' => [
+                [
+                    'type' => 'object',
+                    'properties' => [
+                        'type' => [
+                            'type' => 'string',
+                            'const' => ToolTypeEnum::functionDeclarations()->value,
+                            'description' => 'The type of tool.',
+                        ],
+                        'functionDeclarations' => [
+                            'type' => 'array',
+                            'items' => FunctionDeclaration::getJsonSchema(),
+                            'description' => 'Function declarations.',
+                        ],
                     ],
-                    'description' => 'Web search configuration (when type is web_search).',
+                    'required' => ['type', 'functionDeclarations'],
+                ],
+                [
+                    'type' => 'object',
+                    'properties' => [
+                        'type' => [
+                            'type' => 'string',
+                            'const' => ToolTypeEnum::webSearch()->value,
+                            'description' => 'The type of tool.',
+                        ],
+                        'webSearch' => WebSearch::getJsonSchema(),
+                    ],
+                    'required' => ['type', 'webSearch'],
                 ],
             ],
-            'required' => ['type'],
         ];
     }
 }
