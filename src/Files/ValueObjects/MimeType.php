@@ -232,7 +232,7 @@ final class MimeType
      *
      * @since n.e.x.t
      *
-     * @param mixed $other The other MIME type to compare.
+     * @param self|string $other The other MIME type to compare.
      * @return bool True if equal.
      */
     public function equals($other): bool
