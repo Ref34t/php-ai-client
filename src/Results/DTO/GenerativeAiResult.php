@@ -187,7 +187,7 @@ class GenerativeAiResult implements ResultInterface
     {
         $file = $this->toFile();
 
-        if (!$file->getMimeType()->isImage()) {
+        if (!$file->isImage()) {
             throw new \RuntimeException(
                 sprintf('File is not an image. MIME type: %s', $file->getMimeType())
             );
@@ -208,7 +208,7 @@ class GenerativeAiResult implements ResultInterface
     {
         $file = $this->toFile();
 
-        if (!$file->getMimeType()->isAudio()) {
+        if (!$file->isAudio()) {
             throw new \RuntimeException(
                 sprintf('File is not an audio file. MIME type: %s', $file->getMimeType())
             );
@@ -229,7 +229,7 @@ class GenerativeAiResult implements ResultInterface
     {
         $file = $this->toFile();
 
-        if (!$file->getMimeType()->isVideo()) {
+        if (!$file->isVideo()) {
             throw new \RuntimeException(
                 sprintf('File is not a video file. MIME type: %s', $file->getMimeType())
             );
@@ -313,7 +313,7 @@ class GenerativeAiResult implements ResultInterface
     {
         return array_filter(
             $this->toFiles(),
-            fn(FileInterface $file) => $file->getMimeType()->isImage()
+            fn(FileInterface $file) => $file->isImage()
         );
     }
 
@@ -328,7 +328,7 @@ class GenerativeAiResult implements ResultInterface
     {
         return array_filter(
             $this->toFiles(),
-            fn(FileInterface $file) => $file->getMimeType()->isAudio()
+            fn(FileInterface $file) => $file->isAudio()
         );
     }
 
@@ -343,7 +343,7 @@ class GenerativeAiResult implements ResultInterface
     {
         return array_filter(
             $this->toFiles(),
-            fn(FileInterface $file) => $file->getMimeType()->isVideo()
+            fn(FileInterface $file) => $file->isVideo()
         );
     }
 
