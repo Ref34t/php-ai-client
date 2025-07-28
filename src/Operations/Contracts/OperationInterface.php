@@ -16,7 +16,9 @@ use WordPress\AiClient\Operations\Enums\OperationStateEnum;
  *
  * @since n.e.x.t
  *
- * @extends WithJsonSerialization<array<string, mixed>>
+ * @template TJsonShape of array<string, mixed>
+ *
+ * @extends WithJsonSerialization<TJsonShape>
  */
 interface OperationInterface extends WithJsonSchemaInterface, WithJsonSerialization
 {

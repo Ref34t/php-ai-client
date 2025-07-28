@@ -106,7 +106,7 @@ class Message implements WithJsonSchemaInterface, WithJsonSerialization
      *
      * @since n.e.x.t
      *
-     * @return array<string, mixed>
+     * @return MessageJsonShape
      */
     public function jsonSerialize(): array
     {
@@ -123,7 +123,7 @@ class Message implements WithJsonSchemaInterface, WithJsonSerialization
      *
      * @since n.e.x.t
      */
-    public static function fromJson(array $json): Message
+    final public static function fromJson(array $json): Message
     {
         $role = MessageRoleEnum::from($json['role']);
         $partsData = $json['parts'];
@@ -131,6 +131,19 @@ class Message implements WithJsonSchemaInterface, WithJsonSerialization
             return MessagePart::fromJson($partData);
         }, $partsData);
 
+        // Determine which concrete class to instantiate based on role
+        if ($role->isUser()) {
+            /** @phpstan-ignore-next-line */
+            return new UserMessage($parts);
+        } elseif ($role->isModel()) {
+            /** @phpstan-ignore-next-line */
+            return new ModelMessage($parts);
+        } elseif ($role->isSystem()) {
+            /** @phpstan-ignore-next-line */
+            return new SystemMessage($parts);
+        }
+
+        /** @phpstan-ignore-next-line */
         return new self($role, $parts);
     }
 }

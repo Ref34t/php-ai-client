@@ -26,7 +26,7 @@ use WordPress\AiClient\Files\ValueObjects\MimeType;
  *
  * @implements WithJsonSerialization<FileJsonShape>
  */
-class File implements WithJsonSchemaInterface, WithJsonSerialization
+final class File implements WithJsonSchemaInterface, WithJsonSerialization
 {
     /**
      * @var MimeType The MIME type of the file.
@@ -393,7 +393,7 @@ class File implements WithJsonSchemaInterface, WithJsonSerialization
      *
      * @since n.e.x.t
      *
-     * @return array<string, mixed>
+     * @return FileJsonShape
      */
     public function jsonSerialize(): array
     {
@@ -402,9 +402,9 @@ class File implements WithJsonSchemaInterface, WithJsonSerialization
             'mimeType' => $this->getMimeType(),
         ];
 
-        if ($this->fileType->isRemote()) {
+        if ($this->fileType->isRemote() && $this->url !== null) {
             $data['url'] = $this->url;
-        } else {
+        } elseif (!$this->fileType->isRemote() && $this->base64Data !== null) {
             $data['base64Data'] = $this->base64Data;
         }
 

@@ -13,7 +13,7 @@ use WordPress\AiClient\Messages\Enums\MessageRoleEnum;
  *
  * @since n.e.x.t
  */
-class UserMessage extends Message
+final class UserMessage extends Message
 {
     /**
      * Constructor.
@@ -25,20 +25,5 @@ class UserMessage extends Message
     public function __construct(array $parts)
     {
         parent::__construct(MessageRoleEnum::user(), $parts);
-    }
-
-    /**
-     * {@inheritDoc}
-     *
-     * @since n.e.x.t
-     */
-    public static function fromJson(array $json): UserMessage
-    {
-        $partsData = $json['parts'];
-        $parts = array_map(function (array $partData) {
-            return MessagePart::fromJson($partData);
-        }, $partsData);
-
-        return new self($parts);
     }
 }

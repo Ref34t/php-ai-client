@@ -23,7 +23,7 @@ use WordPress\AiClient\Common\Contracts\WithJsonSerialization;
  *
  * @implements WithJsonSerialization<TokenUsageJsonShape>
  */
-class TokenUsage implements WithJsonSchemaInterface, WithJsonSerialization
+final class TokenUsage implements WithJsonSchemaInterface, WithJsonSerialization
 {
     /**
      * @var int Number of tokens in the prompt.
@@ -124,7 +124,7 @@ class TokenUsage implements WithJsonSchemaInterface, WithJsonSerialization
      *
      * @since n.e.x.t
      *
-     * @return array<string, mixed>
+     * @return TokenUsageJsonShape
      */
     public function jsonSerialize(): array
     {

@@ -27,9 +27,9 @@ use WordPress\AiClient\Results\Contracts\ResultInterface;
  *     providerMetadata?: array<string, mixed>
  * }
  *
- * @implements WithJsonSerialization<GenerativeAiResultJsonShape>
+ * @implements ResultInterface<GenerativeAiResultJsonShape>
  */
-class GenerativeAiResult implements ResultInterface
+final class GenerativeAiResult implements ResultInterface
 {
     /**
      * @var string Unique identifier for this result.
@@ -396,7 +396,7 @@ class GenerativeAiResult implements ResultInterface
      *
      * @since n.e.x.t
      *
-     * @return array<string, mixed>
+     * @return GenerativeAiResultJsonShape
      */
     public function jsonSerialize(): array
     {
@@ -417,22 +417,16 @@ class GenerativeAiResult implements ResultInterface
      */
     public static function fromJson(array $json): GenerativeAiResult
     {
-        /** @var array<CandidateJsonShape> $candidatesData */
         $candidatesData = $json['candidates'];
         $candidates = array_map(function (array $candidateData) {
             return Candidate::fromJson($candidateData);
         }, $candidatesData);
 
-        /** @var TokenUsageJsonShape $tokenUsageData */
         $tokenUsageData = $json['tokenUsage'];
-        /** @var array<string, mixed> $providerMetadata */
         $providerMetadata = $json['providerMetadata'] ?? [];
 
-        /** @var string $id */
-        $id = $json['id'];
-        
         return new self(
-            $id,
+            $json['id'],
             $candidates,
             TokenUsage::fromJson($tokenUsageData),
             $providerMetadata

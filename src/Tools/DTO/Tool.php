@@ -27,7 +27,7 @@ use WordPress\AiClient\Providers\Enums\ToolTypeEnum;
  *
  * @implements WithJsonSerialization<ToolJsonShape>
  */
-class Tool implements WithJsonSchemaInterface, WithJsonSerialization
+final class Tool implements WithJsonSchemaInterface, WithJsonSerialization
 {
     /**
      * @var ToolTypeEnum The type of tool.
@@ -150,7 +150,7 @@ class Tool implements WithJsonSchemaInterface, WithJsonSerialization
      *
      * @since n.e.x.t
      *
-     * @return array<string, mixed>
+     * @return ToolJsonShape
      */
     public function jsonSerialize(): array
     {

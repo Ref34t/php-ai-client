@@ -20,9 +20,9 @@ use WordPress\AiClient\Results\DTO\GenerativeAiResult;
  *
  * @phpstan-type GenerativeAiOperationJsonShape array{id: string, state: string, result?: GenerativeAiResultJsonShape}
  *
- * @implements WithJsonSerialization<GenerativeAiOperationJsonShape>
+ * @implements OperationInterface<GenerativeAiOperationJsonShape>
  */
-class GenerativeAiOperation implements OperationInterface
+final class GenerativeAiOperation implements OperationInterface
 {
     /**
      * @var string Unique identifier for this operation.
@@ -144,7 +144,7 @@ class GenerativeAiOperation implements OperationInterface
      *
      * @since n.e.x.t
      *
-     * @return array<string, mixed>
+     * @return GenerativeAiOperationJsonShape
      */
     public function jsonSerialize(): array
     {
@@ -170,8 +170,7 @@ class GenerativeAiOperation implements OperationInterface
         $state = OperationStateEnum::from($json['state']);
         $result = null;
         if (isset($json['result'])) {
-            $resultData = $json['result'];
-            $result = GenerativeAiResult::fromJson($resultData);
+            $result = GenerativeAiResult::fromJson($json['result']);
         }
 
         return new self($json['id'], $state, $result);

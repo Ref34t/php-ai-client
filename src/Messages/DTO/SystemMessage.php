@@ -14,7 +14,7 @@ use WordPress\AiClient\Messages\Enums\MessageRoleEnum;
  *
  * @since n.e.x.t
  */
-class SystemMessage extends Message
+final class SystemMessage extends Message
 {
     /**
      * Constructor.
@@ -26,20 +26,5 @@ class SystemMessage extends Message
     public function __construct(array $parts)
     {
         parent::__construct(MessageRoleEnum::system(), $parts);
-    }
-
-    /**
-     * {@inheritDoc}
-     *
-     * @since n.e.x.t
-     */
-    public static function fromJson(array $json): SystemMessage
-    {
-        $partsData = $json['parts'];
-        $parts = array_map(function (array $partData) {
-            return MessagePart::fromJson($partData);
-        }, $partsData);
-
-        return new self($parts);
     }
 }

@@ -19,7 +19,7 @@ use WordPress\AiClient\Common\Contracts\WithJsonSerialization;
  *
  * @implements WithJsonSerialization<WebSearchJsonShape>
  */
-class WebSearch implements WithJsonSchemaInterface, WithJsonSerialization
+final class WebSearch implements WithJsonSchemaInterface, WithJsonSerialization
 {
     /**
      * @var string[] List of domains that are allowed for web search.
@@ -103,7 +103,7 @@ class WebSearch implements WithJsonSchemaInterface, WithJsonSerialization
      *
      * @since n.e.x.t
      *
-     * @return array<string, mixed>
+     * @return WebSearchJsonShape
      */
     public function jsonSerialize(): array
     {

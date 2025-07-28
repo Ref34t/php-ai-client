@@ -33,7 +33,7 @@ use WordPress\AiClient\Tools\DTO\FunctionResponse;
  *
  * @implements WithJsonSerialization<MessagePartJsonShape>
  */
-class MessagePart implements WithJsonSchemaInterface, WithJsonSerialization
+final class MessagePart implements WithJsonSchemaInterface, WithJsonSerialization
 {
     /**
      * @var MessagePartTypeEnum The type of this message part.
@@ -223,7 +223,7 @@ class MessagePart implements WithJsonSchemaInterface, WithJsonSerialization
      *
      * @since n.e.x.t
      *
-     * @return array<string, mixed>
+     * @return MessagePartJsonShape
      */
     public function jsonSerialize(): array
     {

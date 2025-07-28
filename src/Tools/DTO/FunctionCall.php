@@ -19,7 +19,7 @@ use WordPress\AiClient\Common\Contracts\WithJsonSerialization;
  *
  * @implements WithJsonSerialization<FunctionCallJsonShape>
  */
-class FunctionCall implements WithJsonSchemaInterface, WithJsonSerialization
+final class FunctionCall implements WithJsonSchemaInterface, WithJsonSerialization
 {
     /**
      * @var string|null Unique identifier for this function call.
@@ -136,7 +136,7 @@ class FunctionCall implements WithJsonSchemaInterface, WithJsonSerialization
      *
      * @since n.e.x.t
      *
-     * @return array<string, mixed>
+     * @return FunctionCallJsonShape
      */
     public function jsonSerialize(): array
     {

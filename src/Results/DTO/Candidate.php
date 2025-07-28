@@ -23,7 +23,7 @@ use WordPress\AiClient\Results\Enums\FinishReasonEnum;
  *
  * @implements WithJsonSerialization<CandidateJsonShape>
  */
-class Candidate implements WithJsonSchemaInterface, WithJsonSerialization
+final class Candidate implements WithJsonSchemaInterface, WithJsonSerialization
 {
     /**
      * @var Message The generated message.
@@ -128,7 +128,7 @@ class Candidate implements WithJsonSchemaInterface, WithJsonSerialization
      *
      * @since n.e.x.t
      *
-     * @return array<string, mixed>
+     * @return CandidateJsonShape
      */
     public function jsonSerialize(): array
     {
@@ -151,7 +151,7 @@ class Candidate implements WithJsonSchemaInterface, WithJsonSerialization
         return new self(
             Message::fromJson($messageData),
             FinishReasonEnum::from($json['finishReason']),
-            $json['tokenCount']
+            (int) $json['tokenCount']
         );
     }
 }

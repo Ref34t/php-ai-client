@@ -16,7 +16,9 @@ use WordPress\AiClient\Results\DTO\TokenUsage;
  *
  * @since n.e.x.t
  *
- * @extends WithJsonSerialization<array<string, mixed>>
+ * @template TJsonShape of array<string, mixed>
+ *
+ * @extends WithJsonSerialization<TJsonShape>
  */
 interface ResultInterface extends WithJsonSchemaInterface, WithJsonSerialization
 {
