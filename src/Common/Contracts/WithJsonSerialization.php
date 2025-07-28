@@ -10,6 +10,8 @@ use JsonSerializable;
  * Interface for objects that support JSON serialization and deserialization.
  *
  * @since 1.0.0
+ *
+ * @template TJsonShape of array<string, mixed>
  */
 interface WithJsonSerialization extends JsonSerializable
 {
@@ -18,8 +20,8 @@ interface WithJsonSerialization extends JsonSerializable
      *
      * @since 1.0.0
      *
-     * @param array<string, mixed> $json The JSON data.
-     * @return self The created instance.
+     * @param TJsonShape $json The JSON data.
+     * @return static The created instance.
      */
     public static function fromJson(array $json);
 }

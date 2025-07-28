@@ -16,6 +16,18 @@ use WordPress\AiClient\Results\Contracts\ResultInterface;
  * and metadata from the AI provider.
  *
  * @since n.e.x.t
+ *
+ * @phpstan-import-type CandidateJsonShape from Candidate
+ * @phpstan-import-type TokenUsageJsonShape from TokenUsage
+ *
+ * @phpstan-type GenerativeAiResultJsonShape array{
+ *     id: string,
+ *     candidates: array<CandidateJsonShape>,
+ *     tokenUsage: TokenUsageJsonShape,
+ *     providerMetadata?: array<string, mixed>
+ * }
+ *
+ * @implements WithJsonSerialization<GenerativeAiResultJsonShape>
  */
 class GenerativeAiResult implements ResultInterface
 {
@@ -402,29 +414,25 @@ class GenerativeAiResult implements ResultInterface
      * {@inheritDoc}
      *
      * @since n.e.x.t
-     *
-     * @param array{
-     *     id: string,
-     *     candidates: array<array<string, mixed>>,
-     *     tokenUsage: array<string, mixed>,
-     *     providerMetadata?: array<string, mixed>
-     * } $json The JSON data.
      */
     public static function fromJson(array $json): GenerativeAiResult
     {
-        /** @var array<array{message: array<string, mixed>, finishReason: string, tokenCount: int|string}> $candidatesData */
+        /** @var array<CandidateJsonShape> $candidatesData */
         $candidatesData = $json['candidates'];
         $candidates = array_map(function (array $candidateData) {
             return Candidate::fromJson($candidateData);
         }, $candidatesData);
 
-        /** @var array{promptTokens: int|string, completionTokens: int|string, totalTokens: int|string} $tokenUsageData */
+        /** @var TokenUsageJsonShape $tokenUsageData */
         $tokenUsageData = $json['tokenUsage'];
         /** @var array<string, mixed> $providerMetadata */
         $providerMetadata = $json['providerMetadata'] ?? [];
 
+        /** @var string $id */
+        $id = $json['id'];
+        
         return new self(
-            (string) $json['id'],
+            $id,
             $candidates,
             TokenUsage::fromJson($tokenUsageData),
             $providerMetadata

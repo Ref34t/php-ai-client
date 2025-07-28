@@ -15,6 +15,12 @@ use WordPress\AiClient\Results\DTO\GenerativeAiResult;
  * immediately, providing access to the result once available.
  *
  * @since n.e.x.t
+ *
+ * @phpstan-import-type GenerativeAiResultJsonShape from GenerativeAiResult
+ *
+ * @phpstan-type GenerativeAiOperationJsonShape array{id: string, state: string, result?: GenerativeAiResultJsonShape}
+ *
+ * @implements WithJsonSerialization<GenerativeAiOperationJsonShape>
  */
 class GenerativeAiOperation implements OperationInterface
 {
@@ -158,19 +164,16 @@ class GenerativeAiOperation implements OperationInterface
      * {@inheritDoc}
      *
      * @since n.e.x.t
-     *
-     * @param array{id: string, state: string, result?: array<string, mixed>} $json The JSON data.
      */
     public static function fromJson(array $json): GenerativeAiOperation
     {
-        $state = OperationStateEnum::from((string) $json['state']);
+        $state = OperationStateEnum::from($json['state']);
         $result = null;
         if (isset($json['result'])) {
-            /** @var array{id: string, candidates: array<array<string, mixed>>, tokenUsage: array<string, mixed>, providerMetadata?: array<string, mixed>} $resultData */
             $resultData = $json['result'];
             $result = GenerativeAiResult::fromJson($resultData);
         }
 
-        return new self((string) $json['id'], $state, $result);
+        return new self($json['id'], $state, $result);
     }
 }

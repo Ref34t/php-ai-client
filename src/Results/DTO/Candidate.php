@@ -16,6 +16,12 @@ use WordPress\AiClient\Results\Enums\FinishReasonEnum;
  * Each candidate contains a message and metadata about why generation stopped.
  *
  * @since n.e.x.t
+ *
+ * @phpstan-import-type MessageJsonShape from Message
+ *
+ * @phpstan-type CandidateJsonShape array{message: MessageJsonShape, finishReason: string, tokenCount: int|string}
+ *
+ * @implements WithJsonSerialization<CandidateJsonShape>
  */
 class Candidate implements WithJsonSchemaInterface, WithJsonSerialization
 {
@@ -137,18 +143,15 @@ class Candidate implements WithJsonSchemaInterface, WithJsonSerialization
      * {@inheritDoc}
      *
      * @since n.e.x.t
-     *
-     * @param array{message: array<string, mixed>, finishReason: string, tokenCount: int|string} $json The JSON data.
      */
     public static function fromJson(array $json): Candidate
     {
-        /** @var array{role: string, parts: array<array<string, mixed>>} $messageData */
         $messageData = $json['message'];
 
         return new self(
             Message::fromJson($messageData),
-            FinishReasonEnum::from((string) $json['finishReason']),
-            (int) $json['tokenCount']
+            FinishReasonEnum::from($json['finishReason']),
+            $json['tokenCount']
         );
     }
 }

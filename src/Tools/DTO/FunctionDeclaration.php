@@ -14,6 +14,10 @@ use WordPress\AiClient\Common\Contracts\WithJsonSerialization;
  * including its name, description, and parameter schema.
  *
  * @since n.e.x.t
+ *
+ * @phpstan-type FunctionDeclarationJsonShape array{name: string, description: string, parameters?: mixed}
+ *
+ * @implements WithJsonSerialization<FunctionDeclarationJsonShape>
  */
 class FunctionDeclaration implements WithJsonSchemaInterface, WithJsonSerialization
 {
@@ -136,14 +140,12 @@ class FunctionDeclaration implements WithJsonSchemaInterface, WithJsonSerializat
      * {@inheritDoc}
      *
      * @since n.e.x.t
-     *
-     * @param array{name: string, description: string, parameters?: mixed} $json The JSON data.
      */
     public static function fromJson(array $json): FunctionDeclaration
     {
         return new self(
-            (string) $json['name'],
-            (string) $json['description'],
+            $json['name'],
+            $json['description'],
             $json['parameters'] ?? null
         );
     }

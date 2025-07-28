@@ -14,6 +14,10 @@ use WordPress\AiClient\Common\Contracts\WithJsonSerialization;
  * wants to invoke, including the function name and its arguments.
  *
  * @since n.e.x.t
+ *
+ * @phpstan-type FunctionCallJsonShape array{id?: string, name?: string, args?: mixed}
+ *
+ * @implements WithJsonSerialization<FunctionCallJsonShape>
  */
 class FunctionCall implements WithJsonSchemaInterface, WithJsonSerialization
 {
@@ -157,8 +161,6 @@ class FunctionCall implements WithJsonSchemaInterface, WithJsonSerialization
      * {@inheritDoc}
      *
      * @since n.e.x.t
-     *
-     * @param array{id?: string, name?: string, args?: mixed} $json The JSON data.
      */
     public static function fromJson(array $json): FunctionCall
     {
@@ -166,8 +168,8 @@ class FunctionCall implements WithJsonSchemaInterface, WithJsonSerialization
         $args = $json['args'] ?? [];
 
         return new self(
-            isset($json['id']) ? (string) $json['id'] : null,
-            isset($json['name']) ? (string) $json['name'] : null,
+            isset($json['id']) ? $json['id'] : null,
+            isset($json['name']) ? $json['name'] : null,
             $args
         );
     }

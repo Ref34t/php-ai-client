@@ -14,6 +14,10 @@ use WordPress\AiClient\Common\Contracts\WithJsonSerialization;
  * including allowed and disallowed domains.
  *
  * @since n.e.x.t
+ *
+ * @phpstan-type WebSearchJsonShape array{allowedDomains?: string[], disallowedDomains?: string[]}
+ *
+ * @implements WithJsonSerialization<WebSearchJsonShape>
  */
 class WebSearch implements WithJsonSchemaInterface, WithJsonSerialization
 {
@@ -116,9 +120,7 @@ class WebSearch implements WithJsonSchemaInterface, WithJsonSerialization
      */
     public static function fromJson(array $json): WebSearch
     {
-        /** @var string[] $allowedDomains */
         $allowedDomains = $json['allowedDomains'] ?? [];
-        /** @var string[] $disallowedDomains */
         $disallowedDomains = $json['disallowedDomains'] ?? [];
 
         return new self(

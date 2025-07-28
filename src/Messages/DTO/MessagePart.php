@@ -18,6 +18,20 @@ use WordPress\AiClient\Tools\DTO\FunctionResponse;
  * function calls, etc. This DTO encapsulates one such part.
  *
  * @since n.e.x.t
+ *
+ * @phpstan-import-type FileJsonShape from File
+ * @phpstan-import-type FunctionCallJsonShape from FunctionCall
+ * @phpstan-import-type FunctionResponseJsonShape from FunctionResponse
+ *
+ * @phpstan-type MessagePartJsonShape array{
+ *     type: string,
+ *     text?: string,
+ *     file?: FileJsonShape,
+ *     functionCall?: FunctionCallJsonShape,
+ *     functionResponse?: FunctionResponseJsonShape
+ * }
+ *
+ * @implements WithJsonSerialization<MessagePartJsonShape>
  */
 class MessagePart implements WithJsonSchemaInterface, WithJsonSerialization
 {
@@ -232,47 +246,36 @@ class MessagePart implements WithJsonSchemaInterface, WithJsonSerialization
      * {@inheritDoc}
      *
      * @since n.e.x.t
-     *
-     * @param array{
-     *     type: string,
-     *     text?: string,
-     *     file?: array<string, mixed>,
-     *     functionCall?: array<string, mixed>,
-     *     functionResponse?: array<string, mixed>
-     * } $json The JSON data.
      */
     public static function fromJson(array $json): MessagePart
     {
-        $type = MessagePartTypeEnum::from((string) $json['type']);
+        $type = MessagePartTypeEnum::from($json['type']);
 
         if ($type->isText()) {
             if (!isset($json['text'])) {
                 throw new \InvalidArgumentException('Text message part requires text field.');
             }
-            return new self((string) $json['text']);
+            return new self($json['text']);
         } elseif ($type->isFile()) {
             if (!isset($json['file'])) {
                 throw new \InvalidArgumentException('File message part requires file field.');
             }
-            /** @var array{fileType: string, url?: string, mimeType?: string, base64Data?: string} $fileData */
             $fileData = $json['file'];
             return new self(File::fromJson($fileData));
         } elseif ($type->isFunctionCall()) {
             if (!isset($json['functionCall'])) {
                 throw new \InvalidArgumentException('Function call message part requires functionCall field.');
             }
-            /** @var array{id?: string, name?: string, args?: mixed} $functionCallData */
             $functionCallData = $json['functionCall'];
             return new self(FunctionCall::fromJson($functionCallData));
         } elseif ($type->isFunctionResponse()) {
             if (!isset($json['functionResponse'])) {
                 throw new \InvalidArgumentException('Function response message part requires functionResponse field.');
             }
-            /** @var array{id: string, name: string, response: mixed} $functionResponseData */
             $functionResponseData = $json['functionResponse'];
             return new self(FunctionResponse::fromJson($functionResponseData));
         }
 
-        throw new \InvalidArgumentException(sprintf('Unknown message part type: %s', (string) $json['type']));
+        throw new \InvalidArgumentException(sprintf('Unknown message part type: %s', $json['type']));
     }
 }

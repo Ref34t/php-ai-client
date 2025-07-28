@@ -15,6 +15,8 @@ use WordPress\AiClient\Results\DTO\TokenUsage;
  * such as token usage and provider-specific information.
  *
  * @since n.e.x.t
+ *
+ * @extends WithJsonSerialization<array<string, mixed>>
  */
 interface ResultInterface extends WithJsonSchemaInterface, WithJsonSerialization
 {

@@ -14,6 +14,14 @@ use WordPress\AiClient\Common\Contracts\WithJsonSerialization;
  * which is important for monitoring usage and costs.
  *
  * @since n.e.x.t
+ *
+ * @phpstan-type TokenUsageJsonShape array{
+ *     promptTokens: int|string,
+ *     completionTokens: int|string,
+ *     totalTokens: int|string
+ * }
+ *
+ * @implements WithJsonSerialization<TokenUsageJsonShape>
  */
 class TokenUsage implements WithJsonSchemaInterface, WithJsonSerialization
 {
@@ -131,12 +139,6 @@ class TokenUsage implements WithJsonSchemaInterface, WithJsonSerialization
      * {@inheritDoc}
      *
      * @since n.e.x.t
-     *
-     * @param array{
-     *     promptTokens: int|string,
-     *     completionTokens: int|string,
-     *     totalTokens: int|string
-     * } $json The JSON data.
      */
     public static function fromJson(array $json): TokenUsage
     {

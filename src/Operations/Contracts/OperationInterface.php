@@ -15,6 +15,8 @@ use WordPress\AiClient\Operations\Enums\OperationStateEnum;
  * They provide a way to track the progress and retrieve results asynchronously.
  *
  * @since n.e.x.t
+ *
+ * @extends WithJsonSerialization<array<string, mixed>>
  */
 interface OperationInterface extends WithJsonSchemaInterface, WithJsonSerialization
 {

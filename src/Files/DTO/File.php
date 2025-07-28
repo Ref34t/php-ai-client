@@ -16,6 +16,15 @@ use WordPress\AiClient\Files\ValueObjects\MimeType;
  * and handles them appropriately.
  *
  * @since n.e.x.t
+ *
+ * @phpstan-type FileJsonShape array{
+ *     fileType: string,
+ *     url?: string,
+ *     mimeType?: string,
+ *     base64Data?: string
+ * }
+ *
+ * @implements WithJsonSerialization<FileJsonShape>
  */
 class File implements WithJsonSchemaInterface, WithJsonSerialization
 {
@@ -406,25 +415,23 @@ class File implements WithJsonSchemaInterface, WithJsonSerialization
      * {@inheritDoc}
      *
      * @since n.e.x.t
-     *
-     * @param array{fileType: string, url?: string, mimeType?: string, base64Data?: string} $json The JSON data.
      */
     public static function fromJson(array $json): File
     {
-        $fileType = FileTypeEnum::from((string) $json['fileType']);
+        $fileType = FileTypeEnum::from($json['fileType']);
 
         if ($fileType->isRemote()) {
             if (!isset($json['url']) || !isset($json['mimeType'])) {
                 throw new \InvalidArgumentException('Remote file requires url and mimeType.');
             }
-            return new self((string) $json['url'], (string) $json['mimeType']);
+            return new self($json['url'], $json['mimeType']);
         } else {
             if (!isset($json['mimeType']) || !isset($json['base64Data'])) {
                 throw new \InvalidArgumentException('Inline file requires mimeType and base64Data.');
             }
             // Create data URI from base64 data and mime type
-            $mimeType = (string) $json['mimeType'];
-            $base64Data = (string) $json['base64Data'];
+            $mimeType = $json['mimeType'];
+            $base64Data = $json['base64Data'];
             $dataUri = sprintf('data:%s;base64,%s', $mimeType, $base64Data);
             return new self($dataUri);
         }

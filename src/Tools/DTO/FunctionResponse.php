@@ -14,6 +14,10 @@ use WordPress\AiClient\Common\Contracts\WithJsonSerialization;
  * requested by the AI model through a FunctionCall.
  *
  * @since n.e.x.t
+ *
+ * @phpstan-type FunctionResponseJsonShape array{id: string, name: string, response: mixed}
+ *
+ * @implements WithJsonSerialization<FunctionResponseJsonShape>
  */
 class FunctionResponse implements WithJsonSchemaInterface, WithJsonSerialization
 {
@@ -131,14 +135,12 @@ class FunctionResponse implements WithJsonSchemaInterface, WithJsonSerialization
      * {@inheritDoc}
      *
      * @since n.e.x.t
-     *
-     * @param array{id: string, name: string, response: mixed} $json The JSON data.
      */
     public static function fromJson(array $json): FunctionResponse
     {
         return new self(
-            (string) $json['id'],
-            (string) $json['name'],
+            $json['id'],
+            $json['name'],
             $json['response']
         );
     }
