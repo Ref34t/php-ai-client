@@ -122,7 +122,7 @@ class Message extends AbstractDataValueObject
      *
      * @since n.e.x.t
      *
-     * @return self|UserMessage|ModelMessage|SystemMessage
+     * @return UserMessage|ModelMessage|SystemMessage
      */
     final public static function fromArray(array $array): Message
     {
@@ -137,10 +137,9 @@ class Message extends AbstractDataValueObject
             return new UserMessage($parts);
         } elseif ($role->isModel()) {
             return new ModelMessage($parts);
-        } elseif ($role->isSystem()) {
+        } else {
+            // System is the only remaining option
             return new SystemMessage($parts);
         }
-
-        return new self($role, $parts);
     }
 }
