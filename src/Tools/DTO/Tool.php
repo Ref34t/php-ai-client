@@ -183,14 +183,13 @@ final class Tool extends AbstractDataValueObject
                 return FunctionDeclaration::fromArray($declarationData);
             }, $declarationsData);
             return new self($declarations);
-        } elseif ($type->isWebSearch()) {
+        } else {
+            // Web search is the only remaining option
             if (!isset($array['webSearch'])) {
                 throw new \InvalidArgumentException('Web search tool requires webSearch field.');
             }
             $webSearchData = $array['webSearch'];
             return new self(WebSearch::fromArray($webSearchData));
         }
-
-        throw new \InvalidArgumentException(sprintf('Unknown tool type: %s', $array['type']));
     }
 }
