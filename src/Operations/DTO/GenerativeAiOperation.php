@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace WordPress\AiClient\Operations\DTO;
 
+use WordPress\AiClient\Common\AbstractDataValueObject;
 use WordPress\AiClient\Operations\Contracts\OperationInterface;
 use WordPress\AiClient\Operations\Enums\OperationStateEnum;
 use WordPress\AiClient\Results\DTO\GenerativeAiResult;
@@ -20,9 +21,9 @@ use WordPress\AiClient\Results\DTO\GenerativeAiResult;
  *
  * @phpstan-type GenerativeAiOperationArrayShape array{id: string, state: string, result?: GenerativeAiResultArrayShape}
  *
- * @implements OperationInterface<GenerativeAiOperationArrayShape>
+ * @extends AbstractDataValueObject<GenerativeAiOperationArrayShape>
  */
-final class GenerativeAiOperation implements OperationInterface
+final class GenerativeAiOperation extends AbstractDataValueObject implements OperationInterface
 {
     /**
      * @var string Unique identifier for this operation.

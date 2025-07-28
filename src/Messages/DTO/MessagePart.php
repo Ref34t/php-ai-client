@@ -4,8 +4,7 @@ declare(strict_types=1);
 
 namespace WordPress\AiClient\Messages\DTO;
 
-use WordPress\AiClient\Common\Contracts\WithJsonSchemaInterface;
-use WordPress\AiClient\Common\Contracts\WithArrayTransformationInterface;
+use WordPress\AiClient\Common\AbstractDataValueObject;
 use WordPress\AiClient\Files\DTO\File;
 use WordPress\AiClient\Messages\Enums\MessagePartTypeEnum;
 use WordPress\AiClient\Tools\DTO\FunctionCall;
@@ -31,9 +30,9 @@ use WordPress\AiClient\Tools\DTO\FunctionResponse;
  *     functionResponse?: FunctionResponseArrayShape
  * }
  *
- * @implements WithArrayTransformationInterface<MessagePartArrayShape>
+ * @extends AbstractDataValueObject<MessagePartArrayShape>
  */
-final class MessagePart implements WithJsonSchemaInterface, WithArrayTransformationInterface
+final class MessagePart extends AbstractDataValueObject
 {
     /**
      * @var MessagePartTypeEnum The type of this message part.

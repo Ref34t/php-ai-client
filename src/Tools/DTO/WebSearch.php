@@ -4,8 +4,7 @@ declare(strict_types=1);
 
 namespace WordPress\AiClient\Tools\DTO;
 
-use WordPress\AiClient\Common\Contracts\WithJsonSchemaInterface;
-use WordPress\AiClient\Common\Contracts\WithArrayTransformationInterface;
+use WordPress\AiClient\Common\AbstractDataValueObject;
 
 /**
  * Represents web search configuration for AI models.
@@ -17,9 +16,9 @@ use WordPress\AiClient\Common\Contracts\WithArrayTransformationInterface;
  *
  * @phpstan-type WebSearchArrayShape array{allowedDomains?: string[], disallowedDomains?: string[]}
  *
- * @implements WithArrayTransformationInterface<WebSearchArrayShape>
+ * @extends AbstractDataValueObject<WebSearchArrayShape>
  */
-final class WebSearch implements WithJsonSchemaInterface, WithArrayTransformationInterface
+final class WebSearch extends AbstractDataValueObject
 {
     /**
      * @var string[] List of domains that are allowed for web search.

@@ -4,8 +4,7 @@ declare(strict_types=1);
 
 namespace WordPress\AiClient\Results\DTO;
 
-use WordPress\AiClient\Common\Contracts\WithJsonSchemaInterface;
-use WordPress\AiClient\Common\Contracts\WithArrayTransformationInterface;
+use WordPress\AiClient\Common\AbstractDataValueObject;
 use WordPress\AiClient\Messages\DTO\Message;
 use WordPress\AiClient\Results\Enums\FinishReasonEnum;
 
@@ -21,9 +20,9 @@ use WordPress\AiClient\Results\Enums\FinishReasonEnum;
  *
  * @phpstan-type CandidateArrayShape array{message: MessageArrayShape, finishReason: string, tokenCount: int|string}
  *
- * @implements WithArrayTransformationInterface<CandidateArrayShape>
+ * @extends AbstractDataValueObject<CandidateArrayShape>
  */
-final class Candidate implements WithJsonSchemaInterface, WithArrayTransformationInterface
+final class Candidate extends AbstractDataValueObject
 {
     /**
      * @var Message The generated message.

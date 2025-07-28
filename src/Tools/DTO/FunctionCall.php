@@ -4,8 +4,7 @@ declare(strict_types=1);
 
 namespace WordPress\AiClient\Tools\DTO;
 
-use WordPress\AiClient\Common\Contracts\WithJsonSchemaInterface;
-use WordPress\AiClient\Common\Contracts\WithArrayTransformationInterface;
+use WordPress\AiClient\Common\AbstractDataValueObject;
 
 /**
  * Represents a function call request from an AI model.
@@ -17,9 +16,9 @@ use WordPress\AiClient\Common\Contracts\WithArrayTransformationInterface;
  *
  * @phpstan-type FunctionCallArrayShape array{id?: string, name?: string, args?: mixed}
  *
- * @implements WithArrayTransformationInterface<FunctionCallArrayShape>
+ * @extends AbstractDataValueObject<FunctionCallArrayShape>
  */
-final class FunctionCall implements WithJsonSchemaInterface, WithArrayTransformationInterface
+final class FunctionCall extends AbstractDataValueObject
 {
     /**
      * @var string|null Unique identifier for this function call.

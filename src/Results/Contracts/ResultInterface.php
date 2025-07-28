@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace WordPress\AiClient\Results\Contracts;
 
-use WordPress\AiClient\Common\Contracts\WithJsonSchemaInterface;
-use WordPress\AiClient\Common\Contracts\WithArrayTransformationInterface;
 use WordPress\AiClient\Results\DTO\TokenUsage;
 
 /**
@@ -15,12 +13,8 @@ use WordPress\AiClient\Results\DTO\TokenUsage;
  * such as token usage and provider-specific information.
  *
  * @since n.e.x.t
- *
- * @template TArrayShape of array<string, mixed>
- *
- * @extends WithArrayTransformationInterface<TArrayShape>
  */
-interface ResultInterface extends WithJsonSchemaInterface, WithArrayTransformationInterface
+interface ResultInterface
 {
     /**
      * Gets the result ID.

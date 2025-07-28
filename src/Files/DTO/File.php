@@ -4,8 +4,7 @@ declare(strict_types=1);
 
 namespace WordPress\AiClient\Files\DTO;
 
-use WordPress\AiClient\Common\Contracts\WithJsonSchemaInterface;
-use WordPress\AiClient\Common\Contracts\WithArrayTransformationInterface;
+use WordPress\AiClient\Common\AbstractDataValueObject;
 use WordPress\AiClient\Files\Enums\FileTypeEnum;
 use WordPress\AiClient\Files\ValueObjects\MimeType;
 
@@ -24,9 +23,9 @@ use WordPress\AiClient\Files\ValueObjects\MimeType;
  *     base64Data?: string
  * }
  *
- * @implements WithArrayTransformationInterface<FileArrayShape>
+ * @extends AbstractDataValueObject<FileArrayShape>
  */
-final class File implements WithJsonSchemaInterface, WithArrayTransformationInterface
+final class File extends AbstractDataValueObject
 {
     /**
      * @var MimeType The MIME type of the file.

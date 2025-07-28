@@ -4,8 +4,7 @@ declare(strict_types=1);
 
 namespace WordPress\AiClient\Messages\DTO;
 
-use WordPress\AiClient\Common\Contracts\WithJsonSchemaInterface;
-use WordPress\AiClient\Common\Contracts\WithArrayTransformationInterface;
+use WordPress\AiClient\Common\AbstractDataValueObject;
 use WordPress\AiClient\Messages\Enums\MessageRoleEnum;
 
 /**
@@ -23,9 +22,9 @@ use WordPress\AiClient\Messages\Enums\MessageRoleEnum;
  *     parts: array<MessagePartArrayShape>
  * }
  *
- * @implements WithArrayTransformationInterface<MessageArrayShape>
+ * @extends AbstractDataValueObject<MessageArrayShape>
  */
-class Message implements WithJsonSchemaInterface, WithArrayTransformationInterface
+class Message extends AbstractDataValueObject
 {
     /**
      * @var MessageRoleEnum The role of the message sender.

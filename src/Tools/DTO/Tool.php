@@ -4,8 +4,7 @@ declare(strict_types=1);
 
 namespace WordPress\AiClient\Tools\DTO;
 
-use WordPress\AiClient\Common\Contracts\WithJsonSchemaInterface;
-use WordPress\AiClient\Common\Contracts\WithArrayTransformationInterface;
+use WordPress\AiClient\Common\AbstractDataValueObject;
 use WordPress\AiClient\Providers\Enums\ToolTypeEnum;
 
 /**
@@ -25,9 +24,9 @@ use WordPress\AiClient\Providers\Enums\ToolTypeEnum;
  *     webSearch?: WebSearchArrayShape
  * }
  *
- * @implements WithArrayTransformationInterface<ToolArrayShape>
+ * @extends AbstractDataValueObject<ToolArrayShape>
  */
-final class Tool implements WithJsonSchemaInterface, WithArrayTransformationInterface
+final class Tool extends AbstractDataValueObject
 {
     /**
      * @var ToolTypeEnum The type of tool.
@@ -66,7 +65,6 @@ final class Tool implements WithJsonSchemaInterface, WithArrayTransformationInte
             );
         }
     }
-
 
     /**
      * Gets the tool type.

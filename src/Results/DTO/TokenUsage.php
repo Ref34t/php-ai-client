@@ -4,8 +4,7 @@ declare(strict_types=1);
 
 namespace WordPress\AiClient\Results\DTO;
 
-use WordPress\AiClient\Common\Contracts\WithJsonSchemaInterface;
-use WordPress\AiClient\Common\Contracts\WithArrayTransformationInterface;
+use WordPress\AiClient\Common\AbstractDataValueObject;
 
 /**
  * Represents token usage statistics for an AI operation.
@@ -21,9 +20,9 @@ use WordPress\AiClient\Common\Contracts\WithArrayTransformationInterface;
  *     totalTokens: int|string
  * }
  *
- * @implements WithArrayTransformationInterface<TokenUsageArrayShape>
+ * @extends AbstractDataValueObject<TokenUsageArrayShape>
  */
-final class TokenUsage implements WithJsonSchemaInterface, WithArrayTransformationInterface
+final class TokenUsage extends AbstractDataValueObject
 {
     /**
      * @var int Number of tokens in the prompt.

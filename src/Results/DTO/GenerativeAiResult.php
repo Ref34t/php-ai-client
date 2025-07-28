@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace WordPress\AiClient\Results\DTO;
 
+use WordPress\AiClient\Common\AbstractDataValueObject;
 use WordPress\AiClient\Files\DTO\File;
 use WordPress\AiClient\Messages\DTO\Message;
 use WordPress\AiClient\Messages\Enums\MessagePartTypeEnum;
@@ -27,9 +28,9 @@ use WordPress\AiClient\Results\Contracts\ResultInterface;
  *     providerMetadata?: array<string, mixed>
  * }
  *
- * @implements ResultInterface<GenerativeAiResultArrayShape>
+ * @extends AbstractDataValueObject<GenerativeAiResultArrayShape>
  */
-final class GenerativeAiResult implements ResultInterface
+final class GenerativeAiResult extends AbstractDataValueObject implements ResultInterface
 {
     /**
      * @var string Unique identifier for this result.

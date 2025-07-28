@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace WordPress\AiClient\Operations\Contracts;
 
-use WordPress\AiClient\Common\Contracts\WithJsonSchemaInterface;
-use WordPress\AiClient\Common\Contracts\WithArrayTransformationInterface;
 use WordPress\AiClient\Operations\Enums\OperationStateEnum;
 
 /**
@@ -15,12 +13,8 @@ use WordPress\AiClient\Operations\Enums\OperationStateEnum;
  * They provide a way to track the progress and retrieve results asynchronously.
  *
  * @since n.e.x.t
- *
- * @template TArrayShape of array<string, mixed>
- *
- * @extends WithArrayTransformationInterface<TArrayShape>
  */
-interface OperationInterface extends WithJsonSchemaInterface, WithArrayTransformationInterface
+interface OperationInterface
 {
     /**
      * Gets the operation ID.

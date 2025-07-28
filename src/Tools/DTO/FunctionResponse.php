@@ -4,8 +4,7 @@ declare(strict_types=1);
 
 namespace WordPress\AiClient\Tools\DTO;
 
-use WordPress\AiClient\Common\Contracts\WithJsonSchemaInterface;
-use WordPress\AiClient\Common\Contracts\WithArrayTransformationInterface;
+use WordPress\AiClient\Common\AbstractDataValueObject;
 
 /**
  * Represents a response to a function call.
@@ -17,9 +16,9 @@ use WordPress\AiClient\Common\Contracts\WithArrayTransformationInterface;
  *
  * @phpstan-type FunctionResponseArrayShape array{id: string, name: string, response: mixed}
  *
- * @implements WithArrayTransformationInterface<FunctionResponseArrayShape>
+ * @extends AbstractDataValueObject<FunctionResponseArrayShape>
  */
-final class FunctionResponse implements WithJsonSchemaInterface, WithArrayTransformationInterface
+final class FunctionResponse extends AbstractDataValueObject
 {
     /**
      * @var string The ID of the function call this is responding to.
