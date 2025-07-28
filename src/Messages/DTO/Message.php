@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace WordPress\AiClient\Messages\DTO;
 
 use WordPress\AiClient\Common\Contracts\WithJsonSchemaInterface;
-use WordPress\AiClient\Common\Contracts\WithJsonSerialization;
+use WordPress\AiClient\Common\Contracts\WithArrayTransformationInterface;
 use WordPress\AiClient\Messages\Enums\MessageRoleEnum;
 
 /**
@@ -16,16 +16,16 @@ use WordPress\AiClient\Messages\Enums\MessageRoleEnum;
  *
  * @since n.e.x.t
  *
- * @phpstan-import-type MessagePartJsonShape from MessagePart
+ * @phpstan-import-type MessagePartArrayShape from MessagePart
  *
- * @phpstan-type MessageJsonShape array{
+ * @phpstan-type MessageArrayShape array{
  *     role: string,
- *     parts: array<MessagePartJsonShape>
+ *     parts: array<MessagePartArrayShape>
  * }
  *
- * @implements WithJsonSerialization<MessageJsonShape>
+ * @implements WithArrayTransformationInterface<MessageArrayShape>
  */
-class Message implements WithJsonSchemaInterface, WithJsonSerialization
+class Message implements WithJsonSchemaInterface, WithArrayTransformationInterface
 {
     /**
      * @var MessageRoleEnum The role of the message sender.
@@ -106,14 +106,14 @@ class Message implements WithJsonSchemaInterface, WithJsonSerialization
      *
      * @since n.e.x.t
      *
-     * @return MessageJsonShape
+     * @return MessageArrayShape
      */
-    public function jsonSerialize(): array
+    public function toArray(): array
     {
         return [
             'role' => $this->role->value,
             'parts' => array_map(function (MessagePart $part) {
-                return $part->jsonSerialize();
+                return $part->toArray();
             }, $this->parts),
         ];
     }
@@ -125,12 +125,12 @@ class Message implements WithJsonSchemaInterface, WithJsonSerialization
      *
      * @return self|UserMessage|ModelMessage|SystemMessage
      */
-    final public static function fromJson(array $json): Message
+    final public static function fromArray(array $array): Message
     {
-        $role = MessageRoleEnum::from($json['role']);
-        $partsData = $json['parts'];
+        $role = MessageRoleEnum::from($array['role']);
+        $partsData = $array['parts'];
         $parts = array_map(function (array $partData) {
-            return MessagePart::fromJson($partData);
+            return MessagePart::fromArray($partData);
         }, $partsData);
 
         // Determine which concrete class to instantiate based on role

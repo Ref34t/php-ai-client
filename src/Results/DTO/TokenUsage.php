@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace WordPress\AiClient\Results\DTO;
 
 use WordPress\AiClient\Common\Contracts\WithJsonSchemaInterface;
-use WordPress\AiClient\Common\Contracts\WithJsonSerialization;
+use WordPress\AiClient\Common\Contracts\WithArrayTransformationInterface;
 
 /**
  * Represents token usage statistics for an AI operation.
@@ -15,15 +15,15 @@ use WordPress\AiClient\Common\Contracts\WithJsonSerialization;
  *
  * @since n.e.x.t
  *
- * @phpstan-type TokenUsageJsonShape array{
+ * @phpstan-type TokenUsageArrayShape array{
  *     promptTokens: int|string,
  *     completionTokens: int|string,
  *     totalTokens: int|string
  * }
  *
- * @implements WithJsonSerialization<TokenUsageJsonShape>
+ * @implements WithArrayTransformationInterface<TokenUsageArrayShape>
  */
-final class TokenUsage implements WithJsonSchemaInterface, WithJsonSerialization
+final class TokenUsage implements WithJsonSchemaInterface, WithArrayTransformationInterface
 {
     /**
      * @var int Number of tokens in the prompt.
@@ -124,9 +124,9 @@ final class TokenUsage implements WithJsonSchemaInterface, WithJsonSerialization
      *
      * @since n.e.x.t
      *
-     * @return TokenUsageJsonShape
+     * @return TokenUsageArrayShape
      */
-    public function jsonSerialize(): array
+    public function toArray(): array
     {
         return [
             'promptTokens' => $this->promptTokens,
@@ -140,12 +140,12 @@ final class TokenUsage implements WithJsonSchemaInterface, WithJsonSerialization
      *
      * @since n.e.x.t
      */
-    public static function fromJson(array $json): TokenUsage
+    public static function fromArray(array $array): TokenUsage
     {
         return new self(
-            (int) $json['promptTokens'],
-            (int) $json['completionTokens'],
-            (int) $json['totalTokens']
+            (int) $array['promptTokens'],
+            (int) $array['completionTokens'],
+            (int) $array['totalTokens']
         );
     }
 }

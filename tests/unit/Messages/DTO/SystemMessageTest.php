@@ -9,14 +9,14 @@ use WordPress\AiClient\Messages\DTO\MessagePart;
 use WordPress\AiClient\Messages\DTO\SystemMessage;
 use WordPress\AiClient\Messages\Enums\MessagePartTypeEnum;
 use WordPress\AiClient\Messages\Enums\MessageRoleEnum;
-use WordPress\AiClient\Tests\traits\JsonSerializationTestTrait;
+use WordPress\AiClient\Tests\traits\ArrayTransformationTestTrait;
 
 /**
  * @covers \WordPress\AiClient\Messages\DTO\SystemMessage
  */
 class SystemMessageTest extends TestCase
 {
-    use JsonSerializationTestTrait;
+    use ArrayTransformationTestTrait;
 
     /**
      * Tests creating SystemMessage automatically sets SYSTEM role.
@@ -169,20 +169,20 @@ class SystemMessageTest extends TestCase
     }
 
     /**
-     * Tests JSON serialization.
+     * Tests array transformation.
      *
      * @return void
      */
-    public function testJsonSerialize(): void
+    public function testToArray(): void
     {
         $message = new SystemMessage([
             new MessagePart('You are a helpful assistant.'),
             new MessagePart('Always be respectful and accurate.')
         ]);
         
-        $json = $this->assertJsonSerializeReturnsArray($message);
+        $json = $this->assertToArrayReturnsArray($message);
         
-        $this->assertJsonHasKeys($json, ['role', 'parts']);
+        $this->assertArrayHasKeys($json, ['role', 'parts']);
         $this->assertEquals(MessageRoleEnum::system()->value, $json['role']);
         $this->assertCount(2, $json['parts']);
         $this->assertEquals('You are a helpful assistant.', $json['parts'][0]['text']);
@@ -194,7 +194,7 @@ class SystemMessageTest extends TestCase
      *
      * @return void
      */
-    public function testFromJson(): void
+    public function testFromArray(): void
     {
         $json = [
             'role' => MessageRoleEnum::system()->value,
@@ -204,7 +204,7 @@ class SystemMessageTest extends TestCase
             ]
         ];
         
-        $message = SystemMessage::fromJson($json);
+        $message = SystemMessage::fromArray($json);
         
         $this->assertInstanceOf(SystemMessage::class, $message);
         $this->assertEquals(MessageRoleEnum::system(), $message->getRole());
@@ -214,13 +214,13 @@ class SystemMessageTest extends TestCase
     }
 
     /**
-     * Tests round-trip JSON serialization.
+     * Tests round-trip array transformation.
      *
      * @return void
      */
-    public function testJsonRoundTrip(): void
+    public function testArrayRoundTrip(): void
     {
-        $this->assertJsonRoundTrip(
+        $this->assertArrayRoundTrip(
             new SystemMessage([
                 new MessagePart('You are an expert in PHP.'),
                 new MessagePart('Follow best practices.')
@@ -241,13 +241,13 @@ class SystemMessageTest extends TestCase
     }
 
     /**
-     * Tests SystemMessage implements WithJsonSerialization.
+     * Tests SystemMessage implements WithArrayTransformationInterface.
      *
      * @return void
      */
-    public function testImplementsWithJsonSerialization(): void
+    public function testImplementsWithArrayTransformationInterface(): void
     {
         $message = new SystemMessage([new MessagePart('test')]);
-        $this->assertImplementsJsonSerialization($message);
+        $this->assertImplementsArrayTransformation($message);
     }
 }

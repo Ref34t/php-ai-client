@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace WordPress\AiClient\Operations\Contracts;
 
 use WordPress\AiClient\Common\Contracts\WithJsonSchemaInterface;
-use WordPress\AiClient\Common\Contracts\WithJsonSerialization;
+use WordPress\AiClient\Common\Contracts\WithArrayTransformationInterface;
 use WordPress\AiClient\Operations\Enums\OperationStateEnum;
 
 /**
@@ -16,11 +16,11 @@ use WordPress\AiClient\Operations\Enums\OperationStateEnum;
  *
  * @since n.e.x.t
  *
- * @template TJsonShape of array<string, mixed>
+ * @template TArrayShape of array<string, mixed>
  *
- * @extends WithJsonSerialization<TJsonShape>
+ * @extends WithArrayTransformationInterface<TArrayShape>
  */
-interface OperationInterface extends WithJsonSchemaInterface, WithJsonSerialization
+interface OperationInterface extends WithJsonSchemaInterface, WithArrayTransformationInterface
 {
     /**
      * Gets the operation ID.

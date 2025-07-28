@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace WordPress\AiClient\Messages\DTO;
 
 use WordPress\AiClient\Common\Contracts\WithJsonSchemaInterface;
-use WordPress\AiClient\Common\Contracts\WithJsonSerialization;
+use WordPress\AiClient\Common\Contracts\WithArrayTransformationInterface;
 use WordPress\AiClient\Files\DTO\File;
 use WordPress\AiClient\Messages\Enums\MessagePartTypeEnum;
 use WordPress\AiClient\Tools\DTO\FunctionCall;
@@ -19,21 +19,21 @@ use WordPress\AiClient\Tools\DTO\FunctionResponse;
  *
  * @since n.e.x.t
  *
- * @phpstan-import-type FileJsonShape from File
- * @phpstan-import-type FunctionCallJsonShape from FunctionCall
- * @phpstan-import-type FunctionResponseJsonShape from FunctionResponse
+ * @phpstan-import-type FileArrayShape from File
+ * @phpstan-import-type FunctionCallArrayShape from FunctionCall
+ * @phpstan-import-type FunctionResponseArrayShape from FunctionResponse
  *
- * @phpstan-type MessagePartJsonShape array{
+ * @phpstan-type MessagePartArrayShape array{
  *     type: string,
  *     text?: string,
- *     file?: FileJsonShape,
- *     functionCall?: FunctionCallJsonShape,
- *     functionResponse?: FunctionResponseJsonShape
+ *     file?: FileArrayShape,
+ *     functionCall?: FunctionCallArrayShape,
+ *     functionResponse?: FunctionResponseArrayShape
  * }
  *
- * @implements WithJsonSerialization<MessagePartJsonShape>
+ * @implements WithArrayTransformationInterface<MessagePartArrayShape>
  */
-final class MessagePart implements WithJsonSchemaInterface, WithJsonSerialization
+final class MessagePart implements WithJsonSchemaInterface, WithArrayTransformationInterface
 {
     /**
      * @var MessagePartTypeEnum The type of this message part.
@@ -223,20 +223,20 @@ final class MessagePart implements WithJsonSchemaInterface, WithJsonSerializatio
      *
      * @since n.e.x.t
      *
-     * @return MessagePartJsonShape
+     * @return MessagePartArrayShape
      */
-    public function jsonSerialize(): array
+    public function toArray(): array
     {
         $data = ['type' => $this->type->value];
 
         if ($this->type->isText() && $this->text !== null) {
             $data['text'] = $this->text;
         } elseif ($this->type->isFile() && $this->file !== null) {
-            $data['file'] = $this->file->jsonSerialize();
+            $data['file'] = $this->file->toArray();
         } elseif ($this->type->isFunctionCall() && $this->functionCall !== null) {
-            $data['functionCall'] = $this->functionCall->jsonSerialize();
+            $data['functionCall'] = $this->functionCall->toArray();
         } elseif ($this->type->isFunctionResponse() && $this->functionResponse !== null) {
-            $data['functionResponse'] = $this->functionResponse->jsonSerialize();
+            $data['functionResponse'] = $this->functionResponse->toArray();
         }
 
         return $data;
@@ -247,35 +247,35 @@ final class MessagePart implements WithJsonSchemaInterface, WithJsonSerializatio
      *
      * @since n.e.x.t
      */
-    public static function fromJson(array $json): MessagePart
+    public static function fromArray(array $array): MessagePart
     {
-        $type = MessagePartTypeEnum::from($json['type']);
+        $type = MessagePartTypeEnum::from($array['type']);
 
         if ($type->isText()) {
-            if (!isset($json['text'])) {
+            if (!isset($array['text'])) {
                 throw new \InvalidArgumentException('Text message part requires text field.');
             }
-            return new self($json['text']);
+            return new self($array['text']);
         } elseif ($type->isFile()) {
-            if (!isset($json['file'])) {
+            if (!isset($array['file'])) {
                 throw new \InvalidArgumentException('File message part requires file field.');
             }
-            $fileData = $json['file'];
-            return new self(File::fromJson($fileData));
+            $fileData = $array['file'];
+            return new self(File::fromArray($fileData));
         } elseif ($type->isFunctionCall()) {
-            if (!isset($json['functionCall'])) {
+            if (!isset($array['functionCall'])) {
                 throw new \InvalidArgumentException('Function call message part requires functionCall field.');
             }
-            $functionCallData = $json['functionCall'];
-            return new self(FunctionCall::fromJson($functionCallData));
+            $functionCallData = $array['functionCall'];
+            return new self(FunctionCall::fromArray($functionCallData));
         } elseif ($type->isFunctionResponse()) {
-            if (!isset($json['functionResponse'])) {
+            if (!isset($array['functionResponse'])) {
                 throw new \InvalidArgumentException('Function response message part requires functionResponse field.');
             }
-            $functionResponseData = $json['functionResponse'];
-            return new self(FunctionResponse::fromJson($functionResponseData));
+            $functionResponseData = $array['functionResponse'];
+            return new self(FunctionResponse::fromArray($functionResponseData));
         }
 
-        throw new \InvalidArgumentException(sprintf('Unknown message part type: %s', $json['type']));
+        throw new \InvalidArgumentException(sprintf('Unknown message part type: %s', $array['type']));
     }
 }

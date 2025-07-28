@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace WordPress\AiClient\Tools\DTO;
 
 use WordPress\AiClient\Common\Contracts\WithJsonSchemaInterface;
-use WordPress\AiClient\Common\Contracts\WithJsonSerialization;
+use WordPress\AiClient\Common\Contracts\WithArrayTransformationInterface;
 
 /**
  * Represents a function call request from an AI model.
@@ -15,11 +15,11 @@ use WordPress\AiClient\Common\Contracts\WithJsonSerialization;
  *
  * @since n.e.x.t
  *
- * @phpstan-type FunctionCallJsonShape array{id?: string, name?: string, args?: mixed}
+ * @phpstan-type FunctionCallArrayShape array{id?: string, name?: string, args?: mixed}
  *
- * @implements WithJsonSerialization<FunctionCallJsonShape>
+ * @implements WithArrayTransformationInterface<FunctionCallArrayShape>
  */
-final class FunctionCall implements WithJsonSchemaInterface, WithJsonSerialization
+final class FunctionCall implements WithJsonSchemaInterface, WithArrayTransformationInterface
 {
     /**
      * @var string|null Unique identifier for this function call.
@@ -136,9 +136,9 @@ final class FunctionCall implements WithJsonSchemaInterface, WithJsonSerializati
      *
      * @since n.e.x.t
      *
-     * @return FunctionCallJsonShape
+     * @return FunctionCallArrayShape
      */
-    public function jsonSerialize(): array
+    public function toArray(): array
     {
         $data = [];
 
@@ -162,14 +162,14 @@ final class FunctionCall implements WithJsonSchemaInterface, WithJsonSerializati
      *
      * @since n.e.x.t
      */
-    public static function fromJson(array $json): FunctionCall
+    public static function fromArray(array $array): FunctionCall
     {
         /** @var array<string, mixed> $args */
-        $args = $json['args'] ?? [];
+        $args = $array['args'] ?? [];
 
         return new self(
-            isset($json['id']) ? $json['id'] : null,
-            isset($json['name']) ? $json['name'] : null,
+            isset($array['id']) ? $array['id'] : null,
+            isset($array['name']) ? $array['name'] : null,
             $args
         );
     }

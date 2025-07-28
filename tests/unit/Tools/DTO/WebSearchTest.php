@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace WordPress\AiClient\Tests\unit\Tools\DTO;
 
 use PHPUnit\Framework\TestCase;
-use WordPress\AiClient\Tests\traits\JsonSerializationTestTrait;
+use WordPress\AiClient\Tests\traits\ArrayTransformationTestTrait;
 use WordPress\AiClient\Tools\DTO\WebSearch;
 
 /**
@@ -13,7 +13,7 @@ use WordPress\AiClient\Tools\DTO\WebSearch;
  */
 class WebSearchTest extends TestCase
 {
-    use JsonSerializationTestTrait;
+    use ArrayTransformationTestTrait;
     /**
      * Tests creating WebSearch with both allowed and disallowed domains.
      *
@@ -295,52 +295,52 @@ class WebSearchTest extends TestCase
     }
 
     /**
-     * Tests JSON serialization with both domain lists.
+     * Tests array transformation with both domain lists.
      *
      * @return void
      */
-    public function testJsonSerializeWithBothDomainLists(): void
+    public function testToArrayWithBothDomainLists(): void
     {
         $webSearch = new WebSearch(
             ['example.com', 'docs.example.com'],
             ['spam.com', 'malware.com']
         );
         
-        $json = $this->assertJsonSerializeReturnsArray($webSearch);
+        $json = $this->assertToArrayReturnsArray($webSearch);
         
-        $this->assertJsonHasKeys($json, ['allowedDomains', 'disallowedDomains']);
+        $this->assertArrayHasKeys($json, ['allowedDomains', 'disallowedDomains']);
         $this->assertEquals(['example.com', 'docs.example.com'], $json['allowedDomains']);
         $this->assertEquals(['spam.com', 'malware.com'], $json['disallowedDomains']);
     }
 
     /**
-     * Tests JSON serialization with empty domain lists.
+     * Tests array transformation with empty domain lists.
      *
      * @return void
      */
-    public function testJsonSerializeWithEmptyDomainLists(): void
+    public function testToArrayWithEmptyDomainLists(): void
     {
         $webSearch = new WebSearch();
         
-        $json = $this->assertJsonSerializeReturnsArray($webSearch);
+        $json = $this->assertToArrayReturnsArray($webSearch);
         
-        $this->assertJsonHasKeys($json, ['allowedDomains', 'disallowedDomains']);
+        $this->assertArrayHasKeys($json, ['allowedDomains', 'disallowedDomains']);
         $this->assertEquals([], $json['allowedDomains']);
         $this->assertEquals([], $json['disallowedDomains']);
     }
 
     /**
-     * Tests JSON serialization with only allowed domains.
+     * Tests array transformation with only allowed domains.
      *
      * @return void
      */
-    public function testJsonSerializeWithOnlyAllowedDomains(): void
+    public function testToArrayWithOnlyAllowedDomains(): void
     {
         $webSearch = new WebSearch(['trusted1.com', 'trusted2.com']);
         
-        $json = $this->assertJsonSerializeReturnsArray($webSearch);
+        $json = $this->assertToArrayReturnsArray($webSearch);
         
-        $this->assertJsonHasKeys($json, ['allowedDomains', 'disallowedDomains']);
+        $this->assertArrayHasKeys($json, ['allowedDomains', 'disallowedDomains']);
         $this->assertEquals(['trusted1.com', 'trusted2.com'], $json['allowedDomains']);
         $this->assertEquals([], $json['disallowedDomains']);
     }
@@ -350,14 +350,14 @@ class WebSearchTest extends TestCase
      *
      * @return void
      */
-    public function testFromJsonWithBothDomainLists(): void
+    public function testFromArrayWithBothDomainLists(): void
     {
         $json = [
             'allowedDomains' => ['api.example.com', 'docs.example.com'],
             'disallowedDomains' => ['ads.example.com', 'tracking.example.com']
         ];
         
-        $webSearch = WebSearch::fromJson($json);
+        $webSearch = WebSearch::fromArray($json);
         
         $this->assertInstanceOf(WebSearch::class, $webSearch);
         $this->assertEquals(['api.example.com', 'docs.example.com'], $webSearch->getAllowedDomains());
@@ -369,14 +369,14 @@ class WebSearchTest extends TestCase
      *
      * @return void
      */
-    public function testFromJsonWithEmptyArrays(): void
+    public function testFromArrayWithEmptyArrays(): void
     {
         $json = [
             'allowedDomains' => [],
             'disallowedDomains' => []
         ];
         
-        $webSearch = WebSearch::fromJson($json);
+        $webSearch = WebSearch::fromArray($json);
         
         $this->assertInstanceOf(WebSearch::class, $webSearch);
         $this->assertEquals([], $webSearch->getAllowedDomains());
@@ -388,11 +388,11 @@ class WebSearchTest extends TestCase
      *
      * @return void
      */
-    public function testFromJsonWithMissingFieldsUsesDefaults(): void
+    public function testFromArrayWithMissingFieldsUsesDefaults(): void
     {
         $json = [];
         
-        $webSearch = WebSearch::fromJson($json);
+        $webSearch = WebSearch::fromArray($json);
         
         $this->assertInstanceOf(WebSearch::class, $webSearch);
         $this->assertEquals([], $webSearch->getAllowedDomains());
@@ -400,13 +400,13 @@ class WebSearchTest extends TestCase
     }
 
     /**
-     * Tests round-trip JSON serialization.
+     * Tests round-trip array transformation.
      *
      * @return void
      */
-    public function testJsonRoundTrip(): void
+    public function testArrayRoundTrip(): void
     {
-        $this->assertJsonRoundTrip(
+        $this->assertArrayRoundTrip(
             new WebSearch(
                 ['wikipedia.org', 'arxiv.org', 'pubmed.gov'],
                 ['facebook.com', 'twitter.com', 'instagram.com']
@@ -423,9 +423,9 @@ class WebSearchTest extends TestCase
      *
      * @return void
      */
-    public function testJsonRoundTripWithSpecialCharacters(): void
+    public function testArrayRoundTripWithSpecialCharacters(): void
     {
-        $this->assertJsonRoundTrip(
+        $this->assertArrayRoundTrip(
             new WebSearch(
                 ['example-with-dash.com', 'sub.domain.example.com', '192.168.1.1'],
                 ['bad_underscore.com', 'another-dash.org']
@@ -438,13 +438,13 @@ class WebSearchTest extends TestCase
     }
 
     /**
-     * Tests WebSearch implements WithJsonSerialization.
+     * Tests WebSearch implements WithArrayTransformationInterface.
      *
      * @return void
      */
-    public function testImplementsWithJsonSerialization(): void
+    public function testImplementsWithArrayTransformationInterface(): void
     {
         $webSearch = new WebSearch();
-        $this->assertImplementsJsonSerialization($webSearch);
+        $this->assertImplementsArrayTransformation($webSearch);
     }
 }

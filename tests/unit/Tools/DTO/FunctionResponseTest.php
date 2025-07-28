@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace WordPress\AiClient\Tests\unit\Tools\DTO;
 
 use PHPUnit\Framework\TestCase;
-use WordPress\AiClient\Tests\traits\JsonSerializationTestTrait;
+use WordPress\AiClient\Tests\traits\ArrayTransformationTestTrait;
 use WordPress\AiClient\Tools\DTO\FunctionResponse;
 
 /**
@@ -13,7 +13,7 @@ use WordPress\AiClient\Tools\DTO\FunctionResponse;
  */
 class FunctionResponseTest extends TestCase
 {
-    use JsonSerializationTestTrait;
+    use ArrayTransformationTestTrait;
 
     /**
      * Tests creating FunctionResponse with all properties.
@@ -185,16 +185,16 @@ class FunctionResponseTest extends TestCase
     }
 
     /**
-     * Tests JSON serialization.
+     * Tests array transformation.
      *
      * @return void
      */
-    public function testJsonSerialize(): void
+    public function testToArray(): void
     {
         $response = new FunctionResponse('func_123', 'calculate', ['result' => 42]);
-        $json = $this->assertJsonSerializeReturnsArray($response);
+        $json = $this->assertToArrayReturnsArray($response);
         
-        $this->assertJsonHasKeys($json, ['id', 'name', 'response']);
+        $this->assertArrayHasKeys($json, ['id', 'name', 'response']);
         $this->assertEquals('func_123', $json['id']);
         $this->assertEquals('calculate', $json['name']);
         $this->assertEquals(['result' => 42], $json['response']);
@@ -205,7 +205,7 @@ class FunctionResponseTest extends TestCase
      *
      * @return void
      */
-    public function testFromJson(): void
+    public function testFromArray(): void
     {
         $json = [
             'id' => 'func_456',
@@ -213,7 +213,7 @@ class FunctionResponseTest extends TestCase
             'response' => ['found' => true, 'count' => 5]
         ];
         
-        $response = FunctionResponse::fromJson($json);
+        $response = FunctionResponse::fromArray($json);
         
         $this->assertInstanceOf(FunctionResponse::class, $response);
         $this->assertEquals('func_456', $response->getId());
@@ -222,13 +222,13 @@ class FunctionResponseTest extends TestCase
     }
 
     /**
-     * Tests round-trip JSON serialization.
+     * Tests round-trip array transformation.
      *
      * @return void
      */
-    public function testJsonRoundTrip(): void
+    public function testArrayRoundTrip(): void
     {
-        $this->assertJsonRoundTrip(
+        $this->assertArrayRoundTrip(
             new FunctionResponse('id_789', 'process', ['status' => 'complete']),
             function ($original, $restored) {
                 $this->assertEquals($original->getId(), $restored->getId());
@@ -239,13 +239,13 @@ class FunctionResponseTest extends TestCase
     }
 
     /**
-     * Tests FunctionResponse implements WithJsonSerialization.
+     * Tests FunctionResponse implements WithArrayTransformationInterface.
      *
      * @return void
      */
-    public function testImplementsWithJsonSerialization(): void
+    public function testImplementsWithArrayTransformationInterface(): void
     {
         $response = new FunctionResponse('id', 'name', 'result');
-        $this->assertImplementsJsonSerialization($response);
+        $this->assertImplementsArrayTransformation($response);
     }
 }

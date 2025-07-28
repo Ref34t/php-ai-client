@@ -233,14 +233,14 @@ class MessagePartTest extends TestCase
     }
 
     /**
-     * Tests JSON serialization with text content.
+     * Tests array transformation with text content.
      *
      * @return void
      */
-    public function testJsonSerializeWithText(): void
+    public function testToArrayWithText(): void
     {
         $part = new MessagePart('Hello, world!');
-        $json = $part->jsonSerialize();
+        $json = $part->toArray();
         
         $this->assertIsArray($json);
         $this->assertArrayHasKey('type', $json);
@@ -255,15 +255,15 @@ class MessagePartTest extends TestCase
     }
 
     /**
-     * Tests JSON serialization with file content.
+     * Tests array transformation with file content.
      *
      * @return void
      */
-    public function testJsonSerializeWithFile(): void
+    public function testToArrayWithFile(): void
     {
         $file = new File('https://example.com/image.jpg', 'image/jpeg');
         $part = new MessagePart($file);
-        $json = $part->jsonSerialize();
+        $json = $part->toArray();
         
         $this->assertIsArray($json);
         $this->assertArrayHasKey('type', $json);
@@ -277,14 +277,14 @@ class MessagePartTest extends TestCase
      *
      * @return void
      */
-    public function testFromJsonWithText(): void
+    public function testFromArrayWithText(): void
     {
         $json = [
             'type' => MessagePartTypeEnum::text()->value,
             'text' => 'Test message'
         ];
         
-        $part = MessagePart::fromJson($json);
+        $part = MessagePart::fromArray($json);
         
         $this->assertEquals(MessagePartTypeEnum::text(), $part->getType());
         $this->assertEquals('Test message', $part->getText());
@@ -295,7 +295,7 @@ class MessagePartTest extends TestCase
      *
      * @return void
      */
-    public function testFromJsonWithFile(): void
+    public function testFromArrayWithFile(): void
     {
         $json = [
             'type' => MessagePartTypeEnum::file()->value,
@@ -306,7 +306,7 @@ class MessagePartTest extends TestCase
             ]
         ];
         
-        $part = MessagePart::fromJson($json);
+        $part = MessagePart::fromArray($json);
         
         $this->assertEquals(MessagePartTypeEnum::file(), $part->getType());
         $this->assertInstanceOf(File::class, $part->getFile());
@@ -314,52 +314,49 @@ class MessagePartTest extends TestCase
     }
 
     /**
-     * Tests round-trip JSON serialization with different content types.
+     * Tests round-trip array transformation with different content types.
      *
      * @return void
      */
-    public function testJsonRoundTrip(): void
+    public function testArrayRoundTrip(): void
     {
         // Test with text
         $textPart = new MessagePart('Test text');
-        $textJson = $textPart->jsonSerialize();
-        $restoredText = MessagePart::fromJson($textJson);
+        $textJson = $textPart->toArray();
+        $restoredText = MessagePart::fromArray($textJson);
         $this->assertEquals($textPart->getText(), $restoredText->getText());
         
         // Test with file
         $file = new File('https://example.com/doc.pdf', 'application/pdf');
         $filePart = new MessagePart($file);
-        $fileJson = $filePart->jsonSerialize();
-        $restoredFile = MessagePart::fromJson($fileJson);
+        $fileJson = $filePart->toArray();
+        $restoredFile = MessagePart::fromArray($fileJson);
         $this->assertEquals($file->getUrl(), $restoredFile->getFile()->getUrl());
         $this->assertEquals($file->getMimeType(), $restoredFile->getFile()->getMimeType());
         
         // Test with function call
         $functionCall = new FunctionCall('id_123', 'getData', ['key' => 'value']);
         $funcPart = new MessagePart($functionCall);
-        $funcJson = $funcPart->jsonSerialize();
-        $restoredFunc = MessagePart::fromJson($funcJson);
+        $funcJson = $funcPart->toArray();
+        $restoredFunc = MessagePart::fromArray($funcJson);
         $this->assertEquals($functionCall->getId(), $restoredFunc->getFunctionCall()->getId());
         $this->assertEquals($functionCall->getName(), $restoredFunc->getFunctionCall()->getName());
         $this->assertEquals($functionCall->getArgs(), $restoredFunc->getFunctionCall()->getArgs());
     }
 
     /**
-     * Tests MessagePart implements WithJsonSerialization.
+     * Tests MessagePart implements WithArrayTransformationInterface.
      *
      * @return void
      */
-    public function testImplementsWithJsonSerialization(): void
+    public function testImplementsWithArrayTransformationInterface(): void
     {
         $part = new MessagePart('test');
         
         $this->assertInstanceOf(
-            \WordPress\AiClient\Common\Contracts\WithJsonSerialization::class,
+            \WordPress\AiClient\Common\Contracts\WithArrayTransformationInterface::class,
             $part
         );
-        $this->assertInstanceOf(
-            \JsonSerializable::class,
-            $part
-        );
+        
     }
 }

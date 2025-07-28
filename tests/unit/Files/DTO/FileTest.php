@@ -269,14 +269,14 @@ class FileTest extends TestCase
     }
 
     /**
-     * Tests JSON serialization for remote file.
+     * Tests array transformation for remote file.
      *
      * @return void
      */
-    public function testJsonSerializeRemoteFile(): void
+    public function testToArrayRemoteFile(): void
     {
         $file = new File('https://example.com/image.jpg', 'image/jpeg');
-        $json = $file->jsonSerialize();
+        $json = $file->toArray();
         
         $this->assertIsArray($json);
         $this->assertEquals(\WordPress\AiClient\Files\Enums\FileTypeEnum::remote()->value, $json['fileType']);
@@ -286,16 +286,16 @@ class FileTest extends TestCase
     }
 
     /**
-     * Tests JSON serialization for inline file.
+     * Tests array transformation for inline file.
      *
      * @return void
      */
-    public function testJsonSerializeInlineFile(): void
+    public function testToArrayInlineFile(): void
     {
         $base64Data = 'SGVsbG8gV29ybGQ=';
         $dataUri = 'data:text/plain;base64,' . $base64Data;
         $file = new File($dataUri);
-        $json = $file->jsonSerialize();
+        $json = $file->toArray();
         
         $this->assertIsArray($json);
         $this->assertEquals(\WordPress\AiClient\Files\Enums\FileTypeEnum::inline()->value, $json['fileType']);
@@ -309,7 +309,7 @@ class FileTest extends TestCase
      *
      * @return void
      */
-    public function testFromJsonRemoteFile(): void
+    public function testFromArrayRemoteFile(): void
     {
         $json = [
             'fileType' => \WordPress\AiClient\Files\Enums\FileTypeEnum::remote()->value,
@@ -317,7 +317,7 @@ class FileTest extends TestCase
             'url' => 'https://example.com/test.png'
         ];
         
-        $file = File::fromJson($json);
+        $file = File::fromArray($json);
         
         $this->assertInstanceOf(File::class, $file);
         $this->assertTrue($file->getFileType()->isRemote());
@@ -331,7 +331,7 @@ class FileTest extends TestCase
      *
      * @return void
      */
-    public function testFromJsonInlineFile(): void
+    public function testFromArrayInlineFile(): void
     {
         $base64Data = 'SGVsbG8gV29ybGQ=';
         $json = [
@@ -340,7 +340,7 @@ class FileTest extends TestCase
             'base64Data' => $base64Data
         ];
         
-        $file = File::fromJson($json);
+        $file = File::fromArray($json);
         
         $this->assertInstanceOf(File::class, $file);
         $this->assertTrue($file->getFileType()->isInline());
@@ -350,16 +350,16 @@ class FileTest extends TestCase
     }
 
     /**
-     * Tests round-trip JSON serialization.
+     * Tests round-trip array transformation.
      *
      * @return void
      */
-    public function testJsonRoundTrip(): void
+    public function testArrayRoundTrip(): void
     {
         // Test remote file
         $remoteFile = new File('https://example.com/doc.pdf', 'application/pdf');
-        $remoteJson = $remoteFile->jsonSerialize();
-        $restoredRemote = File::fromJson($remoteJson);
+        $remoteJson = $remoteFile->toArray();
+        $restoredRemote = File::fromArray($remoteJson);
         
         $this->assertEquals($remoteFile->getFileType()->value, $restoredRemote->getFileType()->value);
         $this->assertEquals($remoteFile->getMimeType(), $restoredRemote->getMimeType());
@@ -368,8 +368,8 @@ class FileTest extends TestCase
         // Test inline file
         $dataUri = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
         $inlineFile = new File($dataUri);
-        $inlineJson = $inlineFile->jsonSerialize();
-        $restoredInline = File::fromJson($inlineJson);
+        $inlineJson = $inlineFile->toArray();
+        $restoredInline = File::fromArray($inlineJson);
         
         $this->assertEquals($inlineFile->getFileType()->value, $restoredInline->getFileType()->value);
         $this->assertEquals($inlineFile->getMimeType(), $restoredInline->getMimeType());
@@ -377,21 +377,18 @@ class FileTest extends TestCase
     }
 
     /**
-     * Tests File implements WithJsonSerialization.
+     * Tests File implements WithArrayTransformationInterface.
      *
      * @return void
      */
-    public function testImplementsWithJsonSerialization(): void
+    public function testImplementsWithArrayTransformationInterface(): void
     {
         $file = new File('https://example.com/test.jpg');
         
         $this->assertInstanceOf(
-            \WordPress\AiClient\Common\Contracts\WithJsonSerialization::class,
+            \WordPress\AiClient\Common\Contracts\WithArrayTransformationInterface::class,
             $file
         );
-        $this->assertInstanceOf(
-            \JsonSerializable::class,
-            $file
-        );
+        
     }
 }

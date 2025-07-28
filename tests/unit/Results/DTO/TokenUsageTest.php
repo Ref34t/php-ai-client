@@ -209,14 +209,14 @@ class TokenUsageTest extends TestCase
     }
 
     /**
-     * Tests JSON serialization.
+     * Tests array transformation.
      *
      * @return void
      */
-    public function testJsonSerialize(): void
+    public function testToArray(): void
     {
         $tokenUsage = new TokenUsage(100, 50, 150);
-        $json = $tokenUsage->jsonSerialize();
+        $json = $tokenUsage->toArray();
         
         $this->assertIsArray($json);
         $this->assertArrayHasKey('promptTokens', $json);
@@ -233,7 +233,7 @@ class TokenUsageTest extends TestCase
      *
      * @return void
      */
-    public function testFromJson(): void
+    public function testFromArray(): void
     {
         $json = [
             'promptTokens' => 100,
@@ -241,7 +241,7 @@ class TokenUsageTest extends TestCase
             'totalTokens' => 150,
         ];
         
-        $tokenUsage = TokenUsage::fromJson($json);
+        $tokenUsage = TokenUsage::fromArray($json);
         
         $this->assertInstanceOf(TokenUsage::class, $tokenUsage);
         $this->assertEquals(100, $tokenUsage->getPromptTokens());
@@ -250,15 +250,15 @@ class TokenUsageTest extends TestCase
     }
 
     /**
-     * Tests round-trip JSON serialization.
+     * Tests round-trip array transformation.
      *
      * @return void
      */
-    public function testJsonRoundTrip(): void
+    public function testArrayRoundTrip(): void
     {
         $original = new TokenUsage(123, 456, 579);
-        $json = $original->jsonSerialize();
-        $restored = TokenUsage::fromJson($json);
+        $json = $original->toArray();
+        $restored = TokenUsage::fromArray($json);
         
         $this->assertEquals($original->getPromptTokens(), $restored->getPromptTokens());
         $this->assertEquals($original->getCompletionTokens(), $restored->getCompletionTokens());
@@ -266,22 +266,19 @@ class TokenUsageTest extends TestCase
     }
 
     /**
-     * Tests TokenUsage implements WithJsonSerialization.
+     * Tests TokenUsage implements WithArrayTransformationInterface.
      *
      * @return void
      */
-    public function testImplementsWithJsonSerialization(): void
+    public function testImplementsWithArrayTransformationInterface(): void
     {
         $tokenUsage = new TokenUsage(10, 20, 30);
         
         $this->assertInstanceOf(
-            \WordPress\AiClient\Common\Contracts\WithJsonSerialization::class,
+            \WordPress\AiClient\Common\Contracts\WithArrayTransformationInterface::class,
             $tokenUsage
         );
-        $this->assertInstanceOf(
-            \JsonSerializable::class,
-            $tokenUsage
-        );
+        
     }
 
     /**

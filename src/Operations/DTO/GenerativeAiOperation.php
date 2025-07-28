@@ -16,11 +16,11 @@ use WordPress\AiClient\Results\DTO\GenerativeAiResult;
  *
  * @since n.e.x.t
  *
- * @phpstan-import-type GenerativeAiResultJsonShape from GenerativeAiResult
+ * @phpstan-import-type GenerativeAiResultArrayShape from GenerativeAiResult
  *
- * @phpstan-type GenerativeAiOperationJsonShape array{id: string, state: string, result?: GenerativeAiResultJsonShape}
+ * @phpstan-type GenerativeAiOperationArrayShape array{id: string, state: string, result?: GenerativeAiResultArrayShape}
  *
- * @implements OperationInterface<GenerativeAiOperationJsonShape>
+ * @implements OperationInterface<GenerativeAiOperationArrayShape>
  */
 final class GenerativeAiOperation implements OperationInterface
 {
@@ -144,9 +144,9 @@ final class GenerativeAiOperation implements OperationInterface
      *
      * @since n.e.x.t
      *
-     * @return GenerativeAiOperationJsonShape
+     * @return GenerativeAiOperationArrayShape
      */
-    public function jsonSerialize(): array
+    public function toArray(): array
     {
         $data = [
             'id' => $this->id,
@@ -154,7 +154,7 @@ final class GenerativeAiOperation implements OperationInterface
         ];
 
         if ($this->result !== null) {
-            $data['result'] = $this->result->jsonSerialize();
+            $data['result'] = $this->result->toArray();
         }
 
         return $data;
@@ -165,14 +165,14 @@ final class GenerativeAiOperation implements OperationInterface
      *
      * @since n.e.x.t
      */
-    public static function fromJson(array $json): GenerativeAiOperation
+    public static function fromArray(array $array): GenerativeAiOperation
     {
-        $state = OperationStateEnum::from($json['state']);
+        $state = OperationStateEnum::from($array['state']);
         $result = null;
-        if (isset($json['result'])) {
-            $result = GenerativeAiResult::fromJson($json['result']);
+        if (isset($array['result'])) {
+            $result = GenerativeAiResult::fromArray($array['result']);
         }
 
-        return new self($json['id'], $state, $result);
+        return new self($array['id'], $state, $result);
     }
 }

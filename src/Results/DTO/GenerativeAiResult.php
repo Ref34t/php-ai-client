@@ -17,17 +17,17 @@ use WordPress\AiClient\Results\Contracts\ResultInterface;
  *
  * @since n.e.x.t
  *
- * @phpstan-import-type CandidateJsonShape from Candidate
- * @phpstan-import-type TokenUsageJsonShape from TokenUsage
+ * @phpstan-import-type CandidateArrayShape from Candidate
+ * @phpstan-import-type TokenUsageArrayShape from TokenUsage
  *
- * @phpstan-type GenerativeAiResultJsonShape array{
+ * @phpstan-type GenerativeAiResultArrayShape array{
  *     id: string,
- *     candidates: array<CandidateJsonShape>,
- *     tokenUsage: TokenUsageJsonShape,
+ *     candidates: array<CandidateArrayShape>,
+ *     tokenUsage: TokenUsageArrayShape,
  *     providerMetadata?: array<string, mixed>
  * }
  *
- * @implements ResultInterface<GenerativeAiResultJsonShape>
+ * @implements ResultInterface<GenerativeAiResultArrayShape>
  */
 final class GenerativeAiResult implements ResultInterface
 {
@@ -396,16 +396,16 @@ final class GenerativeAiResult implements ResultInterface
      *
      * @since n.e.x.t
      *
-     * @return GenerativeAiResultJsonShape
+     * @return GenerativeAiResultArrayShape
      */
-    public function jsonSerialize(): array
+    public function toArray(): array
     {
         return [
             'id' => $this->id,
             'candidates' => array_map(function (Candidate $candidate) {
-                return $candidate->jsonSerialize();
+                return $candidate->toArray();
             }, $this->candidates),
-            'tokenUsage' => $this->tokenUsage->jsonSerialize(),
+            'tokenUsage' => $this->tokenUsage->toArray(),
             'providerMetadata' => $this->providerMetadata,
         ];
     }
@@ -415,20 +415,20 @@ final class GenerativeAiResult implements ResultInterface
      *
      * @since n.e.x.t
      */
-    public static function fromJson(array $json): GenerativeAiResult
+    public static function fromArray(array $array): GenerativeAiResult
     {
-        $candidatesData = $json['candidates'];
+        $candidatesData = $array['candidates'];
         $candidates = array_map(function (array $candidateData) {
-            return Candidate::fromJson($candidateData);
+            return Candidate::fromArray($candidateData);
         }, $candidatesData);
 
-        $tokenUsageData = $json['tokenUsage'];
-        $providerMetadata = $json['providerMetadata'] ?? [];
+        $tokenUsageData = $array['tokenUsage'];
+        $providerMetadata = $array['providerMetadata'] ?? [];
 
         return new self(
-            $json['id'],
+            $array['id'],
             $candidates,
-            TokenUsage::fromJson($tokenUsageData),
+            TokenUsage::fromArray($tokenUsageData),
             $providerMetadata
         );
     }

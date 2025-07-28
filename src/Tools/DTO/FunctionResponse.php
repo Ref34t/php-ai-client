@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace WordPress\AiClient\Tools\DTO;
 
 use WordPress\AiClient\Common\Contracts\WithJsonSchemaInterface;
-use WordPress\AiClient\Common\Contracts\WithJsonSerialization;
+use WordPress\AiClient\Common\Contracts\WithArrayTransformationInterface;
 
 /**
  * Represents a response to a function call.
@@ -15,11 +15,11 @@ use WordPress\AiClient\Common\Contracts\WithJsonSerialization;
  *
  * @since n.e.x.t
  *
- * @phpstan-type FunctionResponseJsonShape array{id: string, name: string, response: mixed}
+ * @phpstan-type FunctionResponseArrayShape array{id: string, name: string, response: mixed}
  *
- * @implements WithJsonSerialization<FunctionResponseJsonShape>
+ * @implements WithArrayTransformationInterface<FunctionResponseArrayShape>
  */
-final class FunctionResponse implements WithJsonSchemaInterface, WithJsonSerialization
+final class FunctionResponse implements WithJsonSchemaInterface, WithArrayTransformationInterface
 {
     /**
      * @var string The ID of the function call this is responding to.
@@ -120,9 +120,9 @@ final class FunctionResponse implements WithJsonSchemaInterface, WithJsonSeriali
      *
      * @since n.e.x.t
      *
-     * @return FunctionResponseJsonShape
+     * @return FunctionResponseArrayShape
      */
-    public function jsonSerialize(): array
+    public function toArray(): array
     {
         return [
             'id' => $this->id,
@@ -136,12 +136,12 @@ final class FunctionResponse implements WithJsonSchemaInterface, WithJsonSeriali
      *
      * @since n.e.x.t
      */
-    public static function fromJson(array $json): FunctionResponse
+    public static function fromArray(array $array): FunctionResponse
     {
         return new self(
-            $json['id'],
-            $json['name'],
-            $json['response']
+            $array['id'],
+            $array['name'],
+            $array['response']
         );
     }
 }

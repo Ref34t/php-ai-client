@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace WordPress\AiClient\Tools\DTO;
 
 use WordPress\AiClient\Common\Contracts\WithJsonSchemaInterface;
-use WordPress\AiClient\Common\Contracts\WithJsonSerialization;
+use WordPress\AiClient\Common\Contracts\WithArrayTransformationInterface;
 
 /**
  * Represents a function declaration for AI models.
@@ -15,11 +15,11 @@ use WordPress\AiClient\Common\Contracts\WithJsonSerialization;
  *
  * @since n.e.x.t
  *
- * @phpstan-type FunctionDeclarationJsonShape array{name: string, description: string, parameters?: mixed}
+ * @phpstan-type FunctionDeclarationArrayShape array{name: string, description: string, parameters?: mixed}
  *
- * @implements WithJsonSerialization<FunctionDeclarationJsonShape>
+ * @implements WithArrayTransformationInterface<FunctionDeclarationArrayShape>
  */
-final class FunctionDeclaration implements WithJsonSchemaInterface, WithJsonSerialization
+final class FunctionDeclaration implements WithJsonSchemaInterface, WithArrayTransformationInterface
 {
     /**
      * @var string The name of the function.
@@ -120,9 +120,9 @@ final class FunctionDeclaration implements WithJsonSchemaInterface, WithJsonSeri
      *
      * @since n.e.x.t
      *
-     * @return FunctionDeclarationJsonShape
+     * @return FunctionDeclarationArrayShape
      */
-    public function jsonSerialize(): array
+    public function toArray(): array
     {
         $data = [
             'name' => $this->name,
@@ -141,12 +141,12 @@ final class FunctionDeclaration implements WithJsonSchemaInterface, WithJsonSeri
      *
      * @since n.e.x.t
      */
-    public static function fromJson(array $json): FunctionDeclaration
+    public static function fromArray(array $array): FunctionDeclaration
     {
         return new self(
-            $json['name'],
-            $json['description'],
-            $json['parameters'] ?? null
+            $array['name'],
+            $array['description'],
+            $array['parameters'] ?? null
         );
     }
 }

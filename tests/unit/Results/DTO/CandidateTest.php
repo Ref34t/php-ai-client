@@ -14,7 +14,7 @@ use WordPress\AiClient\Messages\Enums\MessagePartTypeEnum;
 use WordPress\AiClient\Messages\Enums\MessageRoleEnum;
 use WordPress\AiClient\Results\DTO\Candidate;
 use WordPress\AiClient\Results\Enums\FinishReasonEnum;
-use WordPress\AiClient\Tests\traits\JsonSerializationTestTrait;
+use WordPress\AiClient\Tests\traits\ArrayTransformationTestTrait;
 use WordPress\AiClient\Tools\DTO\FunctionCall;
 
 /**
@@ -22,7 +22,7 @@ use WordPress\AiClient\Tools\DTO\FunctionCall;
  */
 class CandidateTest extends TestCase
 {
-    use JsonSerializationTestTrait;
+    use ArrayTransformationTestTrait;
     /**
      * Tests creating candidate with basic properties.
      *
@@ -334,11 +334,11 @@ class CandidateTest extends TestCase
     }
 
     /**
-     * Tests JSON serialization.
+     * Tests array transformation.
      *
      * @return void
      */
-    public function testJsonSerialize(): void
+    public function testToArray(): void
     {
         $message = new ModelMessage([
             new MessagePart('This is the AI response.'),
@@ -351,9 +351,9 @@ class CandidateTest extends TestCase
             45
         );
         
-        $json = $this->assertJsonSerializeReturnsArray($candidate);
+        $json = $this->assertToArrayReturnsArray($candidate);
         
-        $this->assertJsonHasKeys($json, ['message', 'finishReason', 'tokenCount']);
+        $this->assertArrayHasKeys($json, ['message', 'finishReason', 'tokenCount']);
         $this->assertIsArray($json['message']);
         $this->assertEquals(FinishReasonEnum::stop()->value, $json['finishReason']);
         $this->assertEquals(45, $json['tokenCount']);
@@ -364,7 +364,7 @@ class CandidateTest extends TestCase
      *
      * @return void
      */
-    public function testFromJson(): void
+    public function testFromArray(): void
     {
         $json = [
             'message' => [
@@ -378,7 +378,7 @@ class CandidateTest extends TestCase
             'tokenCount' => 75
         ];
         
-        $candidate = Candidate::fromJson($json);
+        $candidate = Candidate::fromArray($json);
         
         $this->assertInstanceOf(Candidate::class, $candidate);
         $this->assertEquals(FinishReasonEnum::stop(), $candidate->getFinishReason());
@@ -389,13 +389,13 @@ class CandidateTest extends TestCase
     }
 
     /**
-     * Tests round-trip JSON serialization.
+     * Tests round-trip array transformation.
      *
      * @return void
      */
-    public function testJsonRoundTrip(): void
+    public function testArrayRoundTrip(): void
     {
-        $this->assertJsonRoundTrip(
+        $this->assertArrayRoundTrip(
             new Candidate(
                 new ModelMessage([
                     new MessagePart('Generated response'),
@@ -424,17 +424,17 @@ class CandidateTest extends TestCase
     }
 
     /**
-     * Tests Candidate implements WithJsonSerialization.
+     * Tests Candidate implements WithArrayTransformationInterface.
      *
      * @return void
      */
-    public function testImplementsWithJsonSerialization(): void
+    public function testImplementsWithArrayTransformationInterface(): void
     {
         $candidate = new Candidate(
             new ModelMessage([new MessagePart('test')]),
             FinishReasonEnum::stop(),
             10
         );
-        $this->assertImplementsJsonSerialization($candidate);
+        $this->assertImplementsArrayTransformation($candidate);
     }
 }

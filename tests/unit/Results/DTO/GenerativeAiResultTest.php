@@ -14,7 +14,7 @@ use WordPress\AiClient\Results\DTO\Candidate;
 use WordPress\AiClient\Results\DTO\GenerativeAiResult;
 use WordPress\AiClient\Results\DTO\TokenUsage;
 use WordPress\AiClient\Results\Enums\FinishReasonEnum;
-use WordPress\AiClient\Tests\traits\JsonSerializationTestTrait;
+use WordPress\AiClient\Tests\traits\ArrayTransformationTestTrait;
 use WordPress\AiClient\Tools\DTO\FunctionCall;
 
 /**
@@ -22,7 +22,7 @@ use WordPress\AiClient\Tools\DTO\FunctionCall;
  */
 class GenerativeAiResultTest extends TestCase
 {
-    use JsonSerializationTestTrait;
+    use ArrayTransformationTestTrait;
     /**
      * Tests creating result with single candidate.
      *
@@ -601,11 +601,11 @@ class GenerativeAiResultTest extends TestCase
     }
 
     /**
-     * Tests JSON serialization.
+     * Tests array transformation.
      *
      * @return void
      */
-    public function testJsonSerialize(): void
+    public function testToArray(): void
     {
         $message = new ModelMessage([
             new MessagePart('AI generated response'),
@@ -622,9 +622,9 @@ class GenerativeAiResultTest extends TestCase
             $metadata
         );
         
-        $json = $this->assertJsonSerializeReturnsArray($result);
+        $json = $this->assertToArrayReturnsArray($result);
         
-        $this->assertJsonHasKeys($json, ['id', 'candidates', 'tokenUsage', 'providerMetadata']);
+        $this->assertArrayHasKeys($json, ['id', 'candidates', 'tokenUsage', 'providerMetadata']);
         $this->assertEquals('result_json_123', $json['id']);
         $this->assertIsArray($json['candidates']);
         $this->assertCount(1, $json['candidates']);
@@ -637,7 +637,7 @@ class GenerativeAiResultTest extends TestCase
      *
      * @return void
      */
-    public function testFromJson(): void
+    public function testFromArray(): void
     {
         $json = [
             'id' => 'result_from_json',
@@ -662,7 +662,7 @@ class GenerativeAiResultTest extends TestCase
             'providerMetadata' => ['provider' => 'test']
         ];
         
-        $result = GenerativeAiResult::fromJson($json);
+        $result = GenerativeAiResult::fromArray($json);
         
         $this->assertInstanceOf(GenerativeAiResult::class, $result);
         $this->assertEquals('result_from_json', $result->getId());
@@ -674,11 +674,11 @@ class GenerativeAiResultTest extends TestCase
     }
 
     /**
-     * Tests round-trip JSON serialization with multiple candidates.
+     * Tests round-trip array transformation with multiple candidates.
      *
      * @return void
      */
-    public function testJsonRoundTripWithMultipleCandidates(): void
+    public function testArrayRoundTripWithMultipleCandidates(): void
     {
         $candidates = [];
         for ($i = 1; $i <= 2; $i++) {
@@ -689,7 +689,7 @@ class GenerativeAiResultTest extends TestCase
             $candidates[] = new Candidate($message, FinishReasonEnum::toolCalls(), 25 * $i);
         }
         
-        $this->assertJsonRoundTrip(
+        $this->assertArrayRoundTrip(
             new GenerativeAiResult(
                 'result_roundtrip',
                 $candidates,
@@ -719,11 +719,11 @@ class GenerativeAiResultTest extends TestCase
     }
 
     /**
-     * Tests JSON serialization without provider metadata.
+     * Tests array transformation without provider metadata.
      *
      * @return void
      */
-    public function testJsonSerializeWithoutProviderMetadata(): void
+    public function testToArrayWithoutProviderMetadata(): void
     {
         $message = new ModelMessage([new MessagePart('Simple response')]);
         $candidate = new Candidate($message, FinishReasonEnum::stop(), 5);
@@ -735,24 +735,24 @@ class GenerativeAiResultTest extends TestCase
             $tokenUsage
         );
         
-        $json = $this->assertJsonSerializeReturnsArray($result);
+        $json = $this->assertToArrayReturnsArray($result);
         
-        $this->assertJsonHasKeys($json, ['id', 'candidates', 'tokenUsage', 'providerMetadata']);
+        $this->assertArrayHasKeys($json, ['id', 'candidates', 'tokenUsage', 'providerMetadata']);
         $this->assertEquals([], $json['providerMetadata']);
     }
 
     /**
-     * Tests GenerativeAiResult implements WithJsonSerialization.
+     * Tests GenerativeAiResult implements WithArrayTransformationInterface.
      *
      * @return void
      */
-    public function testImplementsWithJsonSerialization(): void
+    public function testImplementsWithArrayTransformationInterface(): void
     {
         $message = new ModelMessage([new MessagePart('test')]);
         $candidate = new Candidate($message, FinishReasonEnum::stop(), 1);
         $tokenUsage = new TokenUsage(1, 1, 2);
         
         $result = new GenerativeAiResult('test', [$candidate], $tokenUsage);
-        $this->assertImplementsJsonSerialization($result);
+        $this->assertImplementsArrayTransformation($result);
     }
 }

@@ -230,11 +230,11 @@ class MessageTest extends TestCase
     }
 
     /**
-     * Tests JSON serialization.
+     * Tests array transformation.
      *
      * @return void
      */
-    public function testJsonSerialize(): void
+    public function testToArray(): void
     {
         $role = MessageRoleEnum::user();
         $parts = [
@@ -242,7 +242,7 @@ class MessageTest extends TestCase
             new MessagePart('How are you?')
         ];
         $message = new Message($role, $parts);
-        $json = $message->jsonSerialize();
+        $json = $message->toArray();
         
         $this->assertIsArray($json);
         $this->assertEquals($role->value, $json['role']);
@@ -257,7 +257,7 @@ class MessageTest extends TestCase
      *
      * @return void
      */
-    public function testFromJson(): void
+    public function testFromArray(): void
     {
         $json = [
             'role' => MessageRoleEnum::system()->value,
@@ -266,7 +266,7 @@ class MessageTest extends TestCase
             ]
         ];
         
-        $message = Message::fromJson($json);
+        $message = Message::fromArray($json);
         
         $this->assertInstanceOf(Message::class, $message);
         $this->assertEquals(MessageRoleEnum::system(), $message->getRole());
@@ -275,11 +275,11 @@ class MessageTest extends TestCase
     }
 
     /**
-     * Tests round-trip JSON serialization.
+     * Tests round-trip array transformation.
      *
      * @return void
      */
-    public function testJsonRoundTrip(): void
+    public function testArrayRoundTrip(): void
     {
         $original = new Message(
             MessageRoleEnum::model(),
@@ -289,8 +289,8 @@ class MessageTest extends TestCase
             ]
         );
         
-        $json = $original->jsonSerialize();
-        $restored = Message::fromJson($json);
+        $json = $original->toArray();
+        $restored = Message::fromArray($json);
         
         $this->assertEquals($original->getRole()->value, $restored->getRole()->value);
         $this->assertCount(count($original->getParts()), $restored->getParts());
@@ -302,21 +302,18 @@ class MessageTest extends TestCase
     }
 
     /**
-     * Tests Message implements WithJsonSerialization.
+     * Tests Message implements WithArrayTransformationInterface.
      *
      * @return void
      */
-    public function testImplementsWithJsonSerialization(): void
+    public function testImplementsWithArrayTransformationInterface(): void
     {
         $message = new Message(MessageRoleEnum::user(), [new MessagePart('test')]);
         
         $this->assertInstanceOf(
-            \WordPress\AiClient\Common\Contracts\WithJsonSerialization::class,
+            \WordPress\AiClient\Common\Contracts\WithArrayTransformationInterface::class,
             $message
         );
-        $this->assertInstanceOf(
-            \JsonSerializable::class,
-            $message
-        );
+        
     }
 }

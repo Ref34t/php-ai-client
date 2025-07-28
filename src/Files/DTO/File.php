@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace WordPress\AiClient\Files\DTO;
 
 use WordPress\AiClient\Common\Contracts\WithJsonSchemaInterface;
-use WordPress\AiClient\Common\Contracts\WithJsonSerialization;
+use WordPress\AiClient\Common\Contracts\WithArrayTransformationInterface;
 use WordPress\AiClient\Files\Enums\FileTypeEnum;
 use WordPress\AiClient\Files\ValueObjects\MimeType;
 
@@ -17,16 +17,16 @@ use WordPress\AiClient\Files\ValueObjects\MimeType;
  *
  * @since n.e.x.t
  *
- * @phpstan-type FileJsonShape array{
+ * @phpstan-type FileArrayShape array{
  *     fileType: string,
  *     url?: string,
  *     mimeType?: string,
  *     base64Data?: string
  * }
  *
- * @implements WithJsonSerialization<FileJsonShape>
+ * @implements WithArrayTransformationInterface<FileArrayShape>
  */
-final class File implements WithJsonSchemaInterface, WithJsonSerialization
+final class File implements WithJsonSchemaInterface, WithArrayTransformationInterface
 {
     /**
      * @var MimeType The MIME type of the file.
@@ -393,9 +393,9 @@ final class File implements WithJsonSchemaInterface, WithJsonSerialization
      *
      * @since n.e.x.t
      *
-     * @return FileJsonShape
+     * @return FileArrayShape
      */
-    public function jsonSerialize(): array
+    public function toArray(): array
     {
         $data = [
             'fileType' => $this->fileType->value,
@@ -416,22 +416,22 @@ final class File implements WithJsonSchemaInterface, WithJsonSerialization
      *
      * @since n.e.x.t
      */
-    public static function fromJson(array $json): File
+    public static function fromArray(array $array): File
     {
-        $fileType = FileTypeEnum::from($json['fileType']);
+        $fileType = FileTypeEnum::from($array['fileType']);
 
         if ($fileType->isRemote()) {
-            if (!isset($json['url']) || !isset($json['mimeType'])) {
+            if (!isset($array['url']) || !isset($array['mimeType'])) {
                 throw new \InvalidArgumentException('Remote file requires url and mimeType.');
             }
-            return new self($json['url'], $json['mimeType']);
+            return new self($array['url'], $array['mimeType']);
         } else {
-            if (!isset($json['mimeType']) || !isset($json['base64Data'])) {
+            if (!isset($array['mimeType']) || !isset($array['base64Data'])) {
                 throw new \InvalidArgumentException('Inline file requires mimeType and base64Data.');
             }
             // Create data URI from base64 data and mime type
-            $mimeType = $json['mimeType'];
-            $base64Data = $json['base64Data'];
+            $mimeType = $array['mimeType'];
+            $base64Data = $array['base64Data'];
             $dataUri = sprintf('data:%s;base64,%s', $mimeType, $base64Data);
             return new self($dataUri);
         }

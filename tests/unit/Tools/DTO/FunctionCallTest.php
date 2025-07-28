@@ -163,14 +163,14 @@ class FunctionCallTest extends TestCase
     }
 
     /**
-     * Tests JSON serialization with all fields.
+     * Tests array transformation with all fields.
      *
      * @return void
      */
-    public function testJsonSerializeAllFields(): void
+    public function testToArrayAllFields(): void
     {
         $functionCall = new FunctionCall('func_123', 'calculate', ['x' => 10, 'y' => 20]);
-        $json = $functionCall->jsonSerialize();
+        $json = $functionCall->toArray();
         
         $this->assertIsArray($json);
         $this->assertEquals('func_123', $json['id']);
@@ -179,14 +179,14 @@ class FunctionCallTest extends TestCase
     }
 
     /**
-     * Tests JSON serialization with only ID.
+     * Tests array transformation with only ID.
      *
      * @return void
      */
-    public function testJsonSerializeOnlyId(): void
+    public function testToArrayOnlyId(): void
     {
         $functionCall = new FunctionCall('func_456', null);
-        $json = $functionCall->jsonSerialize();
+        $json = $functionCall->toArray();
         
         $this->assertIsArray($json);
         $this->assertEquals('func_456', $json['id']);
@@ -195,14 +195,14 @@ class FunctionCallTest extends TestCase
     }
 
     /**
-     * Tests JSON serialization with only name.
+     * Tests array transformation with only name.
      *
      * @return void
      */
-    public function testJsonSerializeOnlyName(): void
+    public function testToArrayOnlyName(): void
     {
         $functionCall = new FunctionCall(null, 'search');
-        $json = $functionCall->jsonSerialize();
+        $json = $functionCall->toArray();
         
         $this->assertIsArray($json);
         $this->assertEquals('search', $json['name']);
@@ -215,7 +215,7 @@ class FunctionCallTest extends TestCase
      *
      * @return void
      */
-    public function testFromJsonAllFields(): void
+    public function testFromArrayAllFields(): void
     {
         $json = [
             'id' => 'func_789',
@@ -223,7 +223,7 @@ class FunctionCallTest extends TestCase
             'args' => ['input' => 'data', 'format' => 'json']
         ];
         
-        $functionCall = FunctionCall::fromJson($json);
+        $functionCall = FunctionCall::fromArray($json);
         
         $this->assertInstanceOf(FunctionCall::class, $functionCall);
         $this->assertEquals('func_789', $functionCall->getId());
@@ -236,11 +236,11 @@ class FunctionCallTest extends TestCase
      *
      * @return void
      */
-    public function testFromJsonMinimalFields(): void
+    public function testFromArrayMinimalFields(): void
     {
         $json = ['name' => 'minimal'];
         
-        $functionCall = FunctionCall::fromJson($json);
+        $functionCall = FunctionCall::fromArray($json);
         
         $this->assertInstanceOf(FunctionCall::class, $functionCall);
         $this->assertNull($functionCall->getId());
@@ -249,15 +249,15 @@ class FunctionCallTest extends TestCase
     }
 
     /**
-     * Tests round-trip JSON serialization.
+     * Tests round-trip array transformation.
      *
      * @return void
      */
-    public function testJsonRoundTrip(): void
+    public function testArrayRoundTrip(): void
     {
         $original = new FunctionCall('id_123', 'execute', ['param' => 'value', 'count' => 5]);
-        $json = $original->jsonSerialize();
-        $restored = FunctionCall::fromJson($json);
+        $json = $original->toArray();
+        $restored = FunctionCall::fromArray($json);
         
         $this->assertEquals($original->getId(), $restored->getId());
         $this->assertEquals($original->getName(), $restored->getName());
@@ -265,21 +265,18 @@ class FunctionCallTest extends TestCase
     }
 
     /**
-     * Tests FunctionCall implements WithJsonSerialization.
+     * Tests FunctionCall implements WithArrayTransformationInterface.
      *
      * @return void
      */
-    public function testImplementsWithJsonSerialization(): void
+    public function testImplementsWithArrayTransformationInterface(): void
     {
         $functionCall = new FunctionCall('id', 'name');
         
         $this->assertInstanceOf(
-            \WordPress\AiClient\Common\Contracts\WithJsonSerialization::class,
+            \WordPress\AiClient\Common\Contracts\WithArrayTransformationInterface::class,
             $functionCall
         );
-        $this->assertInstanceOf(
-            \JsonSerializable::class,
-            $functionCall
-        );
+        
     }
 }

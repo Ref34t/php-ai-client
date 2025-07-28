@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace WordPress\AiClient\Tools\DTO;
 
 use WordPress\AiClient\Common\Contracts\WithJsonSchemaInterface;
-use WordPress\AiClient\Common\Contracts\WithJsonSerialization;
+use WordPress\AiClient\Common\Contracts\WithArrayTransformationInterface;
 
 /**
  * Represents web search configuration for AI models.
@@ -15,11 +15,11 @@ use WordPress\AiClient\Common\Contracts\WithJsonSerialization;
  *
  * @since n.e.x.t
  *
- * @phpstan-type WebSearchJsonShape array{allowedDomains?: string[], disallowedDomains?: string[]}
+ * @phpstan-type WebSearchArrayShape array{allowedDomains?: string[], disallowedDomains?: string[]}
  *
- * @implements WithJsonSerialization<WebSearchJsonShape>
+ * @implements WithArrayTransformationInterface<WebSearchArrayShape>
  */
-final class WebSearch implements WithJsonSchemaInterface, WithJsonSerialization
+final class WebSearch implements WithJsonSchemaInterface, WithArrayTransformationInterface
 {
     /**
      * @var string[] List of domains that are allowed for web search.
@@ -103,9 +103,9 @@ final class WebSearch implements WithJsonSchemaInterface, WithJsonSerialization
      *
      * @since n.e.x.t
      *
-     * @return WebSearchJsonShape
+     * @return WebSearchArrayShape
      */
-    public function jsonSerialize(): array
+    public function toArray(): array
     {
         return [
             'allowedDomains' => $this->allowedDomains,
@@ -118,10 +118,10 @@ final class WebSearch implements WithJsonSchemaInterface, WithJsonSerialization
      *
      * @since n.e.x.t
      */
-    public static function fromJson(array $json): WebSearch
+    public static function fromArray(array $array): WebSearch
     {
-        $allowedDomains = $json['allowedDomains'] ?? [];
-        $disallowedDomains = $json['disallowedDomains'] ?? [];
+        $allowedDomains = $array['allowedDomains'] ?? [];
+        $disallowedDomains = $array['disallowedDomains'] ?? [];
 
         return new self(
             $allowedDomains,

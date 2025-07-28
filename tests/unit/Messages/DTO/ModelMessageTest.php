@@ -10,7 +10,7 @@ use WordPress\AiClient\Messages\DTO\MessagePart;
 use WordPress\AiClient\Messages\DTO\ModelMessage;
 use WordPress\AiClient\Messages\Enums\MessagePartTypeEnum;
 use WordPress\AiClient\Messages\Enums\MessageRoleEnum;
-use WordPress\AiClient\Tests\traits\JsonSerializationTestTrait;
+use WordPress\AiClient\Tests\traits\ArrayTransformationTestTrait;
 use WordPress\AiClient\Tools\DTO\FunctionCall;
 use WordPress\AiClient\Tools\DTO\FunctionResponse;
 
@@ -19,7 +19,7 @@ use WordPress\AiClient\Tools\DTO\FunctionResponse;
  */
 class ModelMessageTest extends TestCase
 {
-    use JsonSerializationTestTrait;
+    use ArrayTransformationTestTrait;
 
     /**
      * Tests creating ModelMessage automatically sets MODEL role.
@@ -123,20 +123,20 @@ class ModelMessageTest extends TestCase
     }
 
     /**
-     * Tests JSON serialization.
+     * Tests array transformation.
      *
      * @return void
      */
-    public function testJsonSerialize(): void
+    public function testToArray(): void
     {
         $message = new ModelMessage([
             new MessagePart('I can help you with that.'),
             new MessagePart('Here is the solution:')
         ]);
         
-        $json = $this->assertJsonSerializeReturnsArray($message);
+        $json = $this->assertToArrayReturnsArray($message);
         
-        $this->assertJsonHasKeys($json, ['role', 'parts']);
+        $this->assertArrayHasKeys($json, ['role', 'parts']);
         $this->assertEquals(MessageRoleEnum::model()->value, $json['role']);
         $this->assertCount(2, $json['parts']);
         $this->assertEquals('I can help you with that.', $json['parts'][0]['text']);
@@ -148,7 +148,7 @@ class ModelMessageTest extends TestCase
      *
      * @return void
      */
-    public function testFromJson(): void
+    public function testFromArray(): void
     {
         $json = [
             'role' => MessageRoleEnum::model()->value,
@@ -158,7 +158,7 @@ class ModelMessageTest extends TestCase
             ]
         ];
         
-        $message = ModelMessage::fromJson($json);
+        $message = ModelMessage::fromArray($json);
         
         $this->assertInstanceOf(ModelMessage::class, $message);
         $this->assertEquals(MessageRoleEnum::model(), $message->getRole());
@@ -168,13 +168,13 @@ class ModelMessageTest extends TestCase
     }
 
     /**
-     * Tests round-trip JSON serialization with function call.
+     * Tests round-trip array transformation with function call.
      *
      * @return void
      */
-    public function testJsonRoundTripWithFunctionCall(): void
+    public function testArrayRoundTripWithFunctionCall(): void
     {
-        $this->assertJsonRoundTrip(
+        $this->assertArrayRoundTrip(
             new ModelMessage([
                 new MessagePart('I\'ll search for that information.'),
                 new MessagePart(new FunctionCall('search_123', 'webSearch', ['query' => 'PHP 8 features']))
@@ -199,13 +199,13 @@ class ModelMessageTest extends TestCase
     }
 
     /**
-     * Tests ModelMessage implements WithJsonSerialization.
+     * Tests ModelMessage implements WithArrayTransformationInterface.
      *
      * @return void
      */
-    public function testImplementsWithJsonSerialization(): void
+    public function testImplementsWithArrayTransformationInterface(): void
     {
         $message = new ModelMessage([new MessagePart('test')]);
-        $this->assertImplementsJsonSerialization($message);
+        $this->assertImplementsArrayTransformation($message);
     }
 }

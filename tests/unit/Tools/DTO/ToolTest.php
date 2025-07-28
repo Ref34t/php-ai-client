@@ -6,7 +6,7 @@ namespace WordPress\AiClient\Tests\unit\Tools\DTO;
 
 use PHPUnit\Framework\TestCase;
 use WordPress\AiClient\Providers\Enums\ToolTypeEnum;
-use WordPress\AiClient\Tests\traits\JsonSerializationTestTrait;
+use WordPress\AiClient\Tests\traits\ArrayTransformationTestTrait;
 use WordPress\AiClient\Tools\DTO\FunctionDeclaration;
 use WordPress\AiClient\Tools\DTO\Tool;
 use WordPress\AiClient\Tools\DTO\WebSearch;
@@ -16,7 +16,7 @@ use WordPress\AiClient\Tools\DTO\WebSearch;
  */
 class ToolTest extends TestCase
 {
-    use JsonSerializationTestTrait;
+    use ArrayTransformationTestTrait;
     /**
      * Tests creating tool with function declarations.
      *
@@ -299,11 +299,11 @@ class ToolTest extends TestCase
     }
 
     /**
-     * Tests JSON serialization with function declarations.
+     * Tests array transformation with function declarations.
      *
      * @return void
      */
-    public function testJsonSerializeWithFunctionDeclarations(): void
+    public function testToArrayWithFunctionDeclarations(): void
     {
         $functions = [
             new FunctionDeclaration('func1', 'First function', ['param1' => ['type' => 'string']]),
@@ -311,9 +311,9 @@ class ToolTest extends TestCase
         ];
         
         $tool = new Tool($functions);
-        $json = $this->assertJsonSerializeReturnsArray($tool);
+        $json = $this->assertToArrayReturnsArray($tool);
         
-        $this->assertJsonHasKeys($json, ['type', 'functionDeclarations']);
+        $this->assertArrayHasKeys($json, ['type', 'functionDeclarations']);
         $this->assertEquals(ToolTypeEnum::functionDeclarations()->value, $json['type']);
         $this->assertIsArray($json['functionDeclarations']);
         $this->assertCount(2, $json['functionDeclarations']);
@@ -322,11 +322,11 @@ class ToolTest extends TestCase
     }
 
     /**
-     * Tests JSON serialization with web search.
+     * Tests array transformation with web search.
      *
      * @return void
      */
-    public function testJsonSerializeWithWebSearch(): void
+    public function testToArrayWithWebSearch(): void
     {
         $webSearch = new WebSearch(
             ['allowed1.com', 'allowed2.com'],
@@ -334,9 +334,9 @@ class ToolTest extends TestCase
         );
         
         $tool = new Tool($webSearch);
-        $json = $this->assertJsonSerializeReturnsArray($tool);
+        $json = $this->assertToArrayReturnsArray($tool);
         
-        $this->assertJsonHasKeys($json, ['type', 'webSearch']);
+        $this->assertArrayHasKeys($json, ['type', 'webSearch']);
         $this->assertEquals(ToolTypeEnum::webSearch()->value, $json['type']);
         $this->assertIsArray($json['webSearch']);
         $this->assertArrayHasKey('allowedDomains', $json['webSearch']);
@@ -348,7 +348,7 @@ class ToolTest extends TestCase
      *
      * @return void
      */
-    public function testFromJsonWithFunctionDeclarations(): void
+    public function testFromArrayWithFunctionDeclarations(): void
     {
         $json = [
             'type' => ToolTypeEnum::functionDeclarations()->value,
@@ -361,7 +361,7 @@ class ToolTest extends TestCase
             ]
         ];
         
-        $tool = Tool::fromJson($json);
+        $tool = Tool::fromArray($json);
         
         $this->assertInstanceOf(Tool::class, $tool);
         $this->assertEquals(ToolTypeEnum::functionDeclarations(), $tool->getType());
@@ -375,7 +375,7 @@ class ToolTest extends TestCase
      *
      * @return void
      */
-    public function testFromJsonWithWebSearch(): void
+    public function testFromArrayWithWebSearch(): void
     {
         $json = [
             'type' => ToolTypeEnum::webSearch()->value,
@@ -385,7 +385,7 @@ class ToolTest extends TestCase
             ]
         ];
         
-        $tool = Tool::fromJson($json);
+        $tool = Tool::fromArray($json);
         
         $this->assertInstanceOf(Tool::class, $tool);
         $this->assertEquals(ToolTypeEnum::webSearch(), $tool->getType());
@@ -396,13 +396,13 @@ class ToolTest extends TestCase
     }
 
     /**
-     * Tests round-trip JSON serialization with function declarations.
+     * Tests round-trip array transformation with function declarations.
      *
      * @return void
      */
-    public function testJsonRoundTripWithFunctionDeclarations(): void
+    public function testArrayRoundTripWithFunctionDeclarations(): void
     {
-        $this->assertJsonRoundTrip(
+        $this->assertArrayRoundTrip(
             new Tool([
                 new FunctionDeclaration('calculate', 'Performs calculations', ['expr' => ['type' => 'string']]),
                 new FunctionDeclaration('validate', 'Validates input', ['data' => ['type' => 'object']])
@@ -424,13 +424,13 @@ class ToolTest extends TestCase
     }
 
     /**
-     * Tests round-trip JSON serialization with web search.
+     * Tests round-trip array transformation with web search.
      *
      * @return void
      */
-    public function testJsonRoundTripWithWebSearch(): void
+    public function testArrayRoundTripWithWebSearch(): void
     {
-        $this->assertJsonRoundTrip(
+        $this->assertArrayRoundTrip(
             new Tool(new WebSearch(['docs.example.com'], ['ads.example.com'])),
             function ($original, $restored) {
                 $this->assertEquals($original->getType()->value, $restored->getType()->value);
@@ -447,13 +447,13 @@ class ToolTest extends TestCase
     }
 
     /**
-     * Tests Tool implements WithJsonSerialization.
+     * Tests Tool implements WithArrayTransformationInterface.
      *
      * @return void
      */
-    public function testImplementsWithJsonSerialization(): void
+    public function testImplementsWithArrayTransformationInterface(): void
     {
         $tool = new Tool([]);
-        $this->assertImplementsJsonSerialization($tool);
+        $this->assertImplementsArrayTransformation($tool);
     }
 }

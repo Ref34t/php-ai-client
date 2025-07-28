@@ -10,14 +10,14 @@ use WordPress\AiClient\Messages\DTO\MessagePart;
 use WordPress\AiClient\Messages\DTO\UserMessage;
 use WordPress\AiClient\Messages\Enums\MessagePartTypeEnum;
 use WordPress\AiClient\Messages\Enums\MessageRoleEnum;
-use WordPress\AiClient\Tests\traits\JsonSerializationTestTrait;
+use WordPress\AiClient\Tests\traits\ArrayTransformationTestTrait;
 
 /**
  * @covers \WordPress\AiClient\Messages\DTO\UserMessage
  */
 class UserMessageTest extends TestCase
 {
-    use JsonSerializationTestTrait;
+    use ArrayTransformationTestTrait;
 
     /**
      * Tests creating UserMessage automatically sets USER role.
@@ -229,20 +229,20 @@ class UserMessageTest extends TestCase
     }
 
     /**
-     * Tests JSON serialization.
+     * Tests array transformation.
      *
      * @return void
      */
-    public function testJsonSerialize(): void
+    public function testToArray(): void
     {
         $message = new UserMessage([
             new MessagePart('Hello, I need help'),
             new MessagePart('Can you assist?')
         ]);
         
-        $json = $this->assertJsonSerializeReturnsArray($message);
+        $json = $this->assertToArrayReturnsArray($message);
         
-        $this->assertJsonHasKeys($json, ['role', 'parts']);
+        $this->assertArrayHasKeys($json, ['role', 'parts']);
         $this->assertEquals(MessageRoleEnum::user()->value, $json['role']);
         $this->assertCount(2, $json['parts']);
         $this->assertEquals('Hello, I need help', $json['parts'][0]['text']);
@@ -254,7 +254,7 @@ class UserMessageTest extends TestCase
      *
      * @return void
      */
-    public function testFromJson(): void
+    public function testFromArray(): void
     {
         $json = [
             'role' => MessageRoleEnum::user()->value,
@@ -264,7 +264,7 @@ class UserMessageTest extends TestCase
             ]
         ];
         
-        $message = UserMessage::fromJson($json);
+        $message = UserMessage::fromArray($json);
         
         $this->assertInstanceOf(UserMessage::class, $message);
         $this->assertEquals(MessageRoleEnum::user(), $message->getRole());
@@ -274,13 +274,13 @@ class UserMessageTest extends TestCase
     }
 
     /**
-     * Tests round-trip JSON serialization.
+     * Tests round-trip array transformation.
      *
      * @return void
      */
-    public function testJsonRoundTrip(): void
+    public function testArrayRoundTrip(): void
     {
-        $this->assertJsonRoundTrip(
+        $this->assertArrayRoundTrip(
             new UserMessage([
                 new MessagePart('Test message'),
                 new MessagePart(new File('https://example.com/image.jpg', 'image/jpeg'))
@@ -301,13 +301,13 @@ class UserMessageTest extends TestCase
     }
 
     /**
-     * Tests UserMessage implements WithJsonSerialization.
+     * Tests UserMessage implements WithArrayTransformationInterface.
      *
      * @return void
      */
-    public function testImplementsWithJsonSerialization(): void
+    public function testImplementsWithArrayTransformationInterface(): void
     {
         $message = new UserMessage([new MessagePart('test')]);
-        $this->assertImplementsJsonSerialization($message);
+        $this->assertImplementsArrayTransformation($message);
     }
 }

@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace WordPress\AiClient\Tools\DTO;
 
 use WordPress\AiClient\Common\Contracts\WithJsonSchemaInterface;
-use WordPress\AiClient\Common\Contracts\WithJsonSerialization;
+use WordPress\AiClient\Common\Contracts\WithArrayTransformationInterface;
 use WordPress\AiClient\Providers\Enums\ToolTypeEnum;
 
 /**
@@ -16,18 +16,18 @@ use WordPress\AiClient\Providers\Enums\ToolTypeEnum;
  *
  * @since n.e.x.t
  *
- * @phpstan-import-type FunctionDeclarationJsonShape from FunctionDeclaration
- * @phpstan-import-type WebSearchJsonShape from WebSearch
+ * @phpstan-import-type FunctionDeclarationArrayShape from FunctionDeclaration
+ * @phpstan-import-type WebSearchArrayShape from WebSearch
  *
- * @phpstan-type ToolJsonShape array{
+ * @phpstan-type ToolArrayShape array{
  *     type: string,
- *     functionDeclarations?: array<FunctionDeclarationJsonShape>,
- *     webSearch?: WebSearchJsonShape
+ *     functionDeclarations?: array<FunctionDeclarationArrayShape>,
+ *     webSearch?: WebSearchArrayShape
  * }
  *
- * @implements WithJsonSerialization<ToolJsonShape>
+ * @implements WithArrayTransformationInterface<ToolArrayShape>
  */
-final class Tool implements WithJsonSchemaInterface, WithJsonSerialization
+final class Tool implements WithJsonSchemaInterface, WithArrayTransformationInterface
 {
     /**
      * @var ToolTypeEnum The type of tool.
@@ -150,18 +150,18 @@ final class Tool implements WithJsonSchemaInterface, WithJsonSerialization
      *
      * @since n.e.x.t
      *
-     * @return ToolJsonShape
+     * @return ToolArrayShape
      */
-    public function jsonSerialize(): array
+    public function toArray(): array
     {
         $data = ['type' => $this->type->value];
 
         if ($this->type->isFunctionDeclarations() && $this->functionDeclarations !== null) {
             $data['functionDeclarations'] = array_map(function (FunctionDeclaration $declaration) {
-                return $declaration->jsonSerialize();
+                return $declaration->toArray();
             }, $this->functionDeclarations);
         } elseif ($this->type->isWebSearch() && $this->webSearch !== null) {
-            $data['webSearch'] = $this->webSearch->jsonSerialize();
+            $data['webSearch'] = $this->webSearch->toArray();
         }
 
         return $data;
@@ -172,27 +172,27 @@ final class Tool implements WithJsonSchemaInterface, WithJsonSerialization
      *
      * @since n.e.x.t
      */
-    public static function fromJson(array $json): Tool
+    public static function fromArray(array $array): Tool
     {
-        $type = ToolTypeEnum::from($json['type']);
+        $type = ToolTypeEnum::from($array['type']);
 
         if ($type->isFunctionDeclarations()) {
-            if (!isset($json['functionDeclarations'])) {
+            if (!isset($array['functionDeclarations'])) {
                 throw new \InvalidArgumentException('Function declarations tool requires functionDeclarations field.');
             }
-            $declarationsData = $json['functionDeclarations'];
+            $declarationsData = $array['functionDeclarations'];
             $declarations = array_map(function (array $declarationData) {
-                return FunctionDeclaration::fromJson($declarationData);
+                return FunctionDeclaration::fromArray($declarationData);
             }, $declarationsData);
             return new self($declarations);
         } elseif ($type->isWebSearch()) {
-            if (!isset($json['webSearch'])) {
+            if (!isset($array['webSearch'])) {
                 throw new \InvalidArgumentException('Web search tool requires webSearch field.');
             }
-            $webSearchData = $json['webSearch'];
-            return new self(WebSearch::fromJson($webSearchData));
+            $webSearchData = $array['webSearch'];
+            return new self(WebSearch::fromArray($webSearchData));
         }
 
-        throw new \InvalidArgumentException(sprintf('Unknown tool type: %s', $json['type']));
+        throw new \InvalidArgumentException(sprintf('Unknown tool type: %s', $array['type']));
     }
 }

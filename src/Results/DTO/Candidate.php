@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace WordPress\AiClient\Results\DTO;
 
 use WordPress\AiClient\Common\Contracts\WithJsonSchemaInterface;
-use WordPress\AiClient\Common\Contracts\WithJsonSerialization;
+use WordPress\AiClient\Common\Contracts\WithArrayTransformationInterface;
 use WordPress\AiClient\Messages\DTO\Message;
 use WordPress\AiClient\Results\Enums\FinishReasonEnum;
 
@@ -17,13 +17,13 @@ use WordPress\AiClient\Results\Enums\FinishReasonEnum;
  *
  * @since n.e.x.t
  *
- * @phpstan-import-type MessageJsonShape from Message
+ * @phpstan-import-type MessageArrayShape from Message
  *
- * @phpstan-type CandidateJsonShape array{message: MessageJsonShape, finishReason: string, tokenCount: int|string}
+ * @phpstan-type CandidateArrayShape array{message: MessageArrayShape, finishReason: string, tokenCount: int|string}
  *
- * @implements WithJsonSerialization<CandidateJsonShape>
+ * @implements WithArrayTransformationInterface<CandidateArrayShape>
  */
-final class Candidate implements WithJsonSchemaInterface, WithJsonSerialization
+final class Candidate implements WithJsonSchemaInterface, WithArrayTransformationInterface
 {
     /**
      * @var Message The generated message.
@@ -128,12 +128,12 @@ final class Candidate implements WithJsonSchemaInterface, WithJsonSerialization
      *
      * @since n.e.x.t
      *
-     * @return CandidateJsonShape
+     * @return CandidateArrayShape
      */
-    public function jsonSerialize(): array
+    public function toArray(): array
     {
         return [
-            'message' => $this->message->jsonSerialize(),
+            'message' => $this->message->toArray(),
             'finishReason' => $this->finishReason->value,
             'tokenCount' => $this->tokenCount,
         ];
@@ -144,14 +144,14 @@ final class Candidate implements WithJsonSchemaInterface, WithJsonSerialization
      *
      * @since n.e.x.t
      */
-    public static function fromJson(array $json): Candidate
+    public static function fromArray(array $array): Candidate
     {
-        $messageData = $json['message'];
+        $messageData = $array['message'];
 
         return new self(
-            Message::fromJson($messageData),
-            FinishReasonEnum::from($json['finishReason']),
-            (int) $json['tokenCount']
+            Message::fromArray($messageData),
+            FinishReasonEnum::from($array['finishReason']),
+            (int) $array['tokenCount']
         );
     }
 }
