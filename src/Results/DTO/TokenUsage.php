@@ -15,9 +15,9 @@ use WordPress\AiClient\Common\AbstractDataValueObject;
  * @since n.e.x.t
  *
  * @phpstan-type TokenUsageArrayShape array{
- *     promptTokens: int|string,
- *     completionTokens: int|string,
- *     totalTokens: int|string
+ *     promptTokens: int,
+ *     completionTokens: int,
+ *     totalTokens: int
  * }
  *
  * @extends AbstractDataValueObject<TokenUsageArrayShape>
@@ -142,9 +142,9 @@ final class TokenUsage extends AbstractDataValueObject
     public static function fromArray(array $array): TokenUsage
     {
         return new self(
-            (int) $array['promptTokens'],
-            (int) $array['completionTokens'],
-            (int) $array['totalTokens']
+            $array['promptTokens'],
+            $array['completionTokens'],
+            $array['totalTokens']
         );
     }
 }
