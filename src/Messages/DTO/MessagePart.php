@@ -267,14 +267,13 @@ final class MessagePart extends AbstractDataValueObject
             }
             $functionCallData = $array['functionCall'];
             return new self(FunctionCall::fromArray($functionCallData));
-        } elseif ($type->isFunctionResponse()) {
+        } else {
+            // Function response is the only remaining option
             if (!isset($array['functionResponse'])) {
                 throw new \InvalidArgumentException('Function response message part requires functionResponse field.');
             }
             $functionResponseData = $array['functionResponse'];
             return new self(FunctionResponse::fromArray($functionResponseData));
         }
-
-        throw new \InvalidArgumentException(sprintf('Unknown message part type: %s', $array['type']));
     }
 }
