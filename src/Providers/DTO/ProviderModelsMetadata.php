@@ -123,6 +123,8 @@ class ProviderModelsMetadata extends AbstractDataValueObject
      */
     public static function fromArray(array $array): self
     {
+        static::validateFromArrayData($array, [self::KEY_PROVIDER, self::KEY_MODELS]);
+
         return new self(
             ProviderMetadata::fromArray($array[self::KEY_PROVIDER]),
             array_map(

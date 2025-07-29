@@ -8,10 +8,10 @@ use WordPress\AiClient\Common\AbstractDataValueObject;
 use WordPress\AiClient\Providers\Models\Enums\CapabilityEnum;
 
 /**
- * Represents requirements for selecting an AI model.
+ * Represents requirements that implementing code has for AI model selection.
  *
- * This class defines the capabilities and options that are required
- * when selecting a model for a specific task.
+ * This class defines the capabilities and options that a model must support
+ * in order to be considered suitable for the implementing code's needs.
  *
  * @since n.e.x.t
  *
@@ -30,12 +30,12 @@ class ModelRequirements extends AbstractDataValueObject
     public const KEY_REQUIRED_OPTIONS = 'requiredOptions';
 
     /**
-     * @var CapabilityEnum[] The required capabilities.
+     * @var CapabilityEnum[] The capabilities that the model must support.
      */
     protected array $requiredCapabilities;
 
     /**
-     * @var RequiredOption[] The required options.
+     * @var RequiredOption[] The options that the model must support with specific values.
      */
     protected array $requiredOptions;
 
@@ -44,8 +44,8 @@ class ModelRequirements extends AbstractDataValueObject
      *
      * @since n.e.x.t
      *
-     * @param CapabilityEnum[] $requiredCapabilities The required capabilities.
-     * @param RequiredOption[] $requiredOptions The required options.
+     * @param CapabilityEnum[] $requiredCapabilities The capabilities that the model must support.
+     * @param RequiredOption[] $requiredOptions The options that the model must support with specific values.
      */
     public function __construct(array $requiredCapabilities, array $requiredOptions)
     {
@@ -54,7 +54,7 @@ class ModelRequirements extends AbstractDataValueObject
     }
 
     /**
-     * Gets the required capabilities.
+     * Gets the capabilities that the model must support.
      *
      * @since n.e.x.t
      *
@@ -66,7 +66,7 @@ class ModelRequirements extends AbstractDataValueObject
     }
 
     /**
-     * Gets the required options.
+     * Gets the options that the model must support with specific values.
      *
      * @since n.e.x.t
      *
@@ -93,12 +93,12 @@ class ModelRequirements extends AbstractDataValueObject
                         'type' => 'string',
                         'enum' => CapabilityEnum::getValues(),
                     ],
-                    'description' => 'The required capabilities.',
+                    'description' => 'The capabilities that the model must support.',
                 ],
                 self::KEY_REQUIRED_OPTIONS => [
                     'type' => 'array',
                     'items' => RequiredOption::getJsonSchema(),
-                    'description' => 'The required options.',
+                    'description' => 'The options that the model must support with specific values.',
                 ],
             ],
             'required' => [self::KEY_REQUIRED_CAPABILITIES, self::KEY_REQUIRED_OPTIONS],
@@ -133,6 +133,8 @@ class ModelRequirements extends AbstractDataValueObject
      */
     public static function fromArray(array $array): self
     {
+        static::validateFromArrayData($array, [self::KEY_REQUIRED_CAPABILITIES, self::KEY_REQUIRED_OPTIONS]);
+
         return new self(
             array_map(
                 static fn(string $capability): CapabilityEnum => CapabilityEnum::from($capability),

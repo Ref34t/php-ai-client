@@ -142,6 +142,8 @@ class SupportedOption extends AbstractDataValueObject
      */
     public static function fromArray(array $array): self
     {
+        static::validateFromArrayData($array, [self::KEY_NAME, self::KEY_SUPPORTED_VALUES]);
+
         return new self(
             $array[self::KEY_NAME],
             $array[self::KEY_SUPPORTED_VALUES]

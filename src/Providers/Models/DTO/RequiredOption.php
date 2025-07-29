@@ -7,10 +7,10 @@ namespace WordPress\AiClient\Providers\Models\DTO;
 use WordPress\AiClient\Common\AbstractDataValueObject;
 
 /**
- * Represents a required configuration option for an AI model.
+ * Represents an option that the implementing code requires the model to support.
  *
- * This class defines an option that must be set when using a model,
- * including its name and the required value.
+ * This class defines an option that the model must support with a specific value
+ * for it to be considered suitable for the implementing code's requirements.
  *
  * @since n.e.x.t
  *
@@ -32,7 +32,7 @@ class RequiredOption extends AbstractDataValueObject
     protected string $name;
 
     /**
-     * @var mixed The required value.
+     * @var mixed The value that the model must support for this option.
      */
     protected $value;
 
@@ -42,7 +42,7 @@ class RequiredOption extends AbstractDataValueObject
      * @since n.e.x.t
      *
      * @param string $name The option name.
-     * @param mixed $value The required value.
+     * @param mixed $value The value that the model must support for this option.
      */
     public function __construct(string $name, $value)
     {
@@ -63,11 +63,11 @@ class RequiredOption extends AbstractDataValueObject
     }
 
     /**
-     * Gets the required value.
+     * Gets the value that the model must support for this option.
      *
      * @since n.e.x.t
      *
-     * @return mixed The required value.
+     * @return mixed The value that the model must support.
      */
     public function getValue()
     {
@@ -97,7 +97,7 @@ class RequiredOption extends AbstractDataValueObject
                         ['type' => 'array'],
                         ['type' => 'object'],
                     ],
-                    'description' => 'The required value.',
+                    'description' => 'The value that the model must support for this option.',
                 ],
             ],
             'required' => [self::KEY_NAME, self::KEY_VALUE],
@@ -126,6 +126,8 @@ class RequiredOption extends AbstractDataValueObject
      */
     public static function fromArray(array $array): self
     {
+        static::validateFromArrayData($array, [self::KEY_NAME, self::KEY_VALUE]);
+
         return new self(
             $array[self::KEY_NAME],
             $array[self::KEY_VALUE]

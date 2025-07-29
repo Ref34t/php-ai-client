@@ -185,6 +185,13 @@ class ModelMetadata extends AbstractDataValueObject
      */
     public static function fromArray(array $array): self
     {
+        static::validateFromArrayData($array, [
+            self::KEY_ID,
+            self::KEY_NAME,
+            self::KEY_SUPPORTED_CAPABILITIES,
+            self::KEY_SUPPORTED_OPTIONS,
+        ]);
+
         return new self(
             $array[self::KEY_ID],
             $array[self::KEY_NAME],
