@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace WordPress\AiClient\Files\DTO;
 
+use InvalidArgumentException;
+use RuntimeException;
 use WordPress\AiClient\Common\AbstractDataValueObject;
 use WordPress\AiClient\Files\Enums\FileTypeEnum;
 use WordPress\AiClient\Files\ValueObjects\MimeType;
@@ -406,7 +408,9 @@ final class File extends AbstractDataValueObject
         } elseif (!$this->fileType->isRemote() && $this->base64Data !== null) {
             $data['base64Data'] = $this->base64Data;
         } else {
-            throw new RuntimeException('File requires either url or base64Data. This should not be a possible condition.');
+            throw new RuntimeException(
+                'File requires either url or base64Data. This should not be a possible condition.'
+            );
         }
 
         return $data;
