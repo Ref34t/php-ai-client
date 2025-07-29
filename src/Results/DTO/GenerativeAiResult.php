@@ -31,8 +31,12 @@ use WordPress\AiClient\Results\Contracts\ResultInterface;
  *
  * @extends AbstractDataValueObject<GenerativeAiResultArrayShape>
  */
-final class GenerativeAiResult extends AbstractDataValueObject implements ResultInterface
+class GenerativeAiResult extends AbstractDataValueObject implements ResultInterface
 {
+    public const KEY_ID = 'id';
+    public const KEY_CANDIDATES = 'candidates';
+    public const KEY_TOKEN_USAGE = 'tokenUsage';
+    public const KEY_PROVIDER_METADATA = 'providerMetadata';
     /**
      * @var string Unique identifier for this result.
      */
@@ -372,24 +376,24 @@ final class GenerativeAiResult extends AbstractDataValueObject implements Result
         return [
             'type' => 'object',
             'properties' => [
-                'id' => [
+                self::KEY_ID => [
                     'type' => 'string',
                     'description' => 'Unique identifier for this result.',
                 ],
-                'candidates' => [
+                self::KEY_CANDIDATES => [
                     'type' => 'array',
                     'items' => Candidate::getJsonSchema(),
                     'minItems' => 1,
                     'description' => 'The generated candidates.',
                 ],
-                'tokenUsage' => TokenUsage::getJsonSchema(),
-                'providerMetadata' => [
+                self::KEY_TOKEN_USAGE => TokenUsage::getJsonSchema(),
+                self::KEY_PROVIDER_METADATA => [
                     'type' => 'object',
                     'additionalProperties' => true,
                     'description' => 'Provider-specific metadata.',
                 ],
             ],
-            'required' => ['id', 'candidates', 'tokenUsage'],
+            'required' => [self::KEY_ID, self::KEY_CANDIDATES, self::KEY_TOKEN_USAGE],
         ];
     }
 
@@ -403,10 +407,10 @@ final class GenerativeAiResult extends AbstractDataValueObject implements Result
     public function toArray(): array
     {
         return [
-            'id' => $this->id,
-            'candidates' => array_map(fn(Candidate $candidate) => $candidate->toArray(), $this->candidates),
-            'tokenUsage' => $this->tokenUsage->toArray(),
-            'providerMetadata' => $this->providerMetadata,
+            self::KEY_ID => $this->id,
+            self::KEY_CANDIDATES => array_map(fn(Candidate $candidate) => $candidate->toArray(), $this->candidates),
+            self::KEY_TOKEN_USAGE => $this->tokenUsage->toArray(),
+            self::KEY_PROVIDER_METADATA => $this->providerMetadata,
         ];
     }
 
@@ -415,17 +419,20 @@ final class GenerativeAiResult extends AbstractDataValueObject implements Result
      *
      * @since n.e.x.t
      */
-    public static function fromArray(array $array): GenerativeAiResult
+    public static function fromArray(array $array): self
     {
-        static::validateFromArrayData($array, ['id', 'candidates', 'tokenUsage']);
+        static::validateFromArrayData($array, [self::KEY_ID, self::KEY_CANDIDATES, self::KEY_TOKEN_USAGE]);
 
-        $candidates = array_map(fn(array $candidateData) => Candidate::fromArray($candidateData), $array['candidates']);
+        $candidates = array_map(
+            fn(array $candidateData) => Candidate::fromArray($candidateData),
+            $array[self::KEY_CANDIDATES]
+        );
 
         return new self(
-            $array['id'],
+            $array[self::KEY_ID],
             $candidates,
-            TokenUsage::fromArray($array['tokenUsage']),
-            $array['providerMetadata'] ?? []
+            TokenUsage::fromArray($array[self::KEY_TOKEN_USAGE]),
+            $array[self::KEY_PROVIDER_METADATA] ?? []
         );
     }
 }

@@ -23,8 +23,11 @@ use WordPress\AiClient\Results\Enums\FinishReasonEnum;
  *
  * @extends AbstractDataValueObject<CandidateArrayShape>
  */
-final class Candidate extends AbstractDataValueObject
+class Candidate extends AbstractDataValueObject
 {
+    public const KEY_MESSAGE = 'message';
+    public const KEY_FINISH_REASON = 'finishReason';
+    public const KEY_TOKEN_COUNT = 'tokenCount';
     /**
      * @var Message The generated message.
      */
@@ -108,18 +111,18 @@ final class Candidate extends AbstractDataValueObject
         return [
             'type' => 'object',
             'properties' => [
-                'message' => Message::getJsonSchema(),
-                'finishReason' => [
+                self::KEY_MESSAGE => Message::getJsonSchema(),
+                self::KEY_FINISH_REASON => [
                     'type' => 'string',
                     'enum' => FinishReasonEnum::getValues(),
                     'description' => 'The reason generation stopped.',
                 ],
-                'tokenCount' => [
+                self::KEY_TOKEN_COUNT => [
                     'type' => 'integer',
                     'description' => 'The number of tokens in this candidate.',
                 ],
             ],
-            'required' => ['message', 'finishReason', 'tokenCount'],
+            'required' => [self::KEY_MESSAGE, self::KEY_FINISH_REASON, self::KEY_TOKEN_COUNT],
         ];
     }
 
@@ -133,9 +136,9 @@ final class Candidate extends AbstractDataValueObject
     public function toArray(): array
     {
         return [
-            'message' => $this->message->toArray(),
-            'finishReason' => $this->finishReason->value,
-            'tokenCount' => $this->tokenCount,
+            self::KEY_MESSAGE => $this->message->toArray(),
+            self::KEY_FINISH_REASON => $this->finishReason->value,
+            self::KEY_TOKEN_COUNT => $this->tokenCount,
         ];
     }
 
@@ -144,16 +147,16 @@ final class Candidate extends AbstractDataValueObject
      *
      * @since n.e.x.t
      */
-    public static function fromArray(array $array): Candidate
+    public static function fromArray(array $array): self
     {
-        static::validateFromArrayData($array, ['message', 'finishReason', 'tokenCount']);
+        static::validateFromArrayData($array, [self::KEY_MESSAGE, self::KEY_FINISH_REASON, self::KEY_TOKEN_COUNT]);
 
-        $messageData = $array['message'];
+        $messageData = $array[self::KEY_MESSAGE];
 
         return new self(
             Message::fromArray($messageData),
-            FinishReasonEnum::from($array['finishReason']),
-            $array['tokenCount']
+            FinishReasonEnum::from($array[self::KEY_FINISH_REASON]),
+            $array[self::KEY_TOKEN_COUNT]
         );
     }
 }
