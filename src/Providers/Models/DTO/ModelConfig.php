@@ -111,16 +111,6 @@ final class ModelConfig extends AbstractDataValueObject
     protected ?array $customOptions = null;
 
     /**
-     * Constructor.
-     *
-     * @since n.e.x.t
-     */
-    public function __construct()
-    {
-        // All properties are optional and set via setters
-    }
-
-    /**
      * Sets the output modalities.
      *
      * @since n.e.x.t
