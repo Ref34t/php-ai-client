@@ -122,7 +122,7 @@ class Message extends AbstractDataValueObject
      *
      * @since n.e.x.t
      *
-     * @return UserMessage|ModelMessage|SystemMessage
+     * @return Message The specific message class based on the role.
      */
     final public static function fromArray(array $array): Message
     {
