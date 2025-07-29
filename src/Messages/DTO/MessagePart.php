@@ -260,8 +260,6 @@ class MessagePart extends AbstractDataValueObject
      */
     public static function fromArray(array $array): self
     {
-        static::validateFromArrayData($array, [self::KEY_TYPE]);
-
         // Check which properties are set to determine how to construct the MessagePart
         if (isset($array[self::KEY_TEXT])) {
             return new self($array[self::KEY_TEXT]);
