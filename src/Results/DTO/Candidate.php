@@ -146,6 +146,8 @@ final class Candidate extends AbstractDataValueObject
      */
     public static function fromArray(array $array): Candidate
     {
+        static::validateFromArrayData($array, ['message', 'finishReason', 'tokenCount']);
+
         $messageData = $array['message'];
 
         return new self(

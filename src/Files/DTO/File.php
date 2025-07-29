@@ -423,6 +423,8 @@ final class File extends AbstractDataValueObject
      */
     public static function fromArray(array $array): File
     {
+        static::validateFromArrayData($array, ['fileType']);
+
         // Check which properties are set to determine how to construct the File
         $mimeType = $array['mimeType'] ?? null;
 
