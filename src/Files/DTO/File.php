@@ -401,10 +401,12 @@ final class File extends AbstractDataValueObject
             'mimeType' => $this->getMimeType(),
         ];
 
-        if ($this->fileType->isRemote() && $this->url !== null) {
+        if ($this->url !== null) {
             $data['url'] = $this->url;
         } elseif (!$this->fileType->isRemote() && $this->base64Data !== null) {
             $data['base64Data'] = $this->base64Data;
+        } else {
+            throw new RuntimeException('File requires either url or base64Data. This should not be a possible condition.');
         }
 
         return $data;

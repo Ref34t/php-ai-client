@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace WordPress\AiClient\Messages\DTO;
 
+use InvalidArgumentException;
+use RuntimeException;
 use WordPress\AiClient\Common\AbstractDataValueObject;
 use WordPress\AiClient\Files\DTO\File;
 use WordPress\AiClient\Messages\Enums\MessagePartTypeEnum;
@@ -228,14 +230,16 @@ final class MessagePart extends AbstractDataValueObject
     {
         $data = ['type' => $this->type->value];
 
-        if ($this->type->isText() && $this->text !== null) {
+        if ($this->text !== null) {
             $data['text'] = $this->text;
-        } elseif ($this->type->isFile() && $this->file !== null) {
+        } elseif ($this->file !== null) {
             $data['file'] = $this->file->toArray();
-        } elseif ($this->type->isFunctionCall() && $this->functionCall !== null) {
+        } elseif ($this->functionCall !== null) {
             $data['functionCall'] = $this->functionCall->toArray();
-        } elseif ($this->type->isFunctionResponse() && $this->functionResponse !== null) {
+        } elseif ($this->functionResponse !== null) {
             $data['functionResponse'] = $this->functionResponse->toArray();
+        } else {
+            throw new RuntimeException('MessagePart requires one of: text, file, functionCall, or functionResponse. This should not be a possible condition.');
         }
 
         return $data;
