@@ -53,7 +53,7 @@ class ModelConfigTest extends TestCase
         $this->assertNull($config->getLogprobs());
         $this->assertNull($config->getTopLogprobs());
         $this->assertNull($config->getTools());
-        $this->assertNull($config->getCustomOptions());
+        $this->assertEquals([], $config->getCustomOptions());
     }
 
     /**
@@ -68,63 +68,63 @@ class ModelConfigTest extends TestCase
 
         // Test output modalities
         $modalities = [ModalityEnum::text(), ModalityEnum::image()];
-        $this->assertSame($config, $config->setOutputModalities($modalities));
+        $config->setOutputModalities($modalities);
         $this->assertEquals($modalities, $config->getOutputModalities());
 
         // Test system instruction
         $instruction = 'You are a helpful assistant.';
-        $this->assertSame($config, $config->setSystemInstruction($instruction));
+        $config->setSystemInstruction($instruction);
         $this->assertEquals($instruction, $config->getSystemInstruction());
 
         // Test candidate count
-        $this->assertSame($config, $config->setCandidateCount(3));
+        $config->setCandidateCount(3);
         $this->assertEquals(3, $config->getCandidateCount());
 
         // Test max tokens
-        $this->assertSame($config, $config->setMaxTokens(1000));
+        $config->setMaxTokens(1000);
         $this->assertEquals(1000, $config->getMaxTokens());
 
         // Test temperature
-        $this->assertSame($config, $config->setTemperature(0.7));
+        $config->setTemperature(0.7);
         $this->assertEquals(0.7, $config->getTemperature());
 
         // Test top-p
-        $this->assertSame($config, $config->setTopP(0.9));
+        $config->setTopP(0.9);
         $this->assertEquals(0.9, $config->getTopP());
 
         // Test top-k
-        $this->assertSame($config, $config->setTopK(40));
+        $config->setTopK(40);
         $this->assertEquals(40, $config->getTopK());
 
         // Test stop sequences
         $stopSequences = ['\n\n', 'END'];
-        $this->assertSame($config, $config->setStopSequences($stopSequences));
+        $config->setStopSequences($stopSequences);
         $this->assertEquals($stopSequences, $config->getStopSequences());
 
         // Test presence penalty
-        $this->assertSame($config, $config->setPresencePenalty(0.5));
+        $config->setPresencePenalty(0.5);
         $this->assertEquals(0.5, $config->getPresencePenalty());
 
         // Test frequency penalty
-        $this->assertSame($config, $config->setFrequencyPenalty(0.3));
+        $config->setFrequencyPenalty(0.3);
         $this->assertEquals(0.3, $config->getFrequencyPenalty());
 
         // Test logprobs
-        $this->assertSame($config, $config->setLogprobs(true));
+        $config->setLogprobs(true);
         $this->assertTrue($config->getLogprobs());
 
         // Test top logprobs
-        $this->assertSame($config, $config->setTopLogprobs(5));
+        $config->setTopLogprobs(5);
         $this->assertEquals(5, $config->getTopLogprobs());
 
         // Test tools
         $tools = [$tool];
-        $this->assertSame($config, $config->setTools($tools));
+        $config->setTools($tools);
         $this->assertEquals($tools, $config->getTools());
 
         // Test custom options
         $customOptions = ['custom_param' => 'value', 'another_param' => 123];
-        $this->assertSame($config, $config->setCustomOptions($customOptions));
+        $config->setCustomOptions($customOptions);
         $this->assertEquals($customOptions, $config->getCustomOptions());
     }
 
@@ -179,20 +179,20 @@ class ModelConfigTest extends TestCase
         $config = new ModelConfig();
         $tool = $this->createSampleTool();
 
-        $config->setOutputModalities([ModalityEnum::text(), ModalityEnum::audio()])
-            ->setSystemInstruction('Test instruction')
-            ->setCandidateCount(2)
-            ->setMaxTokens(500)
-            ->setTemperature(1.2)
-            ->setTopP(0.8)
-            ->setTopK(30)
-            ->setStopSequences(['STOP', 'END'])
-            ->setPresencePenalty(0.6)
-            ->setFrequencyPenalty(0.4)
-            ->setLogprobs(true)
-            ->setTopLogprobs(10)
-            ->setTools([$tool])
-            ->setCustomOptions(['key' => 'value']);
+        $config->setOutputModalities([ModalityEnum::text(), ModalityEnum::audio()]);
+        $config->setSystemInstruction('Test instruction');
+        $config->setCandidateCount(2);
+        $config->setMaxTokens(500);
+        $config->setTemperature(1.2);
+        $config->setTopP(0.8);
+        $config->setTopK(30);
+        $config->setStopSequences(['STOP', 'END']);
+        $config->setPresencePenalty(0.6);
+        $config->setFrequencyPenalty(0.4);
+        $config->setLogprobs(true);
+        $config->setTopLogprobs(10);
+        $config->setTools([$tool]);
+        $config->setCustomOptions(['key' => 'value']);
 
         $array = $config->toArray();
 
@@ -224,7 +224,9 @@ class ModelConfigTest extends TestCase
         $array = $config->toArray();
 
         $this->assertIsArray($array);
-        $this->assertEmpty($array);
+        $this->assertCount(1, $array);
+        $this->assertArrayHasKey('customOptions', $array);
+        $this->assertEquals([], $array['customOptions']);
     }
 
     /**
@@ -235,15 +237,16 @@ class ModelConfigTest extends TestCase
     public function testToArrayPartialProperties(): void
     {
         $config = new ModelConfig();
-        $config->setTemperature(0.5)
-            ->setMaxTokens(100);
+        $config->setTemperature(0.5);
+        $config->setMaxTokens(100);
 
         $array = $config->toArray();
 
         $this->assertIsArray($array);
-        $this->assertCount(2, $array);
+        $this->assertCount(3, $array);
         $this->assertEquals(0.5, $array['temperature']);
         $this->assertEquals(100, $array['maxTokens']);
+        $this->assertEquals([], $array['customOptions']);
         $this->assertArrayNotHasKey('systemInstruction', $array);
         $this->assertArrayNotHasKey('topP', $array);
     }
@@ -327,12 +330,12 @@ class ModelConfigTest extends TestCase
     public function testArrayRoundTrip(): void
     {
         $original = new ModelConfig();
-        $original->setSystemInstruction('Round trip test')
-            ->setTemperature(0.75)
-            ->setMaxTokens(1500)
-            ->setStopSequences(['END', 'STOP'])
-            ->setLogprobs(true)
-            ->setCustomOptions(['test' => 'value']);
+        $original->setSystemInstruction('Round trip test');
+        $original->setTemperature(0.75);
+        $original->setMaxTokens(1500);
+        $original->setStopSequences(['END', 'STOP']);
+        $original->setLogprobs(true);
+        $original->setCustomOptions(['test' => 'value']);
 
         $array = $original->toArray();
         $restored = ModelConfig::fromArray($array);
@@ -353,9 +356,9 @@ class ModelConfigTest extends TestCase
     public function testJsonSerialize(): void
     {
         $config = new ModelConfig();
-        $config->setTemperature(0.8)
-            ->setMaxTokens(1000)
-            ->setSystemInstruction('JSON test');
+        $config->setTemperature(0.8);
+        $config->setMaxTokens(1000);
+        $config->setSystemInstruction('JSON test');
 
         $json = json_encode($config);
         $decoded = json_decode($json, true);
@@ -377,13 +380,13 @@ class ModelConfigTest extends TestCase
         $config = new ModelConfig();
 
         // Test minimum values
-        $config->setTemperature(0.0)
-            ->setTopP(0.0)
-            ->setTopK(1)
-            ->setCandidateCount(1)
-            ->setMaxTokens(1)
-            ->setPresencePenalty(-2.0)
-            ->setFrequencyPenalty(-2.0);
+        $config->setTemperature(0.0);
+        $config->setTopP(0.0);
+        $config->setTopK(1);
+        $config->setCandidateCount(1);
+        $config->setMaxTokens(1);
+        $config->setPresencePenalty(-2.0);
+        $config->setFrequencyPenalty(-2.0);
 
         $array = $config->toArray();
         $this->assertEquals(0.0, $array['temperature']);
@@ -391,13 +394,13 @@ class ModelConfigTest extends TestCase
         $this->assertEquals(1, $array['topK']);
 
         // Test maximum values
-        $config->setTemperature(2.0)
-            ->setTopP(1.0)
-            ->setTopK(999999)
-            ->setCandidateCount(100)
-            ->setMaxTokens(999999)
-            ->setPresencePenalty(2.0)
-            ->setFrequencyPenalty(2.0);
+        $config->setTemperature(2.0);
+        $config->setTopP(1.0);
+        $config->setTopK(999999);
+        $config->setCandidateCount(100);
+        $config->setMaxTokens(999999);
+        $config->setPresencePenalty(2.0);
+        $config->setFrequencyPenalty(2.0);
 
         $array = $config->toArray();
         $this->assertEquals(2.0, $array['temperature']);
@@ -406,26 +409,27 @@ class ModelConfigTest extends TestCase
     }
 
     /**
-     * Tests fluent interface method chaining.
+     * Tests that setters properly set values.
      *
      * @return void
      */
-    public function testFluentInterface(): void
+    public function testSettersProperlySetValues(): void
     {
         $config = new ModelConfig();
 
-        $result = $config
-            ->setSystemInstruction('test')
-            ->setTemperature(0.5)
-            ->setMaxTokens(100)
-            ->setTopP(0.9)
-            ->setTopK(40)
-            ->setLogprobs(true);
+        $config->setSystemInstruction('test');
+        $config->setTemperature(0.5);
+        $config->setMaxTokens(100);
+        $config->setTopP(0.9);
+        $config->setTopK(40);
+        $config->setLogprobs(true);
 
-        $this->assertSame($config, $result);
         $this->assertEquals('test', $config->getSystemInstruction());
         $this->assertEquals(0.5, $config->getTemperature());
         $this->assertEquals(100, $config->getMaxTokens());
+        $this->assertEquals(0.9, $config->getTopP());
+        $this->assertEquals(40, $config->getTopK());
+        $this->assertTrue($config->getLogprobs());
     }
 
     /**
@@ -478,4 +482,3 @@ class ModelConfigTest extends TestCase
         );
     }
 }
-
