@@ -106,9 +106,9 @@ final class ModelConfig extends AbstractDataValueObject
     protected ?array $tools = null;
 
     /**
-     * @var array<string, mixed>|null Custom provider-specific options.
+     * @var array<string, mixed> Custom provider-specific options.
      */
-    protected ?array $customOptions = null;
+    protected array $customOptions = [];
 
     /**
      * Sets the output modalities.
@@ -116,12 +116,10 @@ final class ModelConfig extends AbstractDataValueObject
      * @since n.e.x.t
      *
      * @param ModalityEnum[] $outputModalities The output modalities.
-     * @return self For method chaining.
      */
-    public function setOutputModalities(array $outputModalities): self
+    public function setOutputModalities(array $outputModalities): void
     {
         $this->outputModalities = $outputModalities;
-        return $this;
     }
 
     /**
@@ -142,12 +140,10 @@ final class ModelConfig extends AbstractDataValueObject
      * @since n.e.x.t
      *
      * @param string $systemInstruction The system instruction.
-     * @return self For method chaining.
      */
-    public function setSystemInstruction(string $systemInstruction): self
+    public function setSystemInstruction(string $systemInstruction): void
     {
         $this->systemInstruction = $systemInstruction;
-        return $this;
     }
 
     /**
@@ -168,12 +164,10 @@ final class ModelConfig extends AbstractDataValueObject
      * @since n.e.x.t
      *
      * @param int $candidateCount The candidate count.
-     * @return self For method chaining.
      */
-    public function setCandidateCount(int $candidateCount): self
+    public function setCandidateCount(int $candidateCount): void
     {
         $this->candidateCount = $candidateCount;
-        return $this;
     }
 
     /**
@@ -194,12 +188,10 @@ final class ModelConfig extends AbstractDataValueObject
      * @since n.e.x.t
      *
      * @param int $maxTokens The maximum tokens.
-     * @return self For method chaining.
      */
-    public function setMaxTokens(int $maxTokens): self
+    public function setMaxTokens(int $maxTokens): void
     {
         $this->maxTokens = $maxTokens;
-        return $this;
     }
 
     /**
@@ -220,12 +212,10 @@ final class ModelConfig extends AbstractDataValueObject
      * @since n.e.x.t
      *
      * @param float $temperature The temperature.
-     * @return self For method chaining.
      */
-    public function setTemperature(float $temperature): self
+    public function setTemperature(float $temperature): void
     {
         $this->temperature = $temperature;
-        return $this;
     }
 
     /**
@@ -246,12 +236,10 @@ final class ModelConfig extends AbstractDataValueObject
      * @since n.e.x.t
      *
      * @param float $topP The top-p parameter.
-     * @return self For method chaining.
      */
-    public function setTopP(float $topP): self
+    public function setTopP(float $topP): void
     {
         $this->topP = $topP;
-        return $this;
     }
 
     /**
@@ -272,12 +260,10 @@ final class ModelConfig extends AbstractDataValueObject
      * @since n.e.x.t
      *
      * @param int $topK The top-k parameter.
-     * @return self For method chaining.
      */
-    public function setTopK(int $topK): self
+    public function setTopK(int $topK): void
     {
         $this->topK = $topK;
-        return $this;
     }
 
     /**
@@ -298,12 +284,10 @@ final class ModelConfig extends AbstractDataValueObject
      * @since n.e.x.t
      *
      * @param string[] $stopSequences The stop sequences.
-     * @return self For method chaining.
      */
-    public function setStopSequences(array $stopSequences): self
+    public function setStopSequences(array $stopSequences): void
     {
         $this->stopSequences = $stopSequences;
-        return $this;
     }
 
     /**
@@ -324,12 +308,10 @@ final class ModelConfig extends AbstractDataValueObject
      * @since n.e.x.t
      *
      * @param float $presencePenalty The presence penalty.
-     * @return self For method chaining.
      */
-    public function setPresencePenalty(float $presencePenalty): self
+    public function setPresencePenalty(float $presencePenalty): void
     {
         $this->presencePenalty = $presencePenalty;
-        return $this;
     }
 
     /**
@@ -350,12 +332,10 @@ final class ModelConfig extends AbstractDataValueObject
      * @since n.e.x.t
      *
      * @param float $frequencyPenalty The frequency penalty.
-     * @return self For method chaining.
      */
-    public function setFrequencyPenalty(float $frequencyPenalty): self
+    public function setFrequencyPenalty(float $frequencyPenalty): void
     {
         $this->frequencyPenalty = $frequencyPenalty;
-        return $this;
     }
 
     /**
@@ -376,12 +356,10 @@ final class ModelConfig extends AbstractDataValueObject
      * @since n.e.x.t
      *
      * @param bool $logprobs Whether to return log probabilities.
-     * @return self For method chaining.
      */
-    public function setLogprobs(bool $logprobs): self
+    public function setLogprobs(bool $logprobs): void
     {
         $this->logprobs = $logprobs;
-        return $this;
     }
 
     /**
@@ -402,12 +380,10 @@ final class ModelConfig extends AbstractDataValueObject
      * @since n.e.x.t
      *
      * @param int $topLogprobs The number of top log probabilities.
-     * @return self For method chaining.
      */
-    public function setTopLogprobs(int $topLogprobs): self
+    public function setTopLogprobs(int $topLogprobs): void
     {
         $this->topLogprobs = $topLogprobs;
-        return $this;
     }
 
     /**
@@ -428,12 +404,10 @@ final class ModelConfig extends AbstractDataValueObject
      * @since n.e.x.t
      *
      * @param Tool[] $tools The tools.
-     * @return self For method chaining.
      */
-    public function setTools(array $tools): self
+    public function setTools(array $tools): void
     {
         $this->tools = $tools;
-        return $this;
     }
 
     /**
@@ -454,12 +428,10 @@ final class ModelConfig extends AbstractDataValueObject
      * @since n.e.x.t
      *
      * @param array<string, mixed> $customOptions The custom options.
-     * @return self For method chaining.
      */
-    public function setCustomOptions(array $customOptions): self
+    public function setCustomOptions(array $customOptions): void
     {
         $this->customOptions = $customOptions;
-        return $this;
     }
 
     /**
@@ -467,9 +439,9 @@ final class ModelConfig extends AbstractDataValueObject
      *
      * @since n.e.x.t
      *
-     * @return array<string, mixed>|null The custom options.
+     * @return array<string, mixed> The custom options.
      */
-    public function getCustomOptions(): ?array
+    public function getCustomOptions(): array
     {
         return $this->customOptions;
     }
@@ -629,9 +601,7 @@ final class ModelConfig extends AbstractDataValueObject
             }, $this->tools));
         }
 
-        if ($this->customOptions !== null) {
-            $data['customOptions'] = $this->customOptions;
-        }
+        $data['customOptions'] = $this->customOptions;
 
         return $data;
     }
