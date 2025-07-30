@@ -60,7 +60,7 @@ class File extends AbstractDataValueObject
      *
      * @param string $file The file string (URL, base64 data, or local path).
      * @param string|null $mimeType The MIME type of the file (optional).
-     * @throws \InvalidArgumentException If the file format is invalid or MIME type cannot be determined.
+     * @throws InvalidArgumentException If the file format is invalid or MIME type cannot be determined.
      */
     public function __construct(string $file, ?string $mimeType = null)
     {
@@ -75,7 +75,7 @@ class File extends AbstractDataValueObject
      *
      * @param string $file The file string to process.
      * @param string|null $providedMimeType The explicitly provided MIME type.
-     * @throws \InvalidArgumentException If the file format is invalid or MIME type cannot be determined.
+     * @throws InvalidArgumentException If the file format is invalid or MIME type cannot be determined.
      */
     private function detectAndProcessFile(string $file, ?string $providedMimeType): void
     {
@@ -110,7 +110,7 @@ class File extends AbstractDataValueObject
         // Check if it's plain base64
         if (preg_match('/^[A-Za-z0-9+\/]*={0,2}$/', $file)) {
             if ($providedMimeType === null) {
-                throw new \InvalidArgumentException(
+                throw new InvalidArgumentException(
                     'MIME type is required when providing plain base64 data without data URI format.'
                 );
             }
@@ -120,7 +120,7 @@ class File extends AbstractDataValueObject
             return;
         }
 
-        throw new \InvalidArgumentException(
+        throw new InvalidArgumentException(
             'Invalid file provided. Expected URL, base64 data, or valid local file path.'
         );
     }
@@ -146,14 +146,14 @@ class File extends AbstractDataValueObject
      *
      * @param string $filePath The path to the local file.
      * @return string The base64-encoded file data.
-     * @throws \RuntimeException If the file cannot be read.
+     * @throws RuntimeException If the file cannot be read.
      */
     private function convertFileToBase64(string $filePath): string
     {
         $fileContent = @file_get_contents($filePath);
 
         if ($fileContent === false) {
-            throw new \RuntimeException(
+            throw new RuntimeException(
                 sprintf('Unable to read file: %s', $filePath)
             );
         }
@@ -294,7 +294,7 @@ class File extends AbstractDataValueObject
      * @param string|null $extractedMimeType The MIME type extracted from data URI.
      * @param string|null $pathOrUrl The file path or URL to extract extension from.
      * @return MimeType The determined MIME type.
-     * @throws \InvalidArgumentException If MIME type cannot be determined.
+     * @throws InvalidArgumentException If MIME type cannot be determined.
      */
     private function determineMimeType(
         ?string $providedMimeType,
@@ -326,14 +326,14 @@ class File extends AbstractDataValueObject
             if (!empty($extension)) {
                 try {
                     return MimeType::fromExtension($extension);
-                } catch (\InvalidArgumentException $e) {
+                } catch (InvalidArgumentException $e) {
                     // Extension not recognized, continue to error
                     unset($e);
                 }
             }
         }
 
-        throw new \InvalidArgumentException(
+        throw new InvalidArgumentException(
             'Unable to determine MIME type. Please provide it explicitly.'
         );
     }

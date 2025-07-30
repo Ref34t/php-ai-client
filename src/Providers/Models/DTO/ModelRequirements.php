@@ -1,0 +1,150 @@
+<?php
+
+declare(strict_types=1);
+
+namespace WordPress\AiClient\Providers\Models\DTO;
+
+use WordPress\AiClient\Common\AbstractDataValueObject;
+use WordPress\AiClient\Providers\Models\Enums\CapabilityEnum;
+
+/**
+ * Represents requirements that implementing code has for AI model selection.
+ *
+ * This class defines the capabilities and options that a model must support
+ * in order to be considered suitable for the implementing code's needs.
+ *
+ * @since n.e.x.t
+ *
+ * @phpstan-import-type RequiredOptionArrayShape from RequiredOption
+ *
+ * @phpstan-type ModelRequirementsArrayShape array{
+ *     requiredCapabilities: list<string>,
+ *     requiredOptions: list<RequiredOptionArrayShape>
+ * }
+ *
+ * @extends AbstractDataValueObject<ModelRequirementsArrayShape>
+ */
+class ModelRequirements extends AbstractDataValueObject
+{
+    public const KEY_REQUIRED_CAPABILITIES = 'requiredCapabilities';
+    public const KEY_REQUIRED_OPTIONS = 'requiredOptions';
+
+    /**
+     * @var CapabilityEnum[] The capabilities that the model must support.
+     */
+    protected array $requiredCapabilities;
+
+    /**
+     * @var RequiredOption[] The options that the model must support with specific values.
+     */
+    protected array $requiredOptions;
+
+    /**
+     * Constructor.
+     *
+     * @since n.e.x.t
+     *
+     * @param CapabilityEnum[] $requiredCapabilities The capabilities that the model must support.
+     * @param RequiredOption[] $requiredOptions The options that the model must support with specific values.
+     */
+    public function __construct(array $requiredCapabilities, array $requiredOptions)
+    {
+        $this->requiredCapabilities = $requiredCapabilities;
+        $this->requiredOptions = $requiredOptions;
+    }
+
+    /**
+     * Gets the capabilities that the model must support.
+     *
+     * @since n.e.x.t
+     *
+     * @return CapabilityEnum[] The required capabilities.
+     */
+    public function getRequiredCapabilities(): array
+    {
+        return $this->requiredCapabilities;
+    }
+
+    /**
+     * Gets the options that the model must support with specific values.
+     *
+     * @since n.e.x.t
+     *
+     * @return RequiredOption[] The required options.
+     */
+    public function getRequiredOptions(): array
+    {
+        return $this->requiredOptions;
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @since n.e.x.t
+     */
+    public static function getJsonSchema(): array
+    {
+        return [
+            'type' => 'object',
+            'properties' => [
+                self::KEY_REQUIRED_CAPABILITIES => [
+                    'type' => 'array',
+                    'items' => [
+                        'type' => 'string',
+                        'enum' => CapabilityEnum::getValues(),
+                    ],
+                    'description' => 'The capabilities that the model must support.',
+                ],
+                self::KEY_REQUIRED_OPTIONS => [
+                    'type' => 'array',
+                    'items' => RequiredOption::getJsonSchema(),
+                    'description' => 'The options that the model must support with specific values.',
+                ],
+            ],
+            'required' => [self::KEY_REQUIRED_CAPABILITIES, self::KEY_REQUIRED_OPTIONS],
+        ];
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @since n.e.x.t
+     *
+     * @return ModelRequirementsArrayShape
+     */
+    public function toArray(): array
+    {
+        /** @phpstan-ignore-next-line return.type (array_map doesn't guarantee list, validation will be added later) */
+        return [
+            self::KEY_REQUIRED_CAPABILITIES => array_map(
+                static fn(CapabilityEnum $capability): string => $capability->value,
+                $this->requiredCapabilities
+            ),
+            self::KEY_REQUIRED_OPTIONS => array_map(
+                static fn(RequiredOption $option): array => $option->toArray(),
+                $this->requiredOptions
+            ),
+        ];
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @since n.e.x.t
+     */
+    public static function fromArray(array $array): self
+    {
+        static::validateFromArrayData($array, [self::KEY_REQUIRED_CAPABILITIES, self::KEY_REQUIRED_OPTIONS]);
+
+        return new self(
+            array_map(
+                static fn(string $capability): CapabilityEnum => CapabilityEnum::from($capability),
+                $array[self::KEY_REQUIRED_CAPABILITIES]
+            ),
+            array_map(
+                static fn(array $optionData): RequiredOption => RequiredOption::fromArray($optionData),
+                $array[self::KEY_REQUIRED_OPTIONS]
+            )
+        );
+    }
+}

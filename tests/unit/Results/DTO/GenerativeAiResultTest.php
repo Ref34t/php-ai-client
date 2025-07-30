@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace WordPress\AiClient\Tests\unit\Results\DTO;
 
+use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
+use RuntimeException;
 use WordPress\AiClient\Files\DTO\File;
 use WordPress\AiClient\Messages\DTO\Message;
 use WordPress\AiClient\Messages\DTO\MessagePart;
@@ -113,7 +115,7 @@ class GenerativeAiResultTest extends TestCase
     {
         $tokenUsage = new TokenUsage(0, 0, 0);
         
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('At least one candidate must be provided');
         
         new GenerativeAiResult('result_empty', [], $tokenUsage);
@@ -162,7 +164,7 @@ class GenerativeAiResultTest extends TestCase
             $tokenUsage
         );
         
-        $this->expectException(\RuntimeException::class);
+        $this->expectException(RuntimeException::class);
         $this->expectExceptionMessage('No text content found in first candidate');
         
         $result->toText();
@@ -211,7 +213,7 @@ class GenerativeAiResultTest extends TestCase
             $tokenUsage
         );
         
-        $this->expectException(\RuntimeException::class);
+        $this->expectException(RuntimeException::class);
         $this->expectExceptionMessage('No file content found in first candidate');
         
         $result->toFile();
@@ -260,7 +262,7 @@ class GenerativeAiResultTest extends TestCase
             $tokenUsage
         );
         
-        $this->expectException(\RuntimeException::class);
+        $this->expectException(RuntimeException::class);
         $this->expectExceptionMessage('File is not an image. MIME type: application/pdf');
         
         $result->toImageFile();

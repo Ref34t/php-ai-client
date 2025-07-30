@@ -53,7 +53,7 @@ class Tool extends AbstractDataValueObject
      * @since n.e.x.t
      *
      * @param FunctionDeclaration[]|WebSearch $content The tool content.
-     * @throws \InvalidArgumentException If content type is not supported.
+     * @throws InvalidArgumentException If content type is not supported.
      */
     public function __construct($content)
     {
@@ -64,7 +64,7 @@ class Tool extends AbstractDataValueObject
             $this->type = ToolTypeEnum::webSearch();
             $this->webSearch = $content;
         } else {
-            throw new \InvalidArgumentException(
+            throw new InvalidArgumentException(
                 'Tool content must be an array of FunctionDeclaration instances or a WebSearch instance'
             );
         }

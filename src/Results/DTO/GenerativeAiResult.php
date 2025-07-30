@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace WordPress\AiClient\Results\DTO;
 
+use InvalidArgumentException;
+use RuntimeException;
 use WordPress\AiClient\Common\AbstractDataValueObject;
 use WordPress\AiClient\Files\DTO\File;
 use WordPress\AiClient\Messages\DTO\Message;
@@ -64,12 +66,12 @@ class GenerativeAiResult extends AbstractDataValueObject implements ResultInterf
      * @param Candidate[] $candidates The generated candidates.
      * @param TokenUsage $tokenUsage Token usage statistics.
      * @param array<string, mixed> $providerMetadata Provider-specific metadata.
-     * @throws \InvalidArgumentException If no candidates provided.
+     * @throws InvalidArgumentException If no candidates provided.
      */
     public function __construct(string $id, array $candidates, TokenUsage $tokenUsage, array $providerMetadata = [])
     {
         if (empty($candidates)) {
-            throw new \InvalidArgumentException('At least one candidate must be provided');
+            throw new InvalidArgumentException('At least one candidate must be provided');
         }
 
         $this->id = $id;
@@ -150,7 +152,7 @@ class GenerativeAiResult extends AbstractDataValueObject implements ResultInterf
      * @since n.e.x.t
      *
      * @return string The text content.
-     * @throws \RuntimeException If no text content.
+     * @throws RuntimeException If no text content.
      */
     public function toText(): string
     {
@@ -162,7 +164,7 @@ class GenerativeAiResult extends AbstractDataValueObject implements ResultInterf
             }
         }
 
-        throw new \RuntimeException('No text content found in first candidate');
+        throw new RuntimeException('No text content found in first candidate');
     }
 
     /**
@@ -171,7 +173,7 @@ class GenerativeAiResult extends AbstractDataValueObject implements ResultInterf
      * @since n.e.x.t
      *
      * @return File The file.
-     * @throws \RuntimeException If no file content.
+     * @throws RuntimeException If no file content.
      */
     public function toFile(): File
     {
@@ -183,7 +185,7 @@ class GenerativeAiResult extends AbstractDataValueObject implements ResultInterf
             }
         }
 
-        throw new \RuntimeException('No file content found in first candidate');
+        throw new RuntimeException('No file content found in first candidate');
     }
 
     /**
@@ -192,14 +194,14 @@ class GenerativeAiResult extends AbstractDataValueObject implements ResultInterf
      * @since n.e.x.t
      *
      * @return File The image file.
-     * @throws \RuntimeException If no image content.
+     * @throws RuntimeException If no image content.
      */
     public function toImageFile(): File
     {
         $file = $this->toFile();
 
         if (!$file->isImage()) {
-            throw new \RuntimeException(
+            throw new RuntimeException(
                 sprintf('File is not an image. MIME type: %s', $file->getMimeType())
             );
         }
@@ -213,14 +215,14 @@ class GenerativeAiResult extends AbstractDataValueObject implements ResultInterf
      * @since n.e.x.t
      *
      * @return File The audio file.
-     * @throws \RuntimeException If no audio content.
+     * @throws RuntimeException If no audio content.
      */
     public function toAudioFile(): File
     {
         $file = $this->toFile();
 
         if (!$file->isAudio()) {
-            throw new \RuntimeException(
+            throw new RuntimeException(
                 sprintf('File is not an audio file. MIME type: %s', $file->getMimeType())
             );
         }
@@ -234,14 +236,14 @@ class GenerativeAiResult extends AbstractDataValueObject implements ResultInterf
      * @since n.e.x.t
      *
      * @return File The video file.
-     * @throws \RuntimeException If no video content.
+     * @throws RuntimeException If no video content.
      */
     public function toVideoFile(): File
     {
         $file = $this->toFile();
 
         if (!$file->isVideo()) {
-            throw new \RuntimeException(
+            throw new RuntimeException(
                 sprintf('File is not a video file. MIME type: %s', $file->getMimeType())
             );
         }
