@@ -481,4 +481,52 @@ class ModelConfigTest extends TestCase
             $config
         );
     }
+
+    /**
+     * Tests setCustomOption method.
+     *
+     * @return void
+     */
+    public function testSetCustomOption(): void
+    {
+        $config = new ModelConfig();
+
+        // Test setting a single custom option
+        $config->setCustomOption('key1', 'value1');
+        $customOptions = $config->getCustomOptions();
+        $this->assertArrayHasKey('key1', $customOptions);
+        $this->assertEquals('value1', $customOptions['key1']);
+
+        // Test setting multiple custom options
+        $config->setCustomOption('key2', 42);
+        $config->setCustomOption('key3', true);
+        $config->setCustomOption('key4', ['nested' => 'array']);
+        
+        $customOptions = $config->getCustomOptions();
+        $this->assertCount(4, $customOptions);
+        $this->assertEquals('value1', $customOptions['key1']);
+        $this->assertEquals(42, $customOptions['key2']);
+        $this->assertTrue($customOptions['key3']);
+        $this->assertEquals(['nested' => 'array'], $customOptions['key4']);
+
+        // Test overwriting an existing custom option
+        $config->setCustomOption('key1', 'new value');
+        $customOptions = $config->getCustomOptions();
+        $this->assertEquals('new value', $customOptions['key1']);
+
+        // Test that setCustomOption works with null values
+        $config->setCustomOption('nullKey', null);
+        $customOptions = $config->getCustomOptions();
+        $this->assertArrayHasKey('nullKey', $customOptions);
+        $this->assertNull($customOptions['nullKey']);
+
+        // Test that custom options are preserved in array conversion
+        $array = $config->toArray();
+        $this->assertArrayHasKey(ModelConfig::KEY_CUSTOM_OPTIONS, $array);
+        $this->assertEquals($customOptions, $array[ModelConfig::KEY_CUSTOM_OPTIONS]);
+
+        // Test round-trip with custom options set via setCustomOption
+        $restored = ModelConfig::fromArray($array);
+        $this->assertEquals($customOptions, $restored->getCustomOptions());
+    }
 }
