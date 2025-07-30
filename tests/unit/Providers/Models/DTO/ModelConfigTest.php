@@ -53,6 +53,8 @@ class ModelConfigTest extends TestCase
         $this->assertNull($config->getLogprobs());
         $this->assertNull($config->getTopLogprobs());
         $this->assertNull($config->getTools());
+        $this->assertNull($config->getOutputMimeType());
+        $this->assertNull($config->getOutputSchema());
         $this->assertEquals([], $config->getCustomOptions());
     }
 
@@ -122,6 +124,20 @@ class ModelConfigTest extends TestCase
         $config->setTools($tools);
         $this->assertEquals($tools, $config->getTools());
 
+        // Test output MIME type
+        $config->setOutputMimeType('application/json');
+        $this->assertEquals('application/json', $config->getOutputMimeType());
+
+        // Test output schema
+        $outputSchema = [
+            'type' => 'object',
+            'properties' => [
+                'result' => ['type' => 'string']
+            ]
+        ];
+        $config->setOutputSchema($outputSchema);
+        $this->assertEquals($outputSchema, $config->getOutputSchema());
+
         // Test custom options
         $customOptions = ['custom_param' => 'value', 'another_param' => 123];
         $config->setCustomOptions($customOptions);
@@ -146,7 +162,8 @@ class ModelConfigTest extends TestCase
         $expectedProperties = [
             ModelConfig::KEY_OUTPUT_MODALITIES, ModelConfig::KEY_SYSTEM_INSTRUCTION, ModelConfig::KEY_CANDIDATE_COUNT, ModelConfig::KEY_MAX_TOKENS,
             ModelConfig::KEY_TEMPERATURE, ModelConfig::KEY_TOP_P, ModelConfig::KEY_TOP_K, ModelConfig::KEY_STOP_SEQUENCES, ModelConfig::KEY_PRESENCE_PENALTY,
-            ModelConfig::KEY_FREQUENCY_PENALTY, ModelConfig::KEY_LOGPROBS, ModelConfig::KEY_TOP_LOGPROBS, ModelConfig::KEY_TOOLS, ModelConfig::KEY_CUSTOM_OPTIONS
+            ModelConfig::KEY_FREQUENCY_PENALTY, ModelConfig::KEY_LOGPROBS, ModelConfig::KEY_TOP_LOGPROBS, ModelConfig::KEY_TOOLS, 
+            ModelConfig::KEY_OUTPUT_MIME_TYPE, ModelConfig::KEY_OUTPUT_SCHEMA, ModelConfig::KEY_CUSTOM_OPTIONS
         ];
 
         foreach ($expectedProperties as $property) {
@@ -159,6 +176,8 @@ class ModelConfigTest extends TestCase
         $this->assertEquals('integer', $schema['properties'][ModelConfig::KEY_CANDIDATE_COUNT]['type']);
         $this->assertEquals('number', $schema['properties'][ModelConfig::KEY_TEMPERATURE]['type']);
         $this->assertEquals('boolean', $schema['properties'][ModelConfig::KEY_LOGPROBS]['type']);
+        $this->assertEquals('string', $schema['properties'][ModelConfig::KEY_OUTPUT_MIME_TYPE]['type']);
+        $this->assertEquals('object', $schema['properties'][ModelConfig::KEY_OUTPUT_SCHEMA]['type']);
         $this->assertEquals('object', $schema['properties'][ModelConfig::KEY_CUSTOM_OPTIONS]['type']);
 
         // Check constraints
@@ -192,6 +211,8 @@ class ModelConfigTest extends TestCase
         $config->setLogprobs(true);
         $config->setTopLogprobs(10);
         $config->setTools([$tool]);
+        $config->setOutputMimeType('application/json');
+        $config->setOutputSchema(['type' => 'object']);
         $config->setCustomOptions(['key' => 'value']);
 
         $array = $config->toArray();
@@ -210,6 +231,8 @@ class ModelConfigTest extends TestCase
         $this->assertTrue($array[ModelConfig::KEY_LOGPROBS]);
         $this->assertEquals(10, $array[ModelConfig::KEY_TOP_LOGPROBS]);
         $this->assertCount(1, $array[ModelConfig::KEY_TOOLS]);
+        $this->assertEquals('application/json', $array[ModelConfig::KEY_OUTPUT_MIME_TYPE]);
+        $this->assertEquals(['type' => 'object'], $array[ModelConfig::KEY_OUTPUT_SCHEMA]);
         $this->assertEquals(['key' => 'value'], $array[ModelConfig::KEY_CUSTOM_OPTIONS]);
     }
 
@@ -283,6 +306,8 @@ class ModelConfigTest extends TestCase
                     ]
                 ]
             ],
+            ModelConfig::KEY_OUTPUT_MIME_TYPE => 'application/json',
+            ModelConfig::KEY_OUTPUT_SCHEMA => ['type' => 'array', 'items' => ['type' => 'string']],
             ModelConfig::KEY_CUSTOM_OPTIONS => ['custom' => true]
         ];
 
@@ -304,6 +329,8 @@ class ModelConfigTest extends TestCase
         $this->assertFalse($config->getLogprobs());
         $this->assertEquals(3, $config->getTopLogprobs());
         $this->assertCount(1, $config->getTools());
+        $this->assertEquals('application/json', $config->getOutputMimeType());
+        $this->assertEquals(['type' => 'array', 'items' => ['type' => 'string']], $config->getOutputSchema());
         $this->assertEquals(['custom' => true], $config->getCustomOptions());
     }
 
@@ -480,6 +507,33 @@ class ModelConfigTest extends TestCase
             JsonSerializable::class,
             $config
         );
+    }
+
+    /**
+     * Tests automatic output MIME type setting when schema is provided.
+     *
+     * @return void
+     */
+    public function testOutputSchemaAutomaticallySetsJsonMimeType(): void
+    {
+        $config = new ModelConfig();
+        
+        // Test that setting output schema automatically sets MIME type to application/json
+        $this->assertNull($config->getOutputMimeType());
+        
+        $schema = ['type' => 'object', 'properties' => ['test' => ['type' => 'string']]];
+        $config->setOutputSchema($schema);
+        
+        $this->assertEquals('application/json', $config->getOutputMimeType());
+        $this->assertEquals($schema, $config->getOutputSchema());
+        
+        // Test that explicitly set MIME type is not overridden
+        $config2 = new ModelConfig();
+        $config2->setOutputMimeType('text/plain');
+        $config2->setOutputSchema($schema);
+        
+        $this->assertEquals('text/plain', $config2->getOutputMimeType());
+        $this->assertEquals($schema, $config2->getOutputSchema());
     }
 
     /**

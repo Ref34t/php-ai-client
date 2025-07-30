@@ -33,6 +33,8 @@ use WordPress\AiClient\Tools\DTO\Tool;
  *     logprobs?: bool,
  *     topLogprobs?: int,
  *     tools?: array<int, ToolArrayShape>,
+ *     outputMimeType?: string,
+ *     outputSchema?: array<string, mixed>,
  *     customOptions?: array<string, mixed>
  * }
  *
@@ -53,6 +55,8 @@ class ModelConfig extends AbstractDataValueObject
     public const KEY_LOGPROBS = 'logprobs';
     public const KEY_TOP_LOGPROBS = 'topLogprobs';
     public const KEY_TOOLS = 'tools';
+    public const KEY_OUTPUT_MIME_TYPE = 'outputMimeType';
+    public const KEY_OUTPUT_SCHEMA = 'outputSchema';
     public const KEY_CUSTOM_OPTIONS = 'customOptions';
 
     /**
@@ -119,6 +123,16 @@ class ModelConfig extends AbstractDataValueObject
      * @var Tool[]|null Tools available to the model.
      */
     protected ?array $tools = null;
+
+    /**
+     * @var string|null Output MIME type.
+     */
+    protected ?string $outputMimeType = null;
+
+    /**
+     * @var array<string, mixed>|null Output schema (JSON schema).
+     */
+    protected ?array $outputSchema = null;
 
     /**
      * @var array<string, mixed> Custom provider-specific options.
@@ -438,6 +452,62 @@ class ModelConfig extends AbstractDataValueObject
     }
 
     /**
+     * Sets the output MIME type.
+     *
+     * @since n.e.x.t
+     *
+     * @param string $outputMimeType The output MIME type.
+     */
+    public function setOutputMimeType(string $outputMimeType): void
+    {
+        $this->outputMimeType = $outputMimeType;
+    }
+
+    /**
+     * Gets the output MIME type.
+     *
+     * @since n.e.x.t
+     *
+     * @return string|null The output MIME type.
+     */
+    public function getOutputMimeType(): ?string
+    {
+        return $this->outputMimeType;
+    }
+
+    /**
+     * Sets the output schema.
+     *
+     * When setting an output schema, this method automatically sets
+     * the output MIME type to "application/json" if not already set.
+     *
+     * @since n.e.x.t
+     *
+     * @param array<string, mixed> $outputSchema The output schema (JSON schema).
+     */
+    public function setOutputSchema(array $outputSchema): void
+    {
+        $this->outputSchema = $outputSchema;
+
+        // Automatically set outputMimeType to application/json when schema is provided
+        if ($this->outputMimeType === null) {
+            $this->outputMimeType = 'application/json';
+        }
+    }
+
+    /**
+     * Gets the output schema.
+     *
+     * @since n.e.x.t
+     *
+     * @return array<string, mixed>|null The output schema.
+     */
+    public function getOutputSchema(): ?array
+    {
+        return $this->outputSchema;
+    }
+
+    /**
      * Sets a single custom option.
      *
      * @since n.e.x.t
@@ -552,6 +622,15 @@ class ModelConfig extends AbstractDataValueObject
                     'items' => Tool::getJsonSchema(),
                     'description' => 'Tools available to the model.',
                 ],
+                self::KEY_OUTPUT_MIME_TYPE => [
+                    'type' => 'string',
+                    'description' => 'Output MIME type.',
+                ],
+                self::KEY_OUTPUT_SCHEMA => [
+                    'type' => 'object',
+                    'additionalProperties' => true,
+                    'description' => 'Output schema (JSON schema).',
+                ],
                 self::KEY_CUSTOM_OPTIONS => [
                     'type' => 'object',
                     'additionalProperties' => true,
@@ -632,6 +711,14 @@ class ModelConfig extends AbstractDataValueObject
             }, $this->tools));
         }
 
+        if ($this->outputMimeType !== null) {
+            $data[self::KEY_OUTPUT_MIME_TYPE] = $this->outputMimeType;
+        }
+
+        if ($this->outputSchema !== null) {
+            $data[self::KEY_OUTPUT_SCHEMA] = $this->outputSchema;
+        }
+
         $data[self::KEY_CUSTOM_OPTIONS] = $this->customOptions;
 
         return $data;
@@ -701,6 +788,14 @@ class ModelConfig extends AbstractDataValueObject
             $config->setTools(array_map(static function (array $toolData): Tool {
                 return Tool::fromArray($toolData);
             }, $array[self::KEY_TOOLS]));
+        }
+
+        if (isset($array[self::KEY_OUTPUT_MIME_TYPE])) {
+            $config->setOutputMimeType($array[self::KEY_OUTPUT_MIME_TYPE]);
+        }
+
+        if (isset($array[self::KEY_OUTPUT_SCHEMA])) {
+            $config->setOutputSchema($array[self::KEY_OUTPUT_SCHEMA]);
         }
 
         if (isset($array[self::KEY_CUSTOM_OPTIONS])) {
