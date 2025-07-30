@@ -7,7 +7,7 @@ namespace WordPress\AiClient\Common\Contracts;
 /**
  * Interface for objects that support array transformation.
  *
- * @since 1.0.0
+ * @since n.e.x.t
  *
  * @template TArrayShape of array<string, mixed>
  */
@@ -16,7 +16,7 @@ interface WithArrayTransformationInterface
     /**
      * Converts the object to an array representation.
      *
-     * @since 1.0.0
+     * @since n.e.x.t
      *
      * @return TArrayShape The array representation.
      */
@@ -25,7 +25,7 @@ interface WithArrayTransformationInterface
     /**
      * Creates an instance from array data.
      *
-     * @since 1.0.0
+     * @since n.e.x.t
      *
      * @param TArrayShape $array The array data.
      * @return self<TArrayShape> The created instance.
