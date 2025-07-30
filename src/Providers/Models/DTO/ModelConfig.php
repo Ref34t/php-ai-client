@@ -437,7 +437,15 @@ class ModelConfig extends AbstractDataValueObject
         return $this->tools;
     }
 
-    public function setCustomOption(string $key, mixed $value): void
+    /**
+     * Sets a single custom option.
+     *
+     * @since n.e.x.t
+     *
+     * @param string $key   The option key.
+     * @param mixed  $value The option value.
+     */
+    public function setCustomOption(string $key, $value): void
     {
         $this->customOptions[$key] = $value;
     }
