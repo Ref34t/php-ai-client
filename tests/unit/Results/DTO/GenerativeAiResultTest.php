@@ -673,7 +673,6 @@ class GenerativeAiResultTest extends TestCase
                         ]
                     ],
                     Candidate::KEY_FINISH_REASON => FinishReasonEnum::stop()->value,
-                    Candidate::KEY_TOKEN_COUNT => 20
                 ]
             ],
             GenerativeAiResult::KEY_TOKEN_USAGE => [
