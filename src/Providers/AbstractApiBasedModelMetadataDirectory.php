@@ -1,0 +1,105 @@
+<?php
+
+declare(strict_types=1);
+
+namespace WordPress\AiClient\Providers;
+
+use InvalidArgumentException;
+use WordPress\AiClient\Providers\Contracts\ModelMetadataDirectoryInterface;
+use WordPress\AiClient\Providers\Models\Contracts\WithHttpTransporterInterface;
+use WordPress\AiClient\Providers\Models\DTO\ModelMetadata;
+use WordPress\AiClient\Providers\Models\Traits\WithHttpTransporterTrait;
+
+/**
+ * Base class for an API-based model metadata directory for a provider.
+ *
+ * @since n.e.x.t
+ */
+abstract class AbstractApiBasedModelMetadataDirectory implements
+    ModelMetadataDirectoryInterface,
+    WithHttpTransporterInterface
+{
+    use WithHttpTransporterTrait;
+
+    /**
+     * @var ?array<string, ModelMetadata> Map of model ID to model metadata, effectively for caching.
+     */
+    private ?array $modelMetadataMap = null;
+
+    /**
+     * Lists the metadata for all models from the provider.
+     *
+     * @since n.e.x.t
+     *
+     * @return list<ModelMetadata> List of model metadata objects.
+     */
+    final public function listModelMetadata(): array
+    {
+        $modelsMetadata = $this->getModelMetadataMap();
+        return array_values($modelsMetadata);
+    }
+
+    /**
+     * Checks whether model metadata for the given model ID exists.
+     *
+     * This is effectively a check for whether the given model ID is for a valid model from the provider.
+     *
+     * @since n.e.x.t
+     *
+     * @param string $modelId The model ID.
+     * @return bool True if there is metadata for the model.
+     */
+    final public function hasModelMetadata(string $modelId): bool
+    {
+        try {
+            $this->getModelMetadata();
+        } catch (InvalidArgumentException $e) {
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * Gets the model metadata for the given model ID.
+     *
+     * @since n.e.x.t
+     *
+     * @param string $modelId The model ID.
+     * @return ModelMetadata The model metadata.
+     * @throws InvalidArgumentException If the model for the given ID does not exist.
+     */
+    final public function getModelMetadata(string $modelId): ModelMetadata
+    {
+        $modelsMetadata = $this->getModelMetadataMap();
+        if (!isset($modelsMetadata[$modelId])) {
+            throw new InvalidArgumentException(
+                sprintf('No model with ID %s was found in the provider', $modelId)
+            );
+        }
+        return $modelsMetadata[$modelId];
+    }
+
+    /**
+     * Returns the map of model ID to model metadata for all models from the provider.
+     *
+     * @since n.e.x.t
+     *
+     * @return array<string, ModelMetadata> Map of model ID to model metadata.
+     */
+    private function getModelMetadataMap(): array
+    {
+        if ($this->modelMetadataMap === null) {
+            $this->modelMetadataMap = $this->sendListModelsRequest();
+        }
+        return $this->modelMetadataMap;
+    }
+
+    /**
+     * Sends the API request to list models from the provider and returns the map of model ID to model metadata.
+     *
+     * @since n.e.x.t
+     *
+     * @return array<string, ModelMetadata> Map of model ID to model metadata.
+     */
+    abstract protected function sendListModelsRequest(): array;
+}
