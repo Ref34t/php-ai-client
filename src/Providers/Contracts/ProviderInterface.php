@@ -34,11 +34,11 @@ interface ProviderInterface
      * @since n.e.x.t
      *
      * @param string                          $modelId     Model identifier.
-     * @param ModelConfig|array<string,mixed> $modelConfig Model configuration.
+     * @param ?ModelConfig $modelConfig Model configuration.
      * @return ModelInterface Model instance.
      * @throws InvalidArgumentException If model not found or configuration invalid.
      */
-    public static function model(string $modelId, $modelConfig = []): ModelInterface;
+    public static function model(string $modelId, ?ModelConfig $modelConfig = null): ModelInterface;
 
     /**
      * Gets provider availability checker.
