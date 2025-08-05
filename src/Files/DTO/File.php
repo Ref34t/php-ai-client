@@ -291,7 +291,7 @@ class File extends AbstractDataValueObject
      *
      * @since n.e.x.t
      *
-     * @param string $type The type to check.
+     * @param string $type The mime type to check (e.g. 'image', 'text', 'video', 'audio').
      *
      * @return bool True if the file is of the specified type.
      */
