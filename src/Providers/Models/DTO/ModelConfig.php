@@ -40,6 +40,7 @@ use WordPress\AiClient\Tools\DTO\Tool;
  *     outputMimeType?: string,
  *     outputSchema?: array<string, mixed>,
  *     outputMediaOrientation?: string,
+ *     outputMediaAspectRatio?: string,
  *     customOptions?: array<string, mixed>
  * }
  *
@@ -64,6 +65,7 @@ class ModelConfig extends AbstractDataTransferObject
     public const KEY_OUTPUT_MIME_TYPE = 'outputMimeType';
     public const KEY_OUTPUT_SCHEMA = 'outputSchema';
     public const KEY_OUTPUT_MEDIA_ORIENTATION = 'outputMediaOrientation';
+    public const KEY_OUTPUT_MEDIA_ASPECT_RATIO = 'outputMediaAspectRatio';
     public const KEY_CUSTOM_OPTIONS = 'customOptions';
 
     /**
@@ -150,6 +152,11 @@ class ModelConfig extends AbstractDataTransferObject
      * @var MediaOrientationEnum|null Output media orientation.
      */
     protected ?MediaOrientationEnum $outputMediaOrientation = null;
+
+    /**
+     * @var string|null Output media aspect ratio (e.g. 3:2, 16:9).
+     */
+    protected ?string $outputMediaAspectRatio = null;
 
     /**
      * @var array<string, mixed> Custom provider-specific options.
@@ -591,6 +598,37 @@ class ModelConfig extends AbstractDataTransferObject
     }
 
     /**
+     * Sets the output media aspect ratio.
+     *
+     * If set, this supersedes the output media orientation, as it is a more specific configuration.
+     *
+     * @since n.e.x.t
+     *
+     * @param string $outputMediaAspectRatio The output media aspect ratio (e.g. 3:2, 16:9).
+     */
+    public function setOutputMediaAspectRatio(string $outputMediaAspectRatio): void
+    {
+        if (!preg_match('/^\d+:\d+$/', $outputMediaAspectRatio)) {
+            throw new InvalidArgumentException(
+                'Output media aspect ratio must be in the format "width:height" (e.g. 3:2, 16:9).'
+            );
+        }
+        $this->outputMediaAspectRatio = $outputMediaAspectRatio;
+    }
+
+    /**
+     * Gets the output media aspect ratio.
+     *
+     * @since n.e.x.t
+     *
+     * @return string|null The output media aspect ratio (e.g. 3:2, 16:9).
+     */
+    public function getOutputMediaAspectRatio(): ?string
+    {
+        return $this->outputMediaAspectRatio;
+    }
+
+    /**
      * Sets a single custom option.
      *
      * @since n.e.x.t
@@ -724,6 +762,11 @@ class ModelConfig extends AbstractDataTransferObject
                     'enum' => MediaOrientationEnum::getValues(),
                     'description' => 'Output media orientation.',
                 ],
+                self::KEY_OUTPUT_MEDIA_ASPECT_RATIO => [
+                    'type' => 'string',
+                    'pattern' => '^\d+:\d+$',
+                    'description' => 'Output media aspect ratio.',
+                ],
                 self::KEY_CUSTOM_OPTIONS => [
                     'type' => 'object',
                     'additionalProperties' => true,
@@ -820,6 +863,10 @@ class ModelConfig extends AbstractDataTransferObject
             $data[self::KEY_OUTPUT_MEDIA_ORIENTATION] = $this->outputMediaOrientation->value;
         }
 
+        if ($this->outputMediaAspectRatio !== null) {
+            $data[self::KEY_OUTPUT_MEDIA_ASPECT_RATIO] = $this->outputMediaAspectRatio;
+        }
+
         $data[self::KEY_CUSTOM_OPTIONS] = $this->customOptions;
 
         return $data;
@@ -905,6 +952,10 @@ class ModelConfig extends AbstractDataTransferObject
 
         if (isset($array[self::KEY_OUTPUT_MEDIA_ORIENTATION])) {
             $config->setOutputMediaOrientation(MediaOrientationEnum::from($array[self::KEY_OUTPUT_MEDIA_ORIENTATION]));
+        }
+
+        if (isset($array[self::KEY_OUTPUT_MEDIA_ASPECT_RATIO])) {
+            $config->setOutputMediaAspectRatio($array[self::KEY_OUTPUT_MEDIA_ASPECT_RATIO]);
         }
 
         if (isset($array[self::KEY_CUSTOM_OPTIONS])) {
