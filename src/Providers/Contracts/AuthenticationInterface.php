@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace WordPress\AiClient\Providers\Contracts;
 
 use WordPress\AiClient\Common\Contracts\WithJsonSchemaInterface;
-use WordPress\AiClient\Http\DTO\Request;
+use WordPress\AiClient\Providers\Http\DTO\Request;
 
 /**
  * Interface for authentication implementations.

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace WordPress\AiClient\Http\DTO;
+namespace WordPress\AiClient\Providers\Http\DTO;
 
 use InvalidArgumentException;
 use WordPress\AiClient\Common\AbstractDataTransferObject;

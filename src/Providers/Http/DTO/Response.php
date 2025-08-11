@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace WordPress\AiClient\Http\DTO;
+namespace WordPress\AiClient\Providers\Http\DTO;
 
 use InvalidArgumentException;
 use WordPress\AiClient\Common\AbstractDataTransferObject;
@@ -97,6 +97,25 @@ class Response extends AbstractDataTransferObject
     public function getHeaders(): array
     {
         return $this->headers;
+    }
+
+    /**
+     * Gets a specific header value.
+     *
+     * @since n.e.x.t
+     *
+     * @param string $name The header name (case-insensitive).
+     * @return string|list<string>|null The header value(s) or null if not found.
+     */
+    public function getHeader(string $name)
+    {
+        // Case-insensitive header lookup
+        foreach ($this->headers as $key => $value) {
+            if (strcasecmp($key, $name) === 0) {
+                return $value;
+            }
+        }
+        return null;
     }
 
     /**

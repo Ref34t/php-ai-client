@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace WordPress\AiClient\Providers\Models\Contracts;
 
-use WordPress\AiClient\Http\Contracts\HttpTransporterInterface;
+use WordPress\AiClient\Providers\Http\Contracts\HttpTransporterInterface;
 
 /**
  * Interface for models that require HTTP transport capabilities.

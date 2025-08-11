@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace WordPress\AiClient\Http\Contracts;
+namespace WordPress\AiClient\Providers\Http\Contracts;
 
-use WordPress\AiClient\Http\DTO\Request;
-use WordPress\AiClient\Http\DTO\Response;
+use WordPress\AiClient\Providers\Http\DTO\Request;
+use WordPress\AiClient\Providers\Http\DTO\Response;
 
 /**
  * Interface for HTTP transport implementations.

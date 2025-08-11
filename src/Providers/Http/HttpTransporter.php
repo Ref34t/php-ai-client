@@ -2,22 +2,25 @@
 
 declare(strict_types=1);
 
-namespace WordPress\AiClient\Http;
+namespace WordPress\AiClient\Providers\Http;
 
+use Http\Discovery\Psr17FactoryDiscovery;
+use Http\Discovery\Psr18ClientDiscovery;
 use Psr\Http\Client\ClientInterface;
 use Psr\Http\Message\RequestFactoryInterface;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\StreamFactoryInterface;
-use WordPress\AiClient\Http\Contracts\HttpTransporterInterface;
-use WordPress\AiClient\Http\DTO\Request;
-use WordPress\AiClient\Http\DTO\Response;
+use WordPress\AiClient\Providers\Http\Contracts\HttpTransporterInterface;
+use WordPress\AiClient\Providers\Http\DTO\Request;
+use WordPress\AiClient\Providers\Http\DTO\Response;
 
 /**
- * HTTP transporter implementation using PSR standards.
+ * HTTP transporter implementation using HTTPlug.
  *
  * This class handles the conversion between custom Request/Response
- * objects and PSR-7 messages, using PSR-17 factories and PSR-18 client.
+ * objects and PSR-7 messages, using HTTPlug for client abstraction
+ * and PSR-17 factories for message creation.
  *
  * @since n.e.x.t
  */
@@ -43,18 +46,18 @@ class HttpTransporter implements HttpTransporterInterface
      *
      * @since n.e.x.t
      *
-     * @param RequestFactoryInterface $requestFactory PSR-17 request factory.
-     * @param StreamFactoryInterface $streamFactory PSR-17 stream factory.
-     * @param ClientInterface $client PSR-18 HTTP client.
+     * @param ClientInterface|null $client PSR-18 HTTP client.
+     * @param RequestFactoryInterface|null $requestFactory PSR-17 request factory.
+     * @param StreamFactoryInterface|null $streamFactory PSR-17 stream factory.
      */
     public function __construct(
-        RequestFactoryInterface $requestFactory,
-        StreamFactoryInterface $streamFactory,
-        ClientInterface $client
+        ?ClientInterface $client = null,
+        ?RequestFactoryInterface $requestFactory = null,
+        ?StreamFactoryInterface $streamFactory = null
     ) {
-        $this->requestFactory = $requestFactory;
-        $this->streamFactory = $streamFactory;
-        $this->client = $client;
+        $this->client = $client ?: Psr18ClientDiscovery::find();
+        $this->requestFactory = $requestFactory ?: Psr17FactoryDiscovery::findRequestFactory();
+        $this->streamFactory = $streamFactory ?: Psr17FactoryDiscovery::findStreamFactory();
     }
 
     /**
