@@ -687,8 +687,8 @@ direction LR
 
     namespace AiClientNamespace.Tools.DTO {
         class FunctionCall {
-            +getId() string
-            +getName() string
+            +getId() ?string
+            +getName() ?string
             +getArgs() array< string, mixed >
             +getJsonSchema() array< string, mixed >$
         }
@@ -699,8 +699,8 @@ direction LR
             +getJsonSchema() array< string, mixed >$
         }
         class FunctionResponse {
-            +getId() string
-            +getName() string
+            +getId() ?string
+            +getName() ?string
             +getResponse() mixed
             +getJsonSchema() array< string, mixed >$
         }
