@@ -89,13 +89,9 @@ class HttpTransporter implements HttpTransporterInterface
         );
 
         // Add headers
-        foreach ($request->getHeaders() as $name => $value) {
-            if (is_array($value)) {
-                foreach ($value as $v) {
-                    $psr7Request = $psr7Request->withAddedHeader($name, $v);
-                }
-            } else {
-                $psr7Request = $psr7Request->withHeader($name, $value);
+        foreach ($request->getHeaders() as $name => $values) {
+            foreach ($values as $value) {
+                $psr7Request = $psr7Request->withAddedHeader($name, $value);
             }
         }
 

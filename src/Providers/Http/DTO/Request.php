@@ -19,7 +19,7 @@ use WordPress\AiClient\Providers\Http\Enums\HttpMethodEnum;
  * @phpstan-type RequestArrayShape array{
  *     method: string,
  *     uri: string,
- *     headers: array<string, string|list<string>>,
+ *     headers: array<string, list<string>>,
  *     body?: string|null
  * }
  *
@@ -43,7 +43,7 @@ class Request extends AbstractDataTransferObject
     protected string $uri;
 
     /**
-     * @var array<string, string|list<string>> The request headers.
+     * @var array<string, list<string>> The request headers.
      */
     protected array $headers;
 
@@ -79,7 +79,7 @@ class Request extends AbstractDataTransferObject
         }
 
         $this->uri = $uri;
-        $this->headers = $headers;
+        $this->headers = $this->normalizeHeaders($headers);
         $this->body = $body;
     }
 
@@ -124,7 +124,7 @@ class Request extends AbstractDataTransferObject
      *
      * @since n.e.x.t
      *
-     * @return array<string, string|list<string>> The headers.
+     * @return array<string, list<string>> The headers.
      */
     public function getHeaders(): array
     {
@@ -155,7 +155,7 @@ class Request extends AbstractDataTransferObject
     public function withHeader(string $name, $value): self
     {
         $headers = $this->headers;
-        $headers[$name] = $value;
+        $headers[$name] = is_array($value) ? array_values($value) : [$value];
 
         return new self($this->method, $this->uri, $headers, $this->body);
     }
@@ -171,6 +171,23 @@ class Request extends AbstractDataTransferObject
     public function withBody(string $body): self
     {
         return new self($this->method, $this->uri, $this->headers, $body);
+    }
+
+    /**
+     * Normalizes headers to ensure they are all arrays.
+     *
+     * @since n.e.x.t
+     *
+     * @param array<string, string|list<string>> $headers The headers to normalize.
+     * @return array<string, list<string>> The normalized headers.
+     */
+    private function normalizeHeaders(array $headers): array
+    {
+        $normalized = [];
+        foreach ($headers as $name => $value) {
+            $normalized[$name] = is_array($value) ? array_values($value) : [$value];
+        }
+        return $normalized;
     }
 
     /**
@@ -220,13 +237,8 @@ class Request extends AbstractDataTransferObject
                 self::KEY_HEADERS => [
                     'type' => 'object',
                     'additionalProperties' => [
-                        'oneOf' => [
-                            ['type' => 'string'],
-                            [
-                                'type' => 'array',
-                                'items' => ['type' => 'string'],
-                            ],
-                        ],
+                        'type' => 'array',
+                        'items' => ['type' => 'string'],
                     ],
                     'description' => 'The request headers.',
                 ],
@@ -273,7 +285,7 @@ class Request extends AbstractDataTransferObject
         return new self(
             $array[self::KEY_METHOD],
             $array[self::KEY_URI],
-            $array[self::KEY_HEADERS],
+            $array[self::KEY_HEADERS] ?? [],
             $array[self::KEY_BODY] ?? null
         );
     }
