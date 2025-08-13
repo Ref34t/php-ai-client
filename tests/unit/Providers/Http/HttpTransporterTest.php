@@ -82,7 +82,11 @@ class HttpTransporterTest extends TestCase
         $this->assertInstanceOf(Response::class, $response);
         $this->assertEquals(200, $response->getStatusCode());
         $this->assertEquals('{"success":true}', $response->getBody());
-        $this->assertEquals('application/json', $response->getHeader('Content-Type'));
+        $this->assertEquals(['application/json'], $response->getHeader('Content-Type'));
+        $this->assertEquals('application/json', $response->getHeaderLine('Content-Type'));
+        // Test case-insensitive header lookup
+        $this->assertEquals(['application/json'], $response->getHeader('content-type'));
+        $this->assertEquals('application/json', $response->getHeaderLine('CONTENT-TYPE'));
     }
 
     /**
@@ -112,7 +116,7 @@ class HttpTransporterTest extends TestCase
         // Assert
         $this->assertEquals(201, $response->getStatusCode());
         $this->assertEquals('{"id":123}', $response->getBody());
-        $this->assertEquals('/resource/123', $response->getHeader('Location'));
+        $this->assertEquals(['/resource/123'], $response->getHeader('Location'));
 
         // Verify the request was sent correctly
         $sentRequests = $this->mockClient->getRequests();

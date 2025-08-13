@@ -17,7 +17,7 @@ use WordPress\AiClient\Common\AbstractDataTransferObject;
  *
  * @phpstan-type ResponseArrayShape array{
  *     statusCode: int,
- *     headers: array<string, string|list<string>>,
+ *     headers: array<string, list<string>>,
  *     body?: string|null,
  *     reasonPhrase: string
  * }
@@ -37,9 +37,14 @@ class Response extends AbstractDataTransferObject
     protected int $statusCode;
 
     /**
-     * @var array<string, string|list<string>> The response headers.
+     * @var array<string, list<string>> The response headers.
      */
     protected array $headers;
+
+    /**
+     * @var array<string, string> Map of lowercase header names to actual header names for fast lookup.
+     */
+    protected array $headersMap;
 
     /**
      * @var string|null The response body.
@@ -70,7 +75,8 @@ class Response extends AbstractDataTransferObject
         }
 
         $this->statusCode = $statusCode;
-        $this->headers = $headers;
+        $this->headers = $this->normalizeHeaderValues($headers);
+        $this->headersMap = $this->buildHeadersMap($this->headers);
         $this->body = $body;
         $this->reasonPhrase = $reasonPhrase;
     }
@@ -92,7 +98,7 @@ class Response extends AbstractDataTransferObject
      *
      * @since n.e.x.t
      *
-     * @return array<string, string|list<string>> The headers.
+     * @return array<string, list<string>> The headers.
      */
     public function getHeaders(): array
     {
@@ -105,17 +111,29 @@ class Response extends AbstractDataTransferObject
      * @since n.e.x.t
      *
      * @param string $name The header name (case-insensitive).
-     * @return string|list<string>|null The header value(s) or null if not found.
+     * @return list<string>|null The header value(s) or null if not found.
      */
-    public function getHeader(string $name)
+    public function getHeader(string $name): ?array
     {
-        // Case-insensitive header lookup
-        foreach ($this->headers as $key => $value) {
-            if (strcasecmp($key, $name) === 0) {
-                return $value;
-            }
+        $lower = strtolower($name);
+        if (!isset($this->headersMap[$lower])) {
+            return null;
         }
-        return null;
+        return $this->headers[$this->headersMap[$lower]];
+    }
+
+    /**
+     * Gets the first value of a specific header.
+     *
+     * @since n.e.x.t
+     *
+     * @param string $name The header name (case-insensitive).
+     * @return string|null The first header value or null if not found.
+     */
+    public function getHeaderLine(string $name): ?string
+    {
+        $values = $this->getHeader($name);
+        return $values !== null ? implode(', ', $values) : null;
     }
 
     /**
@@ -152,6 +170,40 @@ class Response extends AbstractDataTransferObject
     public function isSuccessful(): bool
     {
         return $this->statusCode >= 200 && $this->statusCode < 300;
+    }
+
+    /**
+     * Normalizes header values to ensure they are all arrays.
+     *
+     * @since n.e.x.t
+     *
+     * @param array<string, string|list<string>> $headers The headers to normalize.
+     * @return array<string, list<string>> The normalized headers.
+     */
+    private function normalizeHeaderValues(array $headers): array
+    {
+        $normalized = [];
+        foreach ($headers as $name => $value) {
+            $normalized[$name] = is_array($value) ? array_values($value) : [$value];
+        }
+        return $normalized;
+    }
+
+    /**
+     * Builds a map of lowercase header names to actual header names.
+     *
+     * @since n.e.x.t
+     *
+     * @param array<string, list<string>> $headers The headers.
+     * @return array<string, string> The headers map.
+     */
+    private function buildHeadersMap(array $headers): array
+    {
+        $map = [];
+        foreach (array_keys($headers) as $name) {
+            $map[strtolower($name)] = $name;
+        }
+        return $map;
     }
 
     /**
@@ -199,13 +251,8 @@ class Response extends AbstractDataTransferObject
                 self::KEY_HEADERS => [
                     'type' => 'object',
                     'additionalProperties' => [
-                        'oneOf' => [
-                            ['type' => 'string'],
-                            [
-                                'type' => 'array',
-                                'items' => ['type' => 'string'],
-                            ],
-                        ],
+                        'type' => 'array',
+                        'items' => ['type' => 'string'],
                     ],
                     'description' => 'The response headers.',
                 ],
