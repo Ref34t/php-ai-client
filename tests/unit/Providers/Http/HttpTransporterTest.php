@@ -168,31 +168,6 @@ class HttpTransporterTest extends TestCase
     }
 
     /**
-     * Tests response with reason phrase.
-     *
-     * @since n.e.x.t
-     *
-     * @covers ::send
-     * @covers ::convertFromPsr7Response
-     *
-     * @return void
-     */
-    public function testResponseReasonPhrase(): void
-    {
-        // Arrange
-        $request = new Request('GET', 'https://api.example.com');
-        $mockResponse = new Psr7Response(404, [], null, '1.1', 'Not Found');
-        $this->mockClient->addResponse($mockResponse);
-
-        // Act
-        $response = $this->transporter->send($request);
-
-        // Assert
-        $this->assertEquals(404, $response->getStatusCode());
-        $this->assertEquals('Not Found', $response->getReasonPhrase());
-    }
-
-    /**
      * Tests using discovery when no dependencies provided.
      *
      * @since n.e.x.t

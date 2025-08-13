@@ -126,8 +126,7 @@ class HttpTransporter implements HttpTransporterInterface
         return new Response(
             $psr7Response->getStatusCode(),
             $headers,
-            $body === '' ? null : $body,
-            $psr7Response->getReasonPhrase()
+            $body === '' ? null : $body
         );
     }
 }

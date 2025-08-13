@@ -18,8 +18,7 @@ use WordPress\AiClient\Common\AbstractDataTransferObject;
  * @phpstan-type ResponseArrayShape array{
  *     statusCode: int,
  *     headers: array<string, list<string>>,
- *     body?: string|null,
- *     reasonPhrase: string
+ *     body?: string|null
  * }
  *
  * @extends AbstractDataTransferObject<ResponseArrayShape>
@@ -29,7 +28,6 @@ class Response extends AbstractDataTransferObject
     public const KEY_STATUS_CODE = 'statusCode';
     public const KEY_HEADERS = 'headers';
     public const KEY_BODY = 'body';
-    public const KEY_REASON_PHRASE = 'reasonPhrase';
 
     /**
      * @var int The HTTP status code.
@@ -52,11 +50,6 @@ class Response extends AbstractDataTransferObject
     protected ?string $body;
 
     /**
-     * @var string The reason phrase.
-     */
-    protected string $reasonPhrase;
-
-    /**
      * Constructor.
      *
      * @since n.e.x.t
@@ -64,11 +57,10 @@ class Response extends AbstractDataTransferObject
      * @param int $statusCode The HTTP status code.
      * @param array<string, string|list<string>> $headers The response headers.
      * @param string|null $body The response body.
-     * @param string $reasonPhrase The reason phrase.
      *
      * @throws InvalidArgumentException If the status code is invalid.
      */
-    public function __construct(int $statusCode, array $headers, ?string $body = null, string $reasonPhrase = '')
+    public function __construct(int $statusCode, array $headers, ?string $body = null)
     {
         if ($statusCode < 100 || $statusCode >= 600) {
             throw new InvalidArgumentException('Invalid HTTP status code: ' . $statusCode);
@@ -78,7 +70,6 @@ class Response extends AbstractDataTransferObject
         $this->headers = $this->normalizeHeaderValues($headers);
         $this->headersMap = $this->buildHeadersMap($this->headers);
         $this->body = $body;
-        $this->reasonPhrase = $reasonPhrase;
     }
 
     /**
@@ -146,18 +137,6 @@ class Response extends AbstractDataTransferObject
     public function getBody(): ?string
     {
         return $this->body;
-    }
-
-    /**
-     * Gets the reason phrase.
-     *
-     * @since n.e.x.t
-     *
-     * @return string The reason phrase.
-     */
-    public function getReasonPhrase(): string
-    {
-        return $this->reasonPhrase;
     }
 
     /**
@@ -260,12 +239,8 @@ class Response extends AbstractDataTransferObject
                     'type' => ['string', 'null'],
                     'description' => 'The response body.',
                 ],
-                self::KEY_REASON_PHRASE => [
-                    'type' => 'string',
-                    'description' => 'The reason phrase.',
-                ],
             ],
-            'required' => [self::KEY_STATUS_CODE, self::KEY_HEADERS, self::KEY_REASON_PHRASE],
+            'required' => [self::KEY_STATUS_CODE, self::KEY_HEADERS],
         ];
     }
 
@@ -281,7 +256,6 @@ class Response extends AbstractDataTransferObject
         $data = [
             self::KEY_STATUS_CODE => $this->statusCode,
             self::KEY_HEADERS => $this->headers,
-            self::KEY_REASON_PHRASE => $this->reasonPhrase,
         ];
 
         if ($this->body !== null) {
@@ -301,14 +275,12 @@ class Response extends AbstractDataTransferObject
         static::validateFromArrayData($array, [
             self::KEY_STATUS_CODE,
             self::KEY_HEADERS,
-            self::KEY_REASON_PHRASE,
         ]);
 
         return new self(
             $array[self::KEY_STATUS_CODE],
             $array[self::KEY_HEADERS],
-            $array[self::KEY_BODY] ?? null,
-            $array[self::KEY_REASON_PHRASE]
+            $array[self::KEY_BODY] ?? null
         );
     }
 }
