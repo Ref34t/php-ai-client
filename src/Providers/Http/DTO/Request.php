@@ -57,27 +57,20 @@ class Request extends AbstractDataTransferObject
      *
      * @since n.e.x.t
      *
-     * @param HttpMethodEnum|string $method The HTTP method.
+     * @param HttpMethodEnum $method The HTTP method.
      * @param string $uri The request URI.
      * @param array<string, string|list<string>> $headers The request headers.
      * @param string|null $body The request body.
      *
-     * @throws InvalidArgumentException If the URI is empty or method is invalid.
+     * @throws InvalidArgumentException If the URI is empty.
      */
-    public function __construct($method, string $uri, array $headers = [], ?string $body = null)
+    public function __construct(HttpMethodEnum $method, string $uri, array $headers = [], ?string $body = null)
     {
         if (empty($uri)) {
             throw new InvalidArgumentException('URI cannot be empty.');
         }
 
-        if (is_string($method)) {
-            $this->method = HttpMethodEnum::from(strtoupper($method));
-        } elseif ($method instanceof HttpMethodEnum) {
-            $this->method = $method;
-        } else {
-            throw new InvalidArgumentException('Method must be a string or HttpMethodEnum instance.');
-        }
-
+        $this->method = $method;
         $this->uri = $uri;
         $this->headers = $this->normalizeHeaders($headers);
         $this->body = $body;
@@ -283,7 +276,7 @@ class Request extends AbstractDataTransferObject
         static::validateFromArrayData($array, [self::KEY_METHOD, self::KEY_URI, self::KEY_HEADERS]);
 
         return new self(
-            $array[self::KEY_METHOD],
+            HttpMethodEnum::from($array[self::KEY_METHOD]),
             $array[self::KEY_URI],
             $array[self::KEY_HEADERS] ?? [],
             $array[self::KEY_BODY] ?? null

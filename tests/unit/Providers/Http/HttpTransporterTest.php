@@ -9,6 +9,7 @@ use PHPUnit\Framework\TestCase;
 use Psr\Http\Message\ResponseInterface;
 use WordPress\AiClient\Providers\Http\DTO\Request;
 use WordPress\AiClient\Providers\Http\DTO\Response;
+use WordPress\AiClient\Providers\Http\Enums\HttpMethodEnum;
 use WordPress\AiClient\Providers\Http\HttpTransporter;
 use GuzzleHttp\Psr7\Response as Psr7Response;
 use GuzzleHttp\Psr7\HttpFactory;
@@ -65,7 +66,7 @@ class HttpTransporterTest extends TestCase
     public function testSendGetRequest(): void
     {
         // Arrange
-        $request = new Request('GET', 'https://api.example.com/data');
+        $request = new Request(HttpMethodEnum::GET(), 'https://api.example.com/data');
         $mockResponse = new Psr7Response(200, ['Content-Type' => 'application/json'], '{"success":true}');
         $this->mockClient->addResponse($mockResponse);
 
@@ -97,7 +98,7 @@ class HttpTransporterTest extends TestCase
         // Arrange
         $headers = ['Content-Type' => 'application/json'];
         $body = '{"name":"test"}';
-        $request = new Request('POST', 'https://api.example.com/create', $headers, $body);
+        $request = new Request(HttpMethodEnum::POST(), 'https://api.example.com/create', $headers, $body);
 
         $mockResponse = new Psr7Response(201, ['Location' => '/resource/123'], '{"id":123}');
         $this->mockClient->addResponse($mockResponse);
@@ -136,7 +137,7 @@ class HttpTransporterTest extends TestCase
             'Accept' => ['application/json', 'application/xml'],
             'X-Custom' => 'single-value'
         ];
-        $request = new Request('GET', 'https://api.example.com', $headers);
+        $request = new Request(HttpMethodEnum::GET(), 'https://api.example.com', $headers);
 
         $mockResponse = new Psr7Response(200, ['Set-Cookie' => ['cookie1=value1', 'cookie2=value2']]);
         $this->mockClient->addResponse($mockResponse);
