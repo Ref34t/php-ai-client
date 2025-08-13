@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace WordPress\AiClient\Providers\Http\DTO;
 
 use InvalidArgumentException;
+use JsonException;
 use WordPress\AiClient\Common\AbstractDataTransferObject;
 use WordPress\AiClient\Providers\Http\Enums\HttpMethodEnum;
 
@@ -48,6 +49,11 @@ class Request extends AbstractDataTransferObject
     protected array $headers;
 
     /**
+     * @var array<string, string> Map of lowercase header names to actual header names for fast lookup.
+     */
+    protected array $headersMap;
+
+    /**
      * @var string|array<string, mixed>|null The request data.
      */
     protected $data;
@@ -73,6 +79,7 @@ class Request extends AbstractDataTransferObject
         $this->method = $method;
         $this->uri = $uri;
         $this->headers = $this->normalizeHeaders($headers);
+        $this->headersMap = $this->buildHeadersMap($this->headers);
         $this->data = $data;
     }
 
@@ -118,6 +125,50 @@ class Request extends AbstractDataTransferObject
     public function getHeaders(): array
     {
         return $this->headers;
+    }
+
+    /**
+     * Gets a specific header value.
+     *
+     * @since n.e.x.t
+     *
+     * @param string $name The header name (case-insensitive).
+     * @return list<string>|null The header value(s) or null if not found.
+     */
+    public function getHeader(string $name): ?array
+    {
+        $lower = strtolower($name);
+        if (!isset($this->headersMap[$lower])) {
+            return null;
+        }
+        return $this->headers[$this->headersMap[$lower]];
+    }
+
+    /**
+     * Gets the first value of a specific header.
+     *
+     * @since n.e.x.t
+     *
+     * @param string $name The header name (case-insensitive).
+     * @return string|null The first header value or null if not found.
+     */
+    public function getHeaderLine(string $name): ?string
+    {
+        $values = $this->getHeader($name);
+        return $values !== null ? implode(', ', $values) : null;
+    }
+
+    /**
+     * Checks if a header exists.
+     *
+     * @since n.e.x.t
+     *
+     * @param string $name The header name (case-insensitive).
+     * @return bool True if the header exists, false otherwise.
+     */
+    public function hasHeader(string $name): bool
+    {
+        return isset($this->headersMap[strtolower($name)]);
     }
 
     /**
@@ -176,12 +227,8 @@ class Request extends AbstractDataTransferObject
      */
     private function getContentType(): ?string
     {
-        foreach ($this->headers as $name => $values) {
-            if (strcasecmp($name, 'Content-Type') === 0) {
-                return $values[0] ?? null;
-            }
-        }
-        return null;
+        $values = $this->getHeader('Content-Type');
+        return $values !== null ? $values[0] : null;
     }
 
     /**
@@ -229,6 +276,23 @@ class Request extends AbstractDataTransferObject
             $normalized[$name] = is_array($value) ? array_values($value) : [$value];
         }
         return $normalized;
+    }
+
+    /**
+     * Builds a map of lowercase header names to actual header names.
+     *
+     * @since n.e.x.t
+     *
+     * @param array<string, list<string>> $headers The headers.
+     * @return array<string, string> The headers map.
+     */
+    private function buildHeadersMap(array $headers): array
+    {
+        $map = [];
+        foreach (array_keys($headers) as $name) {
+            $map[strtolower($name)] = $name;
+        }
+        return $map;
     }
 
     /**

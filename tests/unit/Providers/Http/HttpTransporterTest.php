@@ -237,6 +237,36 @@ class HttpTransporterTest extends TestCase
     }
 
     /**
+     * Tests case-insensitive header access in Request.
+     *
+     * @return void
+     */
+    public function testRequestCaseInsensitiveHeaders(): void
+    {
+        // Arrange
+        $headers = [
+            'Content-Type' => 'application/json',
+            'X-Custom-Header' => 'value',
+        ];
+        $request = new Request(HttpMethodEnum::GET(), 'https://api.example.com', $headers);
+
+        // Assert - getHeader
+        $this->assertEquals(['application/json'], $request->getHeader('Content-Type'));
+        $this->assertEquals(['application/json'], $request->getHeader('content-type'));
+        $this->assertEquals(['application/json'], $request->getHeader('CONTENT-TYPE'));
+
+        // Assert - getHeaderLine
+        $this->assertEquals('application/json', $request->getHeaderLine('Content-Type'));
+        $this->assertEquals('application/json', $request->getHeaderLine('content-type'));
+
+        // Assert - hasHeader
+        $this->assertTrue($request->hasHeader('Content-Type'));
+        $this->assertTrue($request->hasHeader('content-type'));
+        $this->assertTrue($request->hasHeader('X-CUSTOM-HEADER'));
+        $this->assertFalse($request->hasHeader('Non-Existent'));
+    }
+
+    /**
      * Tests using discovery when no dependencies provided.
      *
      * @covers ::__construct
