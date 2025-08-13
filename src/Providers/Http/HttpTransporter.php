@@ -84,7 +84,7 @@ class HttpTransporter implements HttpTransporterInterface
     private function convertToPsr7Request(Request $request): RequestInterface
     {
         $psr7Request = $this->requestFactory->createRequest(
-            $request->getMethod(),
+            $request->getMethod()->value,
             $request->getUri()
         );
 

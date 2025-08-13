@@ -81,21 +81,9 @@ class Request extends AbstractDataTransferObject
      *
      * @since n.e.x.t
      *
-     * @return string The HTTP method.
+     * @return HttpMethodEnum The HTTP method.
      */
-    public function getMethod(): string
-    {
-        return $this->method->value;
-    }
-
-    /**
-     * Gets the HTTP method enum.
-     *
-     * @since n.e.x.t
-     *
-     * @return HttpMethodEnum The HTTP method enum.
-     */
-    public function getMethodEnum(): HttpMethodEnum
+    public function getMethod(): HttpMethodEnum
     {
         return $this->method;
     }
