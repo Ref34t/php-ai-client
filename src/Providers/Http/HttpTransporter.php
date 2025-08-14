@@ -115,13 +115,10 @@ class HttpTransporter implements HttpTransporterInterface
      */
     private function convertFromPsr7Response(ResponseInterface $psr7Response): Response
     {
-        /** @var array<string, string|list<string>> $headers */
-        $headers = [];
-        foreach ($psr7Response->getHeaders() as $name => $values) {
-            $headers[(string) $name] = count($values) === 1 ? $values[0] : array_values($values);
-        }
-
         $body = (string) $psr7Response->getBody();
+
+        /** @var array<string, array<string>> $headers */
+        $headers = $psr7Response->getHeaders();
 
         return new Response(
             $psr7Response->getStatusCode(),
