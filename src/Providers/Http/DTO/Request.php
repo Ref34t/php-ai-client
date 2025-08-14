@@ -7,6 +7,7 @@ namespace WordPress\AiClient\Providers\Http\DTO;
 use InvalidArgumentException;
 use JsonException;
 use WordPress\AiClient\Common\AbstractDataTransferObject;
+use WordPress\AiClient\Providers\Http\Collections\HeadersCollection;
 use WordPress\AiClient\Providers\Http\Enums\HttpMethodEnum;
 
 /**
@@ -44,14 +45,9 @@ class Request extends AbstractDataTransferObject
     protected string $uri;
 
     /**
-     * @var array<string, list<string>> The request headers.
+     * @var HeadersCollection The request headers.
      */
-    protected array $headers;
-
-    /**
-     * @var array<string, string> Map of lowercase header names to actual header names for fast lookup.
-     */
-    protected array $headersMap;
+    protected HeadersCollection $headers;
 
     /**
      * @var string|array<string, mixed>|null The request data.
@@ -78,8 +74,7 @@ class Request extends AbstractDataTransferObject
 
         $this->method = $method;
         $this->uri = $uri;
-        $this->headers = $this->normalizeHeaders($headers);
-        $this->headersMap = $this->buildHeadersMap($this->headers);
+        $this->headers = new HeadersCollection($headers);
         $this->data = $data;
     }
 
@@ -124,7 +119,7 @@ class Request extends AbstractDataTransferObject
      */
     public function getHeaders(): array
     {
-        return $this->headers;
+        return $this->headers->getAll();
     }
 
     /**
@@ -137,11 +132,7 @@ class Request extends AbstractDataTransferObject
      */
     public function getHeader(string $name): ?array
     {
-        $lower = strtolower($name);
-        if (!isset($this->headersMap[$lower])) {
-            return null;
-        }
-        return $this->headers[$this->headersMap[$lower]];
+        return $this->headers->get($name);
     }
 
     /**
@@ -152,10 +143,9 @@ class Request extends AbstractDataTransferObject
      * @param string $name The header name (case-insensitive).
      * @return string|null The first header value or null if not found.
      */
-    public function getHeaderLine(string $name): ?string
+    public function getHeaderAsString(string $name): ?string
     {
-        $values = $this->getHeader($name);
-        return $values !== null ? implode(', ', $values) : null;
+        return $this->headers->getAsString($name);
     }
 
     /**
@@ -168,7 +158,7 @@ class Request extends AbstractDataTransferObject
      */
     public function hasHeader(string $name): bool
     {
-        return isset($this->headersMap[strtolower($name)]);
+        return $this->headers->has($name);
     }
 
     /**
@@ -242,10 +232,10 @@ class Request extends AbstractDataTransferObject
      */
     public function withHeader(string $name, $value): self
     {
-        $headers = $this->headers;
-        $headers[$name] = is_array($value) ? array_values($value) : [$value];
-
-        return new self($this->method, $this->uri, $headers, $this->data);
+        $newHeaders = $this->headers->withHeader($name, $value);
+        $new = clone $this;
+        $new->headers = $newHeaders;
+        return $new;
     }
 
     /**
@@ -258,41 +248,9 @@ class Request extends AbstractDataTransferObject
      */
     public function withData($data): self
     {
-        return new self($this->method, $this->uri, $this->headers, $data);
-    }
-
-    /**
-     * Normalizes headers to ensure they are all arrays.
-     *
-     * @since n.e.x.t
-     *
-     * @param array<string, string|list<string>> $headers The headers to normalize.
-     * @return array<string, list<string>> The normalized headers.
-     */
-    private function normalizeHeaders(array $headers): array
-    {
-        $normalized = [];
-        foreach ($headers as $name => $value) {
-            $normalized[$name] = is_array($value) ? array_values($value) : [$value];
-        }
-        return $normalized;
-    }
-
-    /**
-     * Builds a map of lowercase header names to actual header names.
-     *
-     * @since n.e.x.t
-     *
-     * @param array<string, list<string>> $headers The headers.
-     * @return array<string, string> The headers map.
-     */
-    private function buildHeadersMap(array $headers): array
-    {
-        $map = [];
-        foreach (array_keys($headers) as $name) {
-            $map[strtolower($name)] = $name;
-        }
-        return $map;
+        $new = clone $this;
+        $new->data = $data;
+        return $new;
     }
 
     /**
@@ -354,7 +312,7 @@ class Request extends AbstractDataTransferObject
         $array = [
             self::KEY_METHOD => $this->method->value,
             self::KEY_URI => $this->uri,
-            self::KEY_HEADERS => $this->headers,
+            self::KEY_HEADERS => $this->headers->getAll(),
         ];
 
         if ($this->data !== null) {

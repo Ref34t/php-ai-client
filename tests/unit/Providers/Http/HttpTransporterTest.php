@@ -78,10 +78,10 @@ class HttpTransporterTest extends TestCase
         $this->assertEquals(200, $response->getStatusCode());
         $this->assertEquals('{"success":true}', $response->getBody());
         $this->assertEquals(['application/json'], $response->getHeader('Content-Type'));
-        $this->assertEquals('application/json', $response->getHeaderLine('Content-Type'));
+        $this->assertEquals('application/json', $response->getHeaderAsString('Content-Type'));
         // Test case-insensitive header lookup
         $this->assertEquals(['application/json'], $response->getHeader('content-type'));
-        $this->assertEquals('application/json', $response->getHeaderLine('CONTENT-TYPE'));
+        $this->assertEquals('application/json', $response->getHeaderAsString('CONTENT-TYPE'));
     }
 
     /**
@@ -255,9 +255,9 @@ class HttpTransporterTest extends TestCase
         $this->assertEquals(['application/json'], $request->getHeader('content-type'));
         $this->assertEquals(['application/json'], $request->getHeader('CONTENT-TYPE'));
 
-        // Assert - getHeaderLine
-        $this->assertEquals('application/json', $request->getHeaderLine('Content-Type'));
-        $this->assertEquals('application/json', $request->getHeaderLine('content-type'));
+        // Assert - getHeaderAsString
+        $this->assertEquals('application/json', $request->getHeaderAsString('Content-Type'));
+        $this->assertEquals('application/json', $request->getHeaderAsString('content-type'));
 
         // Assert - hasHeader
         $this->assertTrue($request->hasHeader('Content-Type'));

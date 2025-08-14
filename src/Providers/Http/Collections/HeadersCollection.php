@@ -1,0 +1,139 @@
+<?php
+
+declare(strict_types=1);
+
+namespace WordPress\AiClient\Providers\Http\Collections;
+
+/**
+ * Simple collection for managing HTTP headers with case-insensitive access.
+ *
+ * This class stores HTTP headers while preserving their original casing
+ * and provides efficient case-insensitive lookups.
+ *
+ * @since n.e.x.t
+ */
+class HeadersCollection
+{
+    /**
+     * @var array<string, list<string>> The headers with original casing.
+     */
+    private array $headers = [];
+
+    /**
+     * @var array<string, string> Map of lowercase header names to actual header names.
+     */
+    private array $headersMap = [];
+
+    /**
+     * Constructor.
+     *
+     * @since n.e.x.t
+     *
+     * @param array<string, string|list<string>> $headers Initial headers.
+     */
+    public function __construct(array $headers = [])
+    {
+        foreach ($headers as $name => $value) {
+            $this->set($name, $value);
+        }
+    }
+
+    /**
+     * Gets a specific header value.
+     *
+     * @since n.e.x.t
+     *
+     * @param string $name The header name (case-insensitive).
+     * @return list<string>|null The header value(s) or null if not found.
+     */
+    public function get(string $name): ?array
+    {
+        $lowerName = strtolower($name);
+        if (!isset($this->headersMap[$lowerName])) {
+            return null;
+        }
+
+        $actualName = $this->headersMap[$lowerName];
+        return $this->headers[$actualName];
+    }
+
+    /**
+     * Gets all headers.
+     *
+     * @since n.e.x.t
+     *
+     * @return array<string, list<string>> All headers with their original casing.
+     */
+    public function getAll(): array
+    {
+        return $this->headers;
+    }
+
+    /**
+     * Gets the first value of a specific header.
+     *
+     * @since n.e.x.t
+     *
+     * @param string $name The header name (case-insensitive).
+     * @return string|null The first header value or null if not found.
+     */
+    public function getAsString(string $name): ?string
+    {
+        $values = $this->get($name);
+        return $values !== null ? $values[0] : null;
+    }
+
+    /**
+     * Checks if a header exists.
+     *
+     * @since n.e.x.t
+     *
+     * @param string $name The header name (case-insensitive).
+     * @return bool True if the header exists, false otherwise.
+     */
+    public function has(string $name): bool
+    {
+        return isset($this->headersMap[strtolower($name)]);
+    }
+
+    /**
+     * Sets a header value, replacing any existing value.
+     *
+     * @since n.e.x.t
+     *
+     * @param string $name The header name.
+     * @param string|list<string> $value The header value(s).
+     * @return void
+     */
+    private function set(string $name, $value): void
+    {
+        $normalizedValues = is_array($value) ? array_values($value) : [$value];
+        $lowerName = strtolower($name);
+
+        // If header exists with different casing, use the existing casing
+        if (isset($this->headersMap[$lowerName])) {
+            $actualName = $this->headersMap[$lowerName];
+            $this->headers[$actualName] = $normalizedValues;
+        } else {
+            // New header, use provided casing
+            $this->headers[$name] = $normalizedValues;
+            $this->headersMap[$lowerName] = $name;
+        }
+    }
+
+    /**
+     * Returns a new instance with the specified header.
+     *
+     * @since n.e.x.t
+     *
+     * @param string $name The header name.
+     * @param string|list<string> $value The header value(s).
+     * @return self A new instance with the header.
+     */
+    public function withHeader(string $name, $value): self
+    {
+        $new = clone $this;
+        $new->set($name, $value);
+        return $new;
+    }
+}

@@ -6,6 +6,7 @@ namespace WordPress\AiClient\Providers\Http\DTO;
 
 use InvalidArgumentException;
 use WordPress\AiClient\Common\AbstractDataTransferObject;
+use WordPress\AiClient\Providers\Http\Collections\HeadersCollection;
 
 /**
  * Represents an HTTP response.
@@ -35,14 +36,9 @@ class Response extends AbstractDataTransferObject
     protected int $statusCode;
 
     /**
-     * @var array<string, list<string>> The response headers.
+     * @var HeadersCollection The response headers.
      */
-    protected array $headers;
-
-    /**
-     * @var array<string, string> Map of lowercase header names to actual header names for fast lookup.
-     */
-    protected array $headersMap;
+    protected HeadersCollection $headers;
 
     /**
      * @var string|null The response body.
@@ -67,8 +63,7 @@ class Response extends AbstractDataTransferObject
         }
 
         $this->statusCode = $statusCode;
-        $this->headers = $this->normalizeHeaderValues($headers);
-        $this->headersMap = $this->buildHeadersMap($this->headers);
+        $this->headers = new HeadersCollection($headers);
         $this->body = $body;
     }
 
@@ -93,7 +88,7 @@ class Response extends AbstractDataTransferObject
      */
     public function getHeaders(): array
     {
-        return $this->headers;
+        return $this->headers->getAll();
     }
 
     /**
@@ -106,11 +101,7 @@ class Response extends AbstractDataTransferObject
      */
     public function getHeader(string $name): ?array
     {
-        $lower = strtolower($name);
-        if (!isset($this->headersMap[$lower])) {
-            return null;
-        }
-        return $this->headers[$this->headersMap[$lower]];
+        return $this->headers->get($name);
     }
 
     /**
@@ -121,10 +112,9 @@ class Response extends AbstractDataTransferObject
      * @param string $name The header name (case-insensitive).
      * @return string|null The first header value or null if not found.
      */
-    public function getHeaderLine(string $name): ?string
+    public function getHeaderAsString(string $name): ?string
     {
-        $values = $this->getHeader($name);
-        return $values !== null ? implode(', ', $values) : null;
+        return $this->headers->getAsString($name);
     }
 
     /**
@@ -149,7 +139,7 @@ class Response extends AbstractDataTransferObject
      */
     public function hasHeader(string $name): bool
     {
-        return isset($this->headersMap[strtolower($name)]);
+        return $this->headers->has($name);
     }
 
     /**
@@ -164,39 +154,6 @@ class Response extends AbstractDataTransferObject
         return $this->statusCode >= 200 && $this->statusCode < 300;
     }
 
-    /**
-     * Normalizes header values to ensure they are all arrays.
-     *
-     * @since n.e.x.t
-     *
-     * @param array<string, string|list<string>> $headers The headers to normalize.
-     * @return array<string, list<string>> The normalized headers.
-     */
-    private function normalizeHeaderValues(array $headers): array
-    {
-        $normalized = [];
-        foreach ($headers as $name => $value) {
-            $normalized[$name] = is_array($value) ? array_values($value) : [$value];
-        }
-        return $normalized;
-    }
-
-    /**
-     * Builds a map of lowercase header names to actual header names.
-     *
-     * @since n.e.x.t
-     *
-     * @param array<string, list<string>> $headers The headers.
-     * @return array<string, string> The headers map.
-     */
-    private function buildHeadersMap(array $headers): array
-    {
-        $map = [];
-        foreach (array_keys($headers) as $name) {
-            $map[strtolower($name)] = $name;
-        }
-        return $map;
-    }
 
     /**
      * Gets the response data as an array.
@@ -268,7 +225,7 @@ class Response extends AbstractDataTransferObject
     {
         $data = [
             self::KEY_STATUS_CODE => $this->statusCode,
-            self::KEY_HEADERS => $this->headers,
+            self::KEY_HEADERS => $this->headers->getAll(),
         ];
 
         if ($this->body !== null) {
