@@ -5,13 +5,12 @@ declare(strict_types=1);
 namespace WordPress\AiClient\Tests\unit\Operations\DTO;
 
 use PHPUnit\Framework\TestCase;
-use WordPress\AiClient\Operations\DTO\GenerativeAiOperation;
-use WordPress\AiClient\Operations\Enums\OperationStateEnum;
 use WordPress\AiClient\Messages\DTO\Message;
 use WordPress\AiClient\Messages\DTO\MessagePart;
 use WordPress\AiClient\Messages\DTO\ModelMessage;
 use WordPress\AiClient\Messages\Enums\MessageRoleEnum;
-use WordPress\AiClient\Messages\Enums\MessagePartTypeEnum;
+use WordPress\AiClient\Operations\DTO\GenerativeAiOperation;
+use WordPress\AiClient\Operations\Enums\OperationStateEnum;
 use WordPress\AiClient\Results\DTO\Candidate;
 use WordPress\AiClient\Results\DTO\GenerativeAiResult;
 use WordPress\AiClient\Results\DTO\TokenUsage;

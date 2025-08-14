@@ -12,8 +12,6 @@ use WordPress\AiClient\Providers\Enums\ProviderTypeEnum;
 use WordPress\AiClient\Providers\Models\DTO\ModelMetadata;
 use WordPress\AiClient\Providers\Models\DTO\SupportedOption;
 use WordPress\AiClient\Providers\Models\Enums\CapabilityEnum;
-use WordPress\AiClient\Tools\DTO\FunctionDeclaration;
-use WordPress\AiClient\Tools\DTO\Tool;
 
 /**
  * @covers \WordPress\AiClient\Providers\DTO\ProviderModelsMetadata

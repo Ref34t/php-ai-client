@@ -10,8 +10,8 @@ use WordPress\AiClient\Files\Enums\FileTypeEnum;
 use WordPress\AiClient\Files\Enums\MediaOrientationEnum;
 use WordPress\AiClient\Messages\Enums\ModalityEnum;
 use WordPress\AiClient\Providers\Models\DTO\ModelConfig;
-use WordPress\AiClient\Tools\DTO\Tool;
 use WordPress\AiClient\Tools\DTO\FunctionDeclaration;
+use WordPress\AiClient\Tools\DTO\Tool;
 
 /**
  * @covers \WordPress\AiClient\Providers\Models\DTO\ModelConfig
