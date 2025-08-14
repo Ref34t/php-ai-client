@@ -1142,7 +1142,6 @@ direction LR
         }
     }
 
-
     namespace AiClientNamespace.Providers.Models.EmbeddingGeneration.Contracts {
         class EmbeddingGenerationModelInterface {
             +generateEmbeddingsResult(Message[] $input) EmbeddingResult
