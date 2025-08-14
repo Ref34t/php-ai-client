@@ -22,7 +22,7 @@ use WordPress\AiClient\Providers\Http\Enums\HttpMethodEnum;
  *     method: string,
  *     uri: string,
  *     headers: array<string, list<string>>,
- *     data?: string|array<string, mixed>|null
+ *     body?: string|null
  * }
  *
  * @extends AbstractDataTransferObject<RequestArrayShape>
@@ -32,7 +32,7 @@ class Request extends AbstractDataTransferObject
     public const KEY_METHOD = 'method';
     public const KEY_URI = 'uri';
     public const KEY_HEADERS = 'headers';
-    public const KEY_DATA = 'data';
+    public const KEY_BODY = 'body';
 
     /**
      * @var HttpMethodEnum The HTTP method.
@@ -306,9 +306,9 @@ class Request extends AbstractDataTransferObject
                     ],
                     'description' => 'The request headers.',
                 ],
-                self::KEY_DATA => [
-                    'type' => ['string', 'array', 'null'],
-                    'description' => 'The request data.',
+                self::KEY_BODY => [
+                    'type' => ['string', 'null'],
+                    'description' => 'The request body.',
                 ],
             ],
             'required' => [self::KEY_METHOD, self::KEY_URI, self::KEY_HEADERS],
@@ -326,15 +326,14 @@ class Request extends AbstractDataTransferObject
     {
         $array = [
             self::KEY_METHOD => $this->method->value,
-            self::KEY_URI => $this->uri,
+            self::KEY_URI => $this->getUri(), // Include query params if GET with data
             self::KEY_HEADERS => $this->headers->getAll(),
         ];
 
-        // Include whichever data type is set
-        if ($this->body !== null) {
-            $array[self::KEY_DATA] = $this->body;
-        } elseif ($this->data !== null) {
-            $array[self::KEY_DATA] = $this->data;
+        // Include body if present (getBody() handles the conversion)
+        $body = $this->getBody();
+        if ($body !== null) {
+            $array[self::KEY_BODY] = $body;
         }
 
         return $array;
@@ -353,7 +352,7 @@ class Request extends AbstractDataTransferObject
             HttpMethodEnum::from($array[self::KEY_METHOD]),
             $array[self::KEY_URI],
             $array[self::KEY_HEADERS] ?? [],
-            $array[self::KEY_DATA] ?? null
+            $array[self::KEY_BODY] ?? null
         );
     }
 }
