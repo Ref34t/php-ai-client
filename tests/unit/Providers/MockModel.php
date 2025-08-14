@@ -40,7 +40,7 @@ class MockModel implements ModelInterface
     /**
      * {@inheritDoc}
      */
-    public function getMetadata(): ModelMetadata
+    public function metadata(): ModelMetadata
     {
         return $this->metadata;
     }
