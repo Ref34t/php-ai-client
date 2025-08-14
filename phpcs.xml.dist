@@ -9,9 +9,6 @@
     <!-- Ignore vendor directory -->
     <exclude-pattern>*/vendor/*</exclude-pattern>
 
-    <!-- Use PSR-12 standard -->
-    <rule ref="PSR12"/>
-
     <!-- Show progress, show sniff codes in all reports -->
     <arg value="sp"/>
 
@@ -20,4 +17,18 @@
 
     <!-- Enable colors in output -->
     <arg name="colors"/>
+
+    <!-- Use PSR-12 standard -->
+    <rule ref="PSR12"/>
+
+    <!-- Enforce namespace best practices -->
+	<rule ref="SlevomatCodingStandard.Namespaces.DisallowGroupUse" />
+	<rule ref="SlevomatCodingStandard.Namespaces.UseDoesNotStartWithBackslash" />
+	<rule ref="SlevomatCodingStandard.Namespaces.AlphabeticallySortedUses" />
+	<rule ref="SlevomatCodingStandard.Namespaces.UseFromSameNamespace" />
+	<rule ref="SlevomatCodingStandard.Namespaces.UnusedUses">
+		<properties>
+			<property name="searchAnnotations" value="true" />
+		</properties>
+	</rule>
 </ruleset>
