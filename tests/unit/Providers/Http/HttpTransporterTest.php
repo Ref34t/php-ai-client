@@ -4,15 +4,14 @@ declare(strict_types=1);
 
 namespace WordPress\AiClient\Tests\Providers\Http;
 
+use GuzzleHttp\Psr7\HttpFactory;
+use GuzzleHttp\Psr7\Response as Psr7Response;
 use Http\Mock\Client as MockClient;
 use PHPUnit\Framework\TestCase;
-use Psr\Http\Message\ResponseInterface;
 use WordPress\AiClient\Providers\Http\DTO\Request;
 use WordPress\AiClient\Providers\Http\DTO\Response;
 use WordPress\AiClient\Providers\Http\Enums\HttpMethodEnum;
 use WordPress\AiClient\Providers\Http\HttpTransporter;
-use GuzzleHttp\Psr7\Response as Psr7Response;
-use GuzzleHttp\Psr7\HttpFactory;
 
 /**
  * Tests for HttpTransporter class.

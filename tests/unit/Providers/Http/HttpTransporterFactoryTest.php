@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace WordPress\AiClient\Tests\Providers\Http;
 
 use PHPUnit\Framework\TestCase;
-use WordPress\AiClient\Providers\Http\HttpTransporterFactory;
 use WordPress\AiClient\Providers\Http\Contracts\HttpTransporterInterface;
+use WordPress\AiClient\Providers\Http\HttpTransporterFactory;
 
 /**
  * Tests for HttpTransporterFactory class.
