@@ -281,18 +281,6 @@ class Request extends AbstractDataTransferObject
     }
 
     /**
-     * Gets the request body string.
-     *
-     * @since n.e.x.t
-     *
-     * @return string|null The request body string.
-     */
-    public function getBodyString(): ?string
-    {
-        return $this->body;
-    }
-
-    /**
      * {@inheritDoc}
      *
      * @since n.e.x.t
