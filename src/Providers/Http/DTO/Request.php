@@ -327,11 +327,10 @@ class Request extends AbstractDataTransferObject
     {
         $array = [
             self::KEY_METHOD => $this->method->value,
-            self::KEY_URI => $this->getUri(), // Include query params if GET with data
+            self::KEY_URI => $this->getUri(),
             self::KEY_HEADERS => $this->headers->getAll(),
         ];
 
-        // Include body if present (getBody() handles the conversion)
         $body = $this->getBody();
         if ($body !== null) {
             $array[self::KEY_BODY] = $body;
@@ -349,11 +348,65 @@ class Request extends AbstractDataTransferObject
     {
         static::validateFromArrayData($array, [self::KEY_METHOD, self::KEY_URI, self::KEY_HEADERS]);
 
+        $method = HttpMethodEnum::from($array[self::KEY_METHOD]);
+        $uri = $array[self::KEY_URI];
+        $data = null;
+
+        // For GET requests, extract query parameters from URI
+        if ($method->isGet()) {
+            $parsedData = self::parseDataFromUri($uri);
+            if ($parsedData !== null) {
+                $uri = $parsedData['uri'];
+                $data = $parsedData['data'];
+            }
+        } else {
+            // Handle body which can be string, array, or object from JSON deserialization
+            $bodyData = $array[self::KEY_BODY] ?? null;
+            if (is_object($bodyData)) {
+                /** @var array<string, mixed> $bodyData */
+                $bodyData = (array) $bodyData;
+            }
+            $data = $bodyData;
+        }
+
         return new self(
-            HttpMethodEnum::from($array[self::KEY_METHOD]),
-            $array[self::KEY_URI],
+            $method,
+            $uri,
             $array[self::KEY_HEADERS] ?? [],
-            $array[self::KEY_BODY] ?? null
+            $data
         );
+    }
+
+    /**
+     * Parses query parameters from a URI string.
+     *
+     * @since n.e.x.t
+     *
+     * @param string $uri The URI to parse.
+     * @return array{uri: string, data: array<string, mixed>}|null Returns parsed data or null if no query string.
+     */
+    private static function parseDataFromUri(string $uri): ?array
+    {
+        $queryString = parse_url($uri, PHP_URL_QUERY);
+        if ($queryString === null || $queryString === false || $queryString === '') {
+            return null;
+        }
+
+        $queryParams = [];
+        parse_str($queryString, $queryParams);
+
+        if (empty($queryParams)) {
+            return null;
+        }
+
+        // Remove query string from URI since it will be reconstructed from data
+        $questionPos = strpos($uri, '?');
+        $cleanUri = $questionPos !== false ? substr($uri, 0, $questionPos) : $uri;
+
+        // PHPStan doesn't understand that parse_str always creates string keys
+        return [ // @phpstan-ignore-line
+            'uri' => $cleanUri,
+            'data' => $queryParams,
+        ];
     }
 }
