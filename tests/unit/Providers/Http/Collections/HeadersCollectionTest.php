@@ -83,15 +83,16 @@ class HeadersCollectionTest extends TestCase
     {
         $headers = new HeadersCollection(['Content-Type' => 'application/json']);
 
-        // withHeader with different casing should replace existing
+        // withHeader with different casing should replace existing with new casing
         $newHeaders = $headers->withHeader('content-type', 'text/html');
 
         $this->assertEquals(['text/html'], $newHeaders->get('Content-Type'));
+        $this->assertEquals(['text/html'], $newHeaders->get('content-type'));
 
-        // Original casing should be preserved
+        // New casing should be used
         $all = $newHeaders->getAll();
-        $this->assertArrayHasKey('Content-Type', $all);
-        $this->assertArrayNotHasKey('content-type', $all);
+        $this->assertArrayHasKey('content-type', $all);
+        $this->assertArrayNotHasKey('Content-Type', $all);
     }
 
     /**

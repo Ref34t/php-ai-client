@@ -115,15 +115,17 @@ class HeadersCollection
         }
         $lowerName = strtolower($name);
 
-        // If header exists with different casing, use the existing casing
+        // If header exists with different casing, remove the old casing
         if (isset($this->headersMap[$lowerName])) {
-            $actualName = $this->headersMap[$lowerName];
-            $this->headers[$actualName] = $normalizedValues;
-        } else {
-            // New header, use provided casing
-            $this->headers[$name] = $normalizedValues;
-            $this->headersMap[$lowerName] = $name;
+            $oldName = $this->headersMap[$lowerName];
+            if ($oldName !== $name) {
+                unset($this->headers[$oldName]);
+            }
         }
+
+        // Always use the new casing
+        $this->headers[$name] = $normalizedValues;
+        $this->headersMap[$lowerName] = $name;
     }
 
     /**
