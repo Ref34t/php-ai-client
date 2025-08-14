@@ -403,7 +403,7 @@ class Request extends AbstractDataTransferObject
         $questionPos = strpos($uri, '?');
         $cleanUri = $questionPos !== false ? substr($uri, 0, $questionPos) : $uri;
 
-        // PHPStan doesn't understand that parse_str always creates string keys
+        // PHPStan doesn't understand that parse_str always creates string keys in the root
         return [ // @phpstan-ignore-line
             'uri' => $cleanUri,
             'data' => $queryParams,
