@@ -117,9 +117,10 @@ class HttpTransporter implements HttpTransporterInterface
     {
         $body = (string) $psr7Response->getBody();
 
+        // PSR-7 always returns headers as arrays, but HeadersCollection handles this
         return new Response(
             $psr7Response->getStatusCode(),
-            $psr7Response->getHeaders(), // @phpstan-ignore-line PSR-7 always returns headers as arrays, but HeadersCollection handles this
+            $psr7Response->getHeaders(), // @phpstan-ignore-line
             $body === '' ? null : $body
         );
     }
