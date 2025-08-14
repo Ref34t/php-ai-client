@@ -50,9 +50,14 @@ class Request extends AbstractDataTransferObject
     protected HeadersCollection $headers;
 
     /**
-     * @var string|array<string, mixed>|null The request data.
+     * @var array<string, mixed>|null The request data (for query params or form data).
      */
-    protected $data;
+    protected ?array $data = null;
+
+    /**
+     * @var string|null The request body (raw string content).
+     */
+    protected ?string $body = null;
 
     /**
      * Constructor.
@@ -75,7 +80,13 @@ class Request extends AbstractDataTransferObject
         $this->method = $method;
         $this->uri = $uri;
         $this->headers = new HeadersCollection($headers);
-        $this->data = $data;
+
+        // Separate data and body based on type
+        if (is_string($data)) {
+            $this->body = $data;
+        } elseif (is_array($data)) {
+            $this->data = $data;
+        }
     }
 
     /**
@@ -101,8 +112,8 @@ class Request extends AbstractDataTransferObject
      */
     public function getUri(): string
     {
-        // If GET request with array data, append as query parameters
-        if ($this->method === HttpMethodEnum::GET() && is_array($this->data) && !empty($this->data)) {
+        // If GET request with data, append as query parameters
+        if ($this->method === HttpMethodEnum::GET() && $this->data !== null && !empty($this->data)) {
             $separator = strpos($this->uri, '?') === false ? '?' : '&';
             return $this->uri . $separator . http_build_query($this->data);
         }
@@ -136,12 +147,12 @@ class Request extends AbstractDataTransferObject
     }
 
     /**
-     * Gets the first value of a specific header.
+     * Gets header values as a comma-separated string.
      *
      * @since n.e.x.t
      *
      * @param string $name The header name (case-insensitive).
-     * @return string|null The header value as a concatenated string, or null if not found.
+     * @return string|null The header values as a comma-separated string, or null if not found.
      */
     public function getHeaderAsString(string $name): ?string
     {
@@ -166,9 +177,9 @@ class Request extends AbstractDataTransferObject
      *
      * For GET requests, returns null.
      * For POST/PUT/PATCH requests:
-     * - If data is a string, returns it as-is
-     * - If data is an array and Content-Type is JSON, returns JSON-encoded data
-     * - If data is an array and Content-Type is form, returns URL-encoded data
+     * - If body is set, returns it as-is
+     * - If data is set and Content-Type is JSON, returns JSON-encoded data
+     * - If data is set and Content-Type is form, returns URL-encoded data
      *
      * @since n.e.x.t
      *
@@ -182,18 +193,13 @@ class Request extends AbstractDataTransferObject
             return null;
         }
 
-        // If data is null, return null
-        if ($this->data === null) {
-            return null;
+        // If body is set, return it as-is
+        if ($this->body !== null) {
+            return $this->body;
         }
 
-        // If data is already a string, return it as-is
-        if (is_string($this->data)) {
-            return $this->data;
-        }
-
-        // If data is an array, encode based on content type
-        if (is_array($this->data)) {
+        // If data is set, encode based on content type
+        if ($this->data !== null) {
             $contentType = $this->getContentType();
 
             // JSON encoding
@@ -249,20 +255,41 @@ class Request extends AbstractDataTransferObject
     public function withData($data): self
     {
         $new = clone $this;
-        $new->data = $data;
+        if (is_string($data)) {
+            $new->body = $data;
+            $new->data = null;
+        } elseif (is_array($data)) {
+            $new->data = $data;
+            $new->body = null;
+        } else {
+            $new->data = null;
+            $new->body = null;
+        }
         return $new;
     }
 
     /**
-     * Gets the request data.
+     * Gets the request data array.
      *
      * @since n.e.x.t
      *
-     * @return string|array<string, mixed>|null The request data.
+     * @return array<string, mixed>|null The request data array.
      */
-    public function getData()
+    public function getData(): ?array
     {
         return $this->data;
+    }
+
+    /**
+     * Gets the request body string.
+     *
+     * @since n.e.x.t
+     *
+     * @return string|null The request body string.
+     */
+    public function getBodyString(): ?string
+    {
+        return $this->body;
     }
 
     /**
@@ -315,7 +342,10 @@ class Request extends AbstractDataTransferObject
             self::KEY_HEADERS => $this->headers->getAll(),
         ];
 
-        if ($this->data !== null) {
+        // Include whichever data type is set
+        if ($this->body !== null) {
+            $array[self::KEY_DATA] = $this->body;
+        } elseif ($this->data !== null) {
             $array[self::KEY_DATA] = $this->data;
         }
 

@@ -105,12 +105,12 @@ class Response extends AbstractDataTransferObject
     }
 
     /**
-     * Gets the first value of a specific header.
+     * Gets header values as a comma-separated string.
      *
      * @since n.e.x.t
      *
      * @param string $name The header name (case-insensitive).
-     * @return string|null The first header value or null if not found.
+     * @return string|null The header values as a comma-separated string or null if not found.
      */
     public function getHeaderAsString(string $name): ?string
     {
