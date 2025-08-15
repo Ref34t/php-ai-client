@@ -307,9 +307,8 @@ class Request extends AbstractDataTransferObject
                     'description' => 'The request headers.',
                 ],
                 self::KEY_BODY => [
-                    'type' => ['string', 'array', 'object', 'null'],
-                    'description' => 'The request body. Always a string when serialized. ' .
-                        'Can be a string, array, or object when deserializing.',
+                    'type' => ['string'],
+                    'description' => 'The request body.',
                 ],
             ],
             'required' => [self::KEY_METHOD, self::KEY_URI, self::KEY_HEADERS],
