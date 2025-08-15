@@ -5,11 +5,11 @@ declare(strict_types=1);
 namespace WordPress\AiClient\Providers\Models;
 
 use WordPress\AiClient\Providers\DTO\ProviderMetadata;
+use WordPress\AiClient\Providers\Http\Contracts\WithHttpTransporterInterface;
+use WordPress\AiClient\Providers\Http\Traits\WithHttpTransporterTrait;
 use WordPress\AiClient\Providers\Models\Contracts\ModelInterface;
-use WordPress\AiClient\Providers\Models\Contracts\WithHttpTransporterInterface;
 use WordPress\AiClient\Providers\Models\DTO\ModelConfig;
 use WordPress\AiClient\Providers\Models\DTO\ModelMetadata;
-use WordPress\AiClient\Providers\Models\Traits\WithHttpTransporterTrait;
 
 /**
  * Base class for an API-based model for a provider.

@@ -9,6 +9,8 @@ use WordPress\AiClient\Files\Enums\FileTypeEnum;
 use WordPress\AiClient\Files\Enums\MediaOrientationEnum;
 use WordPress\AiClient\Messages\Enums\ModalityEnum;
 use WordPress\AiClient\Providers\AbstractOpenAiCompatibleModelMetadataDirectory;
+use WordPress\AiClient\Providers\Http\DTO\Request;
+use WordPress\AiClient\Providers\Http\DTO\Response;
 use WordPress\AiClient\Providers\Models\DTO\ModelConfig;
 use WordPress\AiClient\Providers\Models\DTO\ModelMetadata;
 use WordPress\AiClient\Providers\Models\DTO\SupportedOption;
@@ -24,7 +26,7 @@ class OpenAiModelMetadataDirectory extends AbstractOpenAiCompatibleModelMetadata
     /**
      * @inheritDoc
      */
-    protected function createRequest(string $path): RequestInterface
+    protected function createRequest(string $path): Request
     {
         // Something like this.
         return new OpenAiCompatibleRequest('https://api.openai.com/v1', $path);
@@ -33,7 +35,7 @@ class OpenAiModelMetadataDirectory extends AbstractOpenAiCompatibleModelMetadata
     /**
      * @inheritDoc
      */
-    protected function parseResponseToModelMetadataList(ResponseInterface $response): array
+    protected function parseResponseToModelMetadataList(Response $response): array
     {
         $responseData = $response->getData();
         if (!isset($responseData['data']) || !$responseData['data']) {

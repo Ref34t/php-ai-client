@@ -6,9 +6,9 @@ namespace WordPress\AiClient\Providers;
 
 use InvalidArgumentException;
 use WordPress\AiClient\Providers\Contracts\ModelMetadataDirectoryInterface;
-use WordPress\AiClient\Providers\Models\Contracts\WithHttpTransporterInterface;
+use WordPress\AiClient\Providers\Http\Contracts\WithHttpTransporterInterface;
+use WordPress\AiClient\Providers\Http\Traits\WithHttpTransporterTrait;
 use WordPress\AiClient\Providers\Models\DTO\ModelMetadata;
-use WordPress\AiClient\Providers\Models\Traits\WithHttpTransporterTrait;
 
 /**
  * Base class for an API-based model metadata directory for a provider.

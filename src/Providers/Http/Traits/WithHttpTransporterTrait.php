@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace WordPress\AiClient\Providers\Models\Traits;
+namespace WordPress\AiClient\Providers\Http\Traits;
 
 use RuntimeException;
-use WordPress\AiClient\Providers\Contracts\HttpTransporterInterface;
+use WordPress\AiClient\Providers\Http\Contracts\HttpTransporterInterface;
 
 /**
  * Trait for a class that implements WithHttpTransporterInterface.

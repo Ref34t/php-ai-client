@@ -13,6 +13,8 @@ use WordPress\AiClient\Messages\DTO\SystemMessage;
 use WordPress\AiClient\Messages\Enums\MessagePartChannelEnum;
 use WordPress\AiClient\Messages\Enums\MessageRoleEnum;
 use WordPress\AiClient\Messages\Enums\ModalityEnum;
+use WordPress\AiClient\Providers\Http\DTO\Request;
+use WordPress\AiClient\Providers\Http\DTO\Response;
 use WordPress\AiClient\Providers\Models\TextGeneration\Contracts\TextGenerationModelInterface;
 use WordPress\AiClient\Results\DTO\Candidate;
 use WordPress\AiClient\Results\DTO\GenerativeAiResult;
@@ -39,7 +41,7 @@ abstract class AbstractOpenAiCompatibleTextGenerationModel extends AbstractApiBa
 
         // Something like this.
         $request = $this->createRequest('chat/completions', $params);
-        $response = $httpTransporter->sendRequest($request);
+        $response = $httpTransporter->send($request);
 
         return $this->parseResponseToGenerativeAiResult($response);
     }
@@ -367,19 +369,19 @@ abstract class AbstractOpenAiCompatibleTextGenerationModel extends AbstractApiBa
      *
      * @param string $path The API endpoint path, relative to the base URI.
      * @param array<string, mixed> $params The parameters for the API request.
-     * @return RequestInterface The request object.
+     * @return Request The request object.
      */
-    abstract protected function createRequest(string $path, array $params): RequestInterface;
+    abstract protected function createRequest(string $path, array $params): Request;
 
     /**
      * Parses the response from the API endpoint to a generative AI result.
      *
      * @since n.e.x.t
      *
-     * @param ResponseInterface $response The response from the API endpoint.
+     * @param Response $response The response from the API endpoint.
      * @return GenerativeAiResult The parsed generative AI result.
      */
-    protected function parseResponseToGenerativeAiResult(ResponseInterface $response): GenerativeAiResult
+    protected function parseResponseToGenerativeAiResult(Response $response): GenerativeAiResult
     {
         $responseData = $response->getData();
         if (!isset($responseData['choices']) || !$responseData['choices']) {
