@@ -218,6 +218,13 @@ class ProviderRegistry
             );
         }
 
+        // Validate that class implements ProviderInterface (for PHPStan type safety)
+        if (!is_subclass_of($className, ProviderInterface::class)) {
+            throw new InvalidArgumentException(
+                sprintf('Provider class must implement %s: %s', ProviderInterface::class, $className)
+            );
+        }
+
         return $className;
     }
 }
