@@ -41,7 +41,7 @@ abstract class AbstractApiBasedModelMetadataDirectory implements
     final public function hasModelMetadata(string $modelId): bool
     {
         try {
-            $this->getModelMetadata();
+            $this->getModelMetadata($modelId);
         } catch (InvalidArgumentException $e) {
             return false;
         }
