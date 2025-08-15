@@ -396,21 +396,31 @@ abstract class AbstractOpenAiCompatibleTextGenerationModel extends AbstractApiBa
         }
 
         $candidates = [];
-        foreach ($responseData['choices'] as $choice) {
-            if (!is_array($choice)) {
+        foreach ($responseData['choices'] as $choiceData) {
+            if (!is_array($choiceData) || array_is_list($choiceData)) {
                 throw new RuntimeException(
                     'Unexpected API response: Each element in the choices key must be an associative array.'
                 );
             }
-            $candidates[] = $this->parseResponseChoiceToCandidate($choice);
+
+            /** @var array<string, mixed> $choiceData */
+            $candidates[] = $this->parseResponseChoiceToCandidate($choiceData);
         }
 
-        $id = $responseData['id'] ?? '';
-        $tokenUsage = new TokenUsage(
-            $responseData['usage']['prompt_tokens'] ?? 0,
-            $responseData['usage']['completion_tokens'] ?? 0,
-            $responseData['usage']['total_tokens'] ?? 0
-        );
+        $id = isset($responseData['id']) && is_string($responseData['id']) ? $responseData['id'] : '';
+
+        if (isset($responseData['usage']) && is_array($responseData['usage'])) {
+            /** @var array<string, int> $usage */
+            $usage = $responseData['usage'];
+
+            $tokenUsage = new TokenUsage(
+                $usage['prompt_tokens'] ?? 0,
+                $usage['completion_tokens'] ?? 0,
+                $usage['total_tokens'] ?? 0
+            );
+        } else {
+            $tokenUsage = new TokenUsage(0, 0, 0);
+        }
 
         // Use any other data from the response as provider metadata.
         $providerMetadata = $responseData;
@@ -429,27 +439,33 @@ abstract class AbstractOpenAiCompatibleTextGenerationModel extends AbstractApiBa
      *
      * @since n.e.x.t
      *
-     * @param array<string, mixed> $choice The choice data from the API response.
+     * @param array<string, mixed> $choiceData The choice data from the API response.
      * @return Candidate The parsed candidate.
      * @throws RuntimeException If the choice data is invalid.
      */
-    protected function parseResponseChoiceToCandidate(array $choice): Candidate
+    protected function parseResponseChoiceToCandidate(array $choiceData): Candidate
     {
-        if (!isset($choice['message']) || !is_array($choice['message'])) {
+        if (
+            !isset($choiceData['message']) ||
+            !is_array($choiceData['message']) ||
+            array_is_list($choiceData['message'])
+        ) {
             throw new RuntimeException(
                 'Unexpected API response: Each choice must contain a message key with an associative array.'
             );
         }
 
-        if (!isset($choice['finish_reason']) || !is_string($choice['finish_reason'])) {
+        if (!isset($choiceData['finish_reason']) || !is_string($choiceData['finish_reason'])) {
             throw new RuntimeException(
                 'Unexpected API response: Each choice must contain a finish_reason key with a string value.'
             );
         }
 
-        $message = $this->parseResponseChoiceMessage($choice['message']);
+        /** @var array<string, mixed> $messageData */
+        $messageData = $choiceData['message'];
+        $message = $this->parseResponseChoiceMessage($messageData);
 
-        switch ($choice['finish_reason']) {
+        switch ($choiceData['finish_reason']) {
             case 'stop':
                 $finishReason = FinishReasonEnum::stop();
                 break;
@@ -466,7 +482,7 @@ abstract class AbstractOpenAiCompatibleTextGenerationModel extends AbstractApiBa
                 throw new RuntimeException(
                     sprintf(
                         'Unexpected API response: Invalid finish reason "%s".',
-                        $choice['finish_reason']
+                        $choiceData['finish_reason']
                     )
                 );
         }
@@ -479,16 +495,16 @@ abstract class AbstractOpenAiCompatibleTextGenerationModel extends AbstractApiBa
      *
      * @since n.e.x.t
      *
-     * @param array<string, mixed> $message The message data from the API response.
+     * @param array<string, mixed> $messageData The message data from the API response.
      * @return Message The parsed message.
      */
-    protected function parseResponseChoiceMessage(array $message): Message
+    protected function parseResponseChoiceMessage(array $messageData): Message
     {
-        $role = isset($message['role']) && 'user' === $message['role']
+        $role = isset($messageData['role']) && 'user' === $messageData['role']
             ? MessageRoleEnum::user()
             : MessageRoleEnum::model();
 
-        $parts = $this->parseResponseChoiceMessageParts($message);
+        $parts = $this->parseResponseChoiceMessageParts($messageData);
 
         return new Message($role, $parts);
     }
@@ -498,24 +514,25 @@ abstract class AbstractOpenAiCompatibleTextGenerationModel extends AbstractApiBa
      *
      * @since n.e.x.t
      *
-     * @param array<string, mixed> $message The message data from the API response.
+     * @param array<string, mixed> $messageData The message data from the API response.
      * @return MessagePart[] The parsed message parts.
      */
-    protected function parseResponseChoiceMessageParts(array $message): array
+    protected function parseResponseChoiceMessageParts(array $messageData): array
     {
         $parts = [];
 
-        if (isset($message['reasoning_content']) && is_string($message['reasoning_content'])) {
-            $parts[] = new MessagePart($message['reasoning_content'], MessagePartChannelEnum::thought());
+        if (isset($messageData['reasoning_content']) && is_string($messageData['reasoning_content'])) {
+            $parts[] = new MessagePart($messageData['reasoning_content'], MessagePartChannelEnum::thought());
         }
 
-        if (isset($message['content']) && is_string($message['content'])) {
-            $parts[] = new MessagePart($message['content']);
+        if (isset($messageData['content']) && is_string($messageData['content'])) {
+            $parts[] = new MessagePart($messageData['content']);
         }
 
-        if (isset($message['tool_calls']) && is_array($message['tool_calls'])) {
-            foreach ($message['tool_calls'] as $toolCall) {
-                $toolCallPart = $this->parseResponseChoiceMessageToolCallPart($toolCall);
+        if (isset($messageData['tool_calls']) && is_array($messageData['tool_calls'])) {
+            foreach ($messageData['tool_calls'] as $toolCallData) {
+                /** @var array<string, mixed> $toolCallData */
+                $toolCallPart = $this->parseResponseChoiceMessageToolCallPart($toolCallData);
                 if (!$toolCallPart) {
                     throw new RuntimeException(
                         'Unexpected API response: The response includes a tool call of an unexpected type.'
@@ -533,10 +550,10 @@ abstract class AbstractOpenAiCompatibleTextGenerationModel extends AbstractApiBa
      *
      * @since n.e.x.t
      *
-     * @param array<string, mixed> $toolCall The tool call data from the API response.
+     * @param array<string, mixed> $toolCallData The tool call data from the API response.
      * @return MessagePart|null The parsed message part for the tool call, or null if not applicable.
      */
-    protected function parseResponseChoiceMessageToolCallPart(array $toolCall): ?MessagePart
+    protected function parseResponseChoiceMessageToolCallPart(array $toolCallData): ?MessagePart
     {
         /*
          * For now, only function calls are supported.
@@ -544,18 +561,26 @@ abstract class AbstractOpenAiCompatibleTextGenerationModel extends AbstractApiBa
          * Not all OpenAI compatible APIs include a 'type' key, so we only check its value if it is set.
          */
         if (
-            (isset($toolCall['type']) && 'function' !== $toolCall['type']) ||
-            !isset($toolCall['function'])
+            (isset($toolCallData['type']) && 'function' !== $toolCallData['type']) ||
+            !isset($toolCallData['function']) ||
+            !is_array($toolCallData['function'])
         ) {
             return null;
         }
 
+        /** @var array<string, mixed> $functionArguments */
+        $functionArguments = is_string($toolCallData['function']['arguments'])
+            ? json_decode($toolCallData['function']['arguments'], true)
+            : $toolCallData['function']['arguments'];
+
         $functionCall = new FunctionCall(
-            $toolCall['id'] ?? null,
-            $toolCall['function']['name'],
-            is_string($toolCall['function']['arguments'])
-                ? json_decode($toolCall['function']['arguments'], true)
-                : $toolCall['function']['arguments']
+            isset($toolCallData['id']) && is_string($toolCallData['id']) ?
+                $toolCallData['id'] :
+                null,
+            isset($toolCallData['function']['name']) && is_string($toolCallData['function']['name']) ?
+                $toolCallData['function']['name'] :
+                null,
+            $functionArguments
         );
 
         return new MessagePart($functionCall);
