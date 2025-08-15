@@ -182,7 +182,7 @@ class ProviderRegistry
      *
      * @since n.e.x.t
      *
-     * @param string $idOrClassName The provider ID or class name.
+     * @param string|class-string<ProviderInterface> $idOrClassName The provider ID or class name.
      * @param string $modelId The model identifier.
      * @param ModelConfig|null $modelConfig The model configuration.
      * @return ModelInterface The configured model instance.
