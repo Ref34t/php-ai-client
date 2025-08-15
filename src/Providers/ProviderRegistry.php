@@ -24,7 +24,7 @@ use WordPress\AiClient\Providers\Models\DTO\ModelRequirements;
 class ProviderRegistry
 {
     /**
-     * @var array<string, string> Mapping of provider IDs to class names.
+     * @var array<string, class-string<ProviderInterface>> Mapping of provider IDs to class names.
      */
     private array $providerClassNames = [];
 
