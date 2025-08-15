@@ -38,7 +38,7 @@ class CandidateTest extends TestCase
 
         $candidate = new Candidate(
             $message,
-            FinishReasonEnum::stop()
+            FinishReasonEnum::stop(),
         );
 
         $this->assertSame($message, $candidate->getMessage());
@@ -115,7 +115,11 @@ class CandidateTest extends TestCase
      */
     public function testWithMessageContainingFiles(): void
     {
-        $file = new File('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAAAAAA6fptVAAAACklEQVQI12P4DwABAQEAG7buVgAAAABJRU5ErkJggg==', 'image/png');
+        $base64Data = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAAAAAA6fptVAAAACklEQVQI12P4DwABAQEAG7buVgAAAABJRU5ErkJggg==';
+        $file = new File(
+            'data:image/png;base64,' . $base64Data,
+            'image/png'
+        );
 
         $message = new ModelMessage([
             new MessagePart('I\'ve generated the requested image:'),
@@ -125,7 +129,7 @@ class CandidateTest extends TestCase
 
         $candidate = new Candidate(
             $message,
-            FinishReasonEnum::stop()
+            FinishReasonEnum::stop(),
         );
 
         $parts = $candidate->getMessage()->getParts();
@@ -133,7 +137,6 @@ class CandidateTest extends TestCase
         $this->assertSame($file, $parts[1]->getFile());
         $this->assertEquals('The image shows a flowchart of the process.', $parts[2]->getText());
     }
-
 
     /**
      * Tests candidate rejects non-model message.
@@ -317,11 +320,17 @@ class CandidateTest extends TestCase
             Candidate::KEY_MESSAGE => [
                 Message::KEY_ROLE => MessageRoleEnum::model()->value,
                 Message::KEY_PARTS => [
-                    [MessagePart::KEY_TYPE => MessagePartTypeEnum::text()->value, MessagePart::KEY_TEXT => 'Response text 1'],
-                    [MessagePart::KEY_TYPE => MessagePartTypeEnum::text()->value, MessagePart::KEY_TEXT => 'Response text 2']
+                    [
+                        MessagePart::KEY_TYPE => MessagePartTypeEnum::text()->value,
+                        MessagePart::KEY_TEXT => 'Response text 1'
+                    ],
+                    [
+                        MessagePart::KEY_TYPE => MessagePartTypeEnum::text()->value,
+                        MessagePart::KEY_TEXT => 'Response text 2'
+                    ]
                 ]
             ],
-            Candidate::KEY_FINISH_REASON => FinishReasonEnum::stop()->value
+            Candidate::KEY_FINISH_REASON => FinishReasonEnum::stop()->value,
         ];
 
         $candidate = Candidate::fromArray($json);

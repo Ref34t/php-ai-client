@@ -178,7 +178,11 @@ class GenerativeAiResultTest extends TestCase
      */
     public function testToFile(): void
     {
-        $file = new File('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAAAAAA6fptVAAAACklEQVQI12P4DwABAQEAG7buVgAAAABJRU5ErkJggg==', 'image/png');
+        $base64Data = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAAAAAA6fptVAAAACklEQVQI12P4DwABAQEAG7buVgAAAABJRU5ErkJggg==';
+        $file = new File(
+            'data:image/png;base64,' . $base64Data,
+            'image/png'
+        );
         $message = new ModelMessage([
             new MessagePart('Here is the generated image:'),
             new MessagePart($file)
@@ -628,7 +632,15 @@ class GenerativeAiResultTest extends TestCase
 
         $json = $this->assertToArrayReturnsArray($result);
 
-        $this->assertArrayHasKeys($json, [GenerativeAiResult::KEY_ID, GenerativeAiResult::KEY_CANDIDATES, GenerativeAiResult::KEY_TOKEN_USAGE, GenerativeAiResult::KEY_PROVIDER_METADATA]);
+        $this->assertArrayHasKeys(
+            $json,
+            [
+                GenerativeAiResult::KEY_ID,
+                GenerativeAiResult::KEY_CANDIDATES,
+                GenerativeAiResult::KEY_TOKEN_USAGE,
+                GenerativeAiResult::KEY_PROVIDER_METADATA
+            ]
+        );
         $this->assertEquals('result_json_123', $json[GenerativeAiResult::KEY_ID]);
         $this->assertIsArray($json[GenerativeAiResult::KEY_CANDIDATES]);
         $this->assertCount(1, $json[GenerativeAiResult::KEY_CANDIDATES]);
@@ -650,11 +662,17 @@ class GenerativeAiResultTest extends TestCase
                     Candidate::KEY_MESSAGE => [
                         Message::KEY_ROLE => MessageRoleEnum::model()->value,
                         Message::KEY_PARTS => [
-                            [MessagePart::KEY_TYPE => MessagePartTypeEnum::text()->value, MessagePart::KEY_TEXT => 'First part'],
-                            [MessagePart::KEY_TYPE => MessagePartTypeEnum::text()->value, MessagePart::KEY_TEXT => 'Second part']
+                            [
+                                MessagePart::KEY_TYPE => MessagePartTypeEnum::text()->value,
+                                MessagePart::KEY_TEXT => 'First part'
+                            ],
+                            [
+                                MessagePart::KEY_TYPE => MessagePartTypeEnum::text()->value,
+                                MessagePart::KEY_TEXT => 'Second part'
+                            ]
                         ]
                     ],
-                    Candidate::KEY_FINISH_REASON => FinishReasonEnum::stop()->value
+                    Candidate::KEY_FINISH_REASON => FinishReasonEnum::stop()->value,
                 ]
             ],
             GenerativeAiResult::KEY_TOKEN_USAGE => [
@@ -742,7 +760,15 @@ class GenerativeAiResultTest extends TestCase
 
         $json = $this->assertToArrayReturnsArray($result);
 
-        $this->assertArrayHasKeys($json, [GenerativeAiResult::KEY_ID, GenerativeAiResult::KEY_CANDIDATES, GenerativeAiResult::KEY_TOKEN_USAGE, GenerativeAiResult::KEY_PROVIDER_METADATA]);
+        $this->assertArrayHasKeys(
+            $json,
+            [
+                GenerativeAiResult::KEY_ID,
+                GenerativeAiResult::KEY_CANDIDATES,
+                GenerativeAiResult::KEY_TOKEN_USAGE,
+                GenerativeAiResult::KEY_PROVIDER_METADATA
+            ]
+        );
         $this->assertEquals([], $json[GenerativeAiResult::KEY_PROVIDER_METADATA]);
     }
 

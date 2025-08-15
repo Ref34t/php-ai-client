@@ -246,7 +246,10 @@ class GenerativeAiOperationTest extends TestCase
         );
 
         // Required fields
-        $this->assertEquals([GenerativeAiOperation::KEY_ID, GenerativeAiOperation::KEY_STATE, GenerativeAiOperation::KEY_RESULT], $succeededSchema['required']);
+        $this->assertEquals(
+            [GenerativeAiOperation::KEY_ID, GenerativeAiOperation::KEY_STATE, GenerativeAiOperation::KEY_RESULT],
+            $succeededSchema['required']
+        );
     }
 
     /**
@@ -274,7 +277,10 @@ class GenerativeAiOperationTest extends TestCase
         $this->assertContains(OperationStateEnum::canceled()->value, $stateEnum);
 
         // Required fields
-        $this->assertEquals([GenerativeAiOperation::KEY_ID, GenerativeAiOperation::KEY_STATE], $otherStatesSchema['required']);
+        $this->assertEquals(
+            [GenerativeAiOperation::KEY_ID, GenerativeAiOperation::KEY_STATE],
+            $otherStatesSchema['required']
+        );
     }
 
     /**
@@ -342,7 +348,10 @@ class GenerativeAiOperationTest extends TestCase
 
         $json = $this->assertToArrayReturnsArray($operation);
 
-        $this->assertArrayHasKeys($json, [GenerativeAiOperation::KEY_ID, GenerativeAiOperation::KEY_STATE, GenerativeAiOperation::KEY_RESULT]);
+        $this->assertArrayHasKeys(
+            $json,
+            [GenerativeAiOperation::KEY_ID, GenerativeAiOperation::KEY_STATE, GenerativeAiOperation::KEY_RESULT]
+        );
         $this->assertEquals('op_success_456', $json[GenerativeAiOperation::KEY_ID]);
         $this->assertEquals(OperationStateEnum::succeeded()->value, $json[GenerativeAiOperation::KEY_STATE]);
         $this->assertIsArray($json[GenerativeAiOperation::KEY_RESULT]);
@@ -385,9 +394,14 @@ class GenerativeAiOperationTest extends TestCase
                     [
                         Candidate::KEY_MESSAGE => [
                             Message::KEY_ROLE => MessageRoleEnum::model()->value,
-                            Message::KEY_PARTS => [[MessagePart::KEY_TYPE => 'text', MessagePart::KEY_TEXT => 'Response text']]
+                            Message::KEY_PARTS => [
+                                [
+                                    MessagePart::KEY_TYPE => 'text',
+                                    MessagePart::KEY_TEXT => 'Response text'
+                                ]
+                            ]
                         ],
-                        Candidate::KEY_FINISH_REASON => FinishReasonEnum::stop()->value
+                        Candidate::KEY_FINISH_REASON => FinishReasonEnum::stop()->value,
                     ]
                 ],
                 GenerativeAiResult::KEY_TOKEN_USAGE => [
