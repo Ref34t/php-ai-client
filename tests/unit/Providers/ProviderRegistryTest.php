@@ -9,11 +9,12 @@ use PHPUnit\Framework\TestCase;
 use WordPress\AiClient\Providers\ProviderRegistry;
 use WordPress\AiClient\Providers\Models\DTO\ModelRequirements;
 use WordPress\AiClient\Providers\Models\Enums\CapabilityEnum;
+use WordPress\AiClient\Tests\mocks\MockProvider;
 
 /**
- * @covers \WordPress\AiClient\Providers\AiProviderRegistry
+ * @covers \WordPress\AiClient\Providers\ProviderRegistry
  */
-class AiProviderRegistryTest extends TestCase
+class ProviderRegistryTest extends TestCase
 {
     private ProviderRegistry $registry;
 

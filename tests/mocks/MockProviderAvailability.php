@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace WordPress\AiClient\Tests\unit\Providers;
+namespace WordPress\AiClient\Tests\mocks;
 
 use WordPress\AiClient\Providers\Contracts\ProviderAvailabilityInterface;
 
