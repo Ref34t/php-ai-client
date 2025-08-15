@@ -34,7 +34,8 @@ class ProviderRegistry
      *
      * @since n.e.x.t
      *
-     * @param class-string<ProviderInterface> $className The fully qualified provider class name implementing the ProviderInterface
+     * @param class-string<ProviderInterface> $className The fully qualified provider class name implementing the
+     * ProviderInterface
      * @throws InvalidArgumentException If the class doesn't exist or implement the required interface.
      */
     public function registerProvider(string $className): void
