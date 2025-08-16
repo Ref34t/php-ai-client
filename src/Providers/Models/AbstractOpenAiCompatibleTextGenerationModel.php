@@ -22,6 +22,7 @@ use WordPress\AiClient\Results\DTO\GenerativeAiResult;
 use WordPress\AiClient\Results\DTO\TokenUsage;
 use WordPress\AiClient\Results\Enums\FinishReasonEnum;
 use WordPress\AiClient\Tools\DTO\FunctionCall;
+use WordPress\AiClient\Tools\DTO\FunctionDeclaration;
 
 /**
  * Base class for a text generation model for an OpenAI compatible provider.
@@ -90,7 +91,78 @@ abstract class AbstractOpenAiCompatibleTextGenerationModel extends AbstractApiBa
             }
         }
 
-        // TODO: Prepare other parameters based on config.
+        $candidateCount = $config->getCandidateCount();
+        if ($candidateCount !== null) {
+            $params['n'] = $candidateCount;
+        }
+
+        $maxTokens = $config->getMaxTokens();
+        if ($maxTokens !== null) {
+            $params['max_tokens'] = $maxTokens;
+        }
+
+        $temperature = $config->getTemperature();
+        if ($temperature !== null) {
+            $params['temperature'] = $temperature;
+        }
+
+        $topP = $config->getTopP();
+        if ($topP !== null) {
+            $params['top_p'] = $topP;
+        }
+
+        $stopSequences = $config->getStopSequences();
+        if (is_array($stopSequences)) {
+            $params['stop'] = $stopSequences;
+        }
+
+        $presencePenalty = $config->getPresencePenalty();
+        if ($presencePenalty !== null) {
+            $params['presence_penalty'] = $presencePenalty;
+        }
+
+        $frequencyPenalty = $config->getFrequencyPenalty();
+        if ($frequencyPenalty !== null) {
+            $params['frequency_penalty'] = $frequencyPenalty;
+        }
+
+        $logprobs = $config->getLogprobs();
+        if ($logprobs !== null) {
+            $params['logprobs'] = $logprobs;
+        }
+
+        $topLogprobs = $config->getTopLogprobs();
+        if ($topLogprobs !== null) {
+            $params['top_logprobs'] = $topLogprobs;
+        }
+
+        $functionDeclarations = $config->getFunctionDeclarations();
+        if (is_array($functionDeclarations)) {
+            $params['tools'] = $this->prepareToolsParam($functionDeclarations);
+        }
+
+        $outputMimeType = $config->getOutputMimeType();
+        if ('application/json' === $outputMimeType) {
+            $outputSchema = $config->getOutputSchema();
+            $params['response_format'] = $this->prepareResponseFormatParam($outputSchema);
+        }
+
+        /*
+         * Any custom options are added to the parameters as well.
+         * This allows developers to pass other options that may be more niche or not yet supported by the SDK.
+         */
+        $customOptions = $config->getCustomOptions();
+        foreach ($customOptions as $key => $value) {
+            if (isset($params[$key])) {
+                throw new InvalidArgumentException(
+                    sprintf(
+                        'The custom option "%s" conflicts with an existing parameter.',
+                        $key
+                    )
+                );
+            }
+            $params[$key] = $value;
+        }
 
         return $params;
     }
@@ -360,6 +432,51 @@ abstract class AbstractOpenAiCompatibleTextGenerationModel extends AbstractApiBa
             }
         }
         return $prepared;
+    }
+
+    /**
+     * Prepares the tools parameter for the API request.
+     *
+     * @since n.e.x.t
+     *
+     * @param list<FunctionDeclaration> $functionDeclarations The function declarations.
+     * @return list<array<string, mixed>> The prepared tools parameter.
+     */
+    protected function prepareToolsParam(array $functionDeclarations): array
+    {
+        $tools = [];
+        foreach ($functionDeclarations as $functionDeclaration) {
+            $tools[] = [
+                'type' => 'function',
+                'function' => $functionDeclaration->toArray(),
+            ];
+        }
+
+        return $tools;
+    }
+
+    /**
+     * Prepares the response format parameter for the API request.
+     *
+     * This is only called if the output MIME type is `application/json`.
+     *
+     * @since n.e.x.t
+     *
+     * @param array<string, mixed>|null $outputSchema The output schema.
+     * @return array<string, mixed> The prepared response format parameter.
+     */
+    protected function prepareResponseFormatParam(?array $outputSchema): array
+    {
+        if (is_array($outputSchema)) {
+            return [
+                'type' => 'json_schema',
+                'json_schema' => $outputSchema,
+            ];
+        }
+
+        return [
+            'type' => 'json_object',
+        ];
     }
 
     /**
