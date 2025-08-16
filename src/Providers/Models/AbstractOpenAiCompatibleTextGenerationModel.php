@@ -244,7 +244,7 @@ abstract class AbstractOpenAiCompatibleTextGenerationModel extends AbstractApiBa
                     'type' => 'input_audio',
                     'input_audio' => [
                         'data' => $file->getBase64Data(),
-                        'format' => '', // TODO: Add method to transform MIME type into file extension.
+                        'format' => $file->getMimeTypeObject()->toExtension(),
                     ],
                 ];
             }
