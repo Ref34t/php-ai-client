@@ -526,12 +526,8 @@ class AiClient
             );
         }
 
-        // Create and return the operation (starting state, no result yet)
-        return new EmbeddingOperation(
-            uniqid('embed_op_', true),
-            OperationStateEnum::starting(),
-            null
-        );
+        // Delegate to the model's operation method
+        return $model->generateEmbeddingsOperation($input);
     }
 
     /**

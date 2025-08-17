@@ -100,25 +100,46 @@ class EmbeddingOperation extends AbstractDataTransferObject implements Operation
     public static function getJsonSchema(): array
     {
         return [
-            'type' => 'object',
-            'properties' => [
-                self::KEY_ID => [
-                    'type' => 'string',
-                    'description' => 'Unique identifier for this operation.',
+            'oneOf' => [
+                // Succeeded state - has result
+                [
+                    'type' => 'object',
+                    'properties' => [
+                        self::KEY_ID => [
+                            'type' => 'string',
+                            'description' => 'Unique identifier for this operation.',
+                        ],
+                        self::KEY_STATE => [
+                            'type' => 'string',
+                            'const' => OperationStateEnum::succeeded()->value,
+                        ],
+                        self::KEY_RESULT => EmbeddingResult::getJsonSchema(),
+                    ],
+                    'required' => [self::KEY_ID, self::KEY_STATE, self::KEY_RESULT],
+                    'additionalProperties' => false,
                 ],
-                self::KEY_STATE => [
-                    'type' => 'string',
-                    'enum' => OperationStateEnum::getAllValues(),
-                    'description' => 'The current state of the operation.',
+                // All other states - no result
+                [
+                    'type' => 'object',
+                    'properties' => [
+                        self::KEY_ID => [
+                            'type' => 'string',
+                            'description' => 'Unique identifier for this operation.',
+                        ],
+                        self::KEY_STATE => [
+                            'type' => 'string',
+                            'enum' => [
+                                OperationStateEnum::starting()->value,
+                                OperationStateEnum::processing()->value,
+                                OperationStateEnum::failed()->value,
+                                OperationStateEnum::canceled()->value,
+                            ],
+                            'description' => 'The current state of the operation.',
+                        ],
+                    ],
+                    'required' => [self::KEY_ID, self::KEY_STATE],
+                    'additionalProperties' => false,
                 ],
-                self::KEY_RESULT => [
-                    '$ref' => '#/definitions/EmbeddingResult',
-                    'description' => 'The result once the operation completes.',
-                ],
-            ],
-            'required' => [self::KEY_ID, self::KEY_STATE],
-            'definitions' => [
-                'EmbeddingResult' => EmbeddingResult::getJsonSchema(),
             ],
         ];
     }
@@ -132,16 +153,16 @@ class EmbeddingOperation extends AbstractDataTransferObject implements Operation
      */
     public function toArray(): array
     {
-        $array = [
+        $data = [
             self::KEY_ID => $this->id,
-            self::KEY_STATE => $this->state->getValue(),
+            self::KEY_STATE => $this->state->value,
         ];
 
         if ($this->result !== null) {
-            $array[self::KEY_RESULT] = $this->result->toArray();
+            $data[self::KEY_RESULT] = $this->result->toArray();
         }
 
-        return $array;
+        return $data;
     }
 
     /**
@@ -163,7 +184,7 @@ class EmbeddingOperation extends AbstractDataTransferObject implements Operation
 
         return new self(
             $array[self::KEY_ID],
-            OperationStateEnum::fromValue($array[self::KEY_STATE]),
+            OperationStateEnum::from($array[self::KEY_STATE]),
             $result
         );
     }
