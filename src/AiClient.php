@@ -13,10 +13,8 @@ use WordPress\AiClient\Operations\DTO\GenerativeAiOperation;
 use WordPress\AiClient\Operations\Enums\OperationStateEnum;
 use WordPress\AiClient\Providers\Contracts\ProviderAvailabilityInterface;
 use WordPress\AiClient\Providers\Models\Contracts\ModelInterface;
-use WordPress\AiClient\Providers\Models\DTO\ModelRequirements;
 use WordPress\AiClient\Providers\Models\EmbeddingGeneration\Contracts\EmbeddingGenerationModelInterface;
 use WordPress\AiClient\Providers\Models\EmbeddingGeneration\Contracts\EmbeddingGenerationOperationModelInterface;
-use WordPress\AiClient\Providers\Models\Enums\CapabilityEnum;
 use WordPress\AiClient\Providers\Models\ImageGeneration\Contracts\ImageGenerationModelInterface;
 use WordPress\AiClient\Providers\Models\SpeechGeneration\Contracts\SpeechGenerationModelInterface;
 use WordPress\AiClient\Providers\Models\SpeechGeneration\Contracts\SpeechGenerationOperationModelInterface;
@@ -26,6 +24,8 @@ use WordPress\AiClient\Providers\Models\TextToSpeechConversion\Contracts\TextToS
 use WordPress\AiClient\Providers\ProviderRegistry;
 use WordPress\AiClient\Results\DTO\EmbeddingResult;
 use WordPress\AiClient\Results\DTO\GenerativeAiResult;
+use WordPress\AiClient\Utils\ModelDiscovery;
+use WordPress\AiClient\Utils\PromptNormalizer;
 
 /**
  * Main AI Client class providing both fluent and traditional APIs for AI operations.
@@ -191,10 +191,10 @@ class AiClient
     public static function generateTextResult($prompt, ModelInterface $model = null): GenerativeAiResult
     {
         // Convert prompt to standardized Message array format
-        $messages = self::normalizePromptToMessages($prompt);
+        $messages = PromptNormalizer::normalize($prompt);
 
         // Get model - either provided or auto-discovered
-        $resolvedModel = $model ?? self::findSuitableTextModel();
+        $resolvedModel = $model ?? ModelDiscovery::findTextModel(self::defaultRegistry());
 
         // Ensure the model supports text generation
         if (!$resolvedModel instanceof TextGenerationModelInterface) {
@@ -222,10 +222,10 @@ class AiClient
     public static function streamGenerateTextResult($prompt, ModelInterface $model = null): Generator
     {
         // Convert prompt to standardized Message array format
-        $messages = self::normalizePromptToMessages($prompt);
+        $messages = PromptNormalizer::normalize($prompt);
 
         // Get model - either provided or auto-discovered
-        $resolvedModel = $model ?? self::findSuitableTextModel();
+        $resolvedModel = $model ?? ModelDiscovery::findTextModel(self::defaultRegistry());
 
         // Ensure the model supports text generation
         if (!$resolvedModel instanceof TextGenerationModelInterface) {
@@ -253,10 +253,10 @@ class AiClient
     public static function generateImageResult($prompt, ModelInterface $model = null): GenerativeAiResult
     {
         // Convert prompt to standardized Message array format
-        $messages = self::normalizePromptToMessages($prompt);
+        $messages = PromptNormalizer::normalize($prompt);
 
         // Get model - either provided or auto-discovered
-        $resolvedModel = $model ?? self::findSuitableImageModel();
+        $resolvedModel = $model ?? ModelDiscovery::findImageModel(self::defaultRegistry());
 
         // Ensure the model supports image generation
         if (!$resolvedModel instanceof ImageGenerationModelInterface) {
@@ -284,10 +284,10 @@ class AiClient
     public static function convertTextToSpeechResult($prompt, ModelInterface $model = null): GenerativeAiResult
     {
         // Convert prompt to standardized Message array format
-        $messages = self::normalizePromptToMessages($prompt);
+        $messages = PromptNormalizer::normalize($prompt);
 
         // Get model - either provided or auto-discovered
-        $resolvedModel = $model ?? self::findSuitableTextToSpeechModel();
+        $resolvedModel = $model ?? ModelDiscovery::findTextToSpeechModel(self::defaultRegistry());
 
         // Ensure the model supports text-to-speech conversion
         if (!$resolvedModel instanceof TextToSpeechConversionModelInterface) {
@@ -315,10 +315,10 @@ class AiClient
     public static function generateSpeechResult($prompt, ModelInterface $model = null): GenerativeAiResult
     {
         // Convert prompt to standardized Message array format
-        $messages = self::normalizePromptToMessages($prompt);
+        $messages = PromptNormalizer::normalize($prompt);
 
         // Get model - either provided or auto-discovered
-        $resolvedModel = $model ?? self::findSuitableSpeechModel();
+        $resolvedModel = $model ?? ModelDiscovery::findSpeechModel(self::defaultRegistry());
 
         // Ensure the model supports speech generation
         if (!$resolvedModel instanceof SpeechGenerationModelInterface) {
@@ -352,7 +352,7 @@ class AiClient
             $messages = array_map(fn(string $text) => new UserMessage([new MessagePart($text)]), $stringArray);
         } else {
             /** @var string|MessagePart|MessagePart[]|Message|Message[] $input */
-            $messages = self::normalizePromptToMessages($input);
+            $messages = PromptNormalizer::normalize($input);
         }
 
         // Ensure messages is a proper list (sequential array with numeric keys starting from 0)
@@ -360,7 +360,7 @@ class AiClient
         $messageList = array_values($messages);
 
         // Get model - either provided or auto-discovered
-        $resolvedModel = $model ?? self::findSuitableEmbeddingModel();
+        $resolvedModel = $model ?? ModelDiscovery::findEmbeddingModel(self::defaultRegistry());
 
         // Ensure the model supports embedding generation
         if (!$resolvedModel instanceof EmbeddingGenerationModelInterface) {
@@ -387,7 +387,7 @@ class AiClient
     public static function generateOperation($prompt, ModelInterface $model): GenerativeAiOperation
     {
         // Convert prompt to standardized Message array format
-        $messages = self::normalizePromptToMessages($prompt);
+        $messages = PromptNormalizer::normalize($prompt);
 
         // Create and return the operation (starting state, no result yet)
         return new GenerativeAiOperation(
@@ -411,7 +411,7 @@ class AiClient
     public static function generateTextOperation($prompt, ModelInterface $model): GenerativeAiOperation
     {
         // Convert prompt to standardized Message array format
-        $messages = self::normalizePromptToMessages($prompt);
+        $messages = PromptNormalizer::normalize($prompt);
 
         // Ensure the model supports text generation
         if (!$model instanceof TextGenerationModelInterface) {
@@ -442,7 +442,7 @@ class AiClient
     public static function generateImageOperation($prompt, ModelInterface $model): GenerativeAiOperation
     {
         // Convert prompt to standardized Message array format
-        $messages = self::normalizePromptToMessages($prompt);
+        $messages = PromptNormalizer::normalize($prompt);
 
         // Ensure the model supports image generation
         if (!$model instanceof ImageGenerationModelInterface) {
@@ -473,7 +473,7 @@ class AiClient
     public static function convertTextToSpeechOperation($prompt, ModelInterface $model): GenerativeAiOperation
     {
         // Convert prompt to standardized Message array format
-        $messages = self::normalizePromptToMessages($prompt);
+        $messages = PromptNormalizer::normalize($prompt);
 
         // Ensure the model supports text-to-speech conversion operations
         if (!$model instanceof TextToSpeechConversionOperationModelInterface) {
@@ -505,7 +505,7 @@ class AiClient
     public static function generateSpeechOperation($prompt, ModelInterface $model): GenerativeAiOperation
     {
         // Convert prompt to standardized Message array format
-        $messages = self::normalizePromptToMessages($prompt);
+        $messages = PromptNormalizer::normalize($prompt);
 
         // Ensure the model supports speech generation operations
         if (!$model instanceof SpeechGenerationOperationModelInterface) {
@@ -543,7 +543,7 @@ class AiClient
             $messages = array_map(fn(string $text) => new UserMessage([new MessagePart($text)]), $stringArray);
         } else {
             /** @var string|MessagePart|MessagePart[]|Message|Message[] $input */
-            $messages = self::normalizePromptToMessages($input);
+            $messages = PromptNormalizer::normalize($input);
         }
 
         // Ensure messages is a proper list (sequential array with numeric keys starting from 0)
@@ -560,211 +560,5 @@ class AiClient
 
         // Delegate to the model's operation method with proper list type
         return $model->generateEmbeddingsOperation($messageList);
-    }
-
-    /**
-     * Normalizes various prompt formats into a standardized Message array.
-     *
-     * @since n.e.x.t
-     *
-     * @param string|MessagePart|MessagePart[]|Message|Message[] $prompt The prompt to normalize.
-     * @return list<Message> Array of Message objects.
-     *
-     * @throws \InvalidArgumentException If the prompt format is invalid.
-     */
-    private static function normalizePromptToMessages($prompt): array
-    {
-        if (is_string($prompt)) {
-            // Convert string to UserMessage with single text MessagePart
-            return [new UserMessage([new MessagePart($prompt)])];
-        }
-
-        if ($prompt instanceof Message) {
-            return [$prompt];
-        }
-
-        if ($prompt instanceof MessagePart) {
-            // Convert MessagePart to UserMessage
-            return [new UserMessage([$prompt])];
-        }
-
-        if (is_array($prompt)) {
-            // Handle array of Messages or MessageParts
-            $messages = [];
-            foreach ($prompt as $item) {
-                if ($item instanceof Message) {
-                    $messages[] = $item;
-                } elseif ($item instanceof MessagePart) {
-                    $messages[] = new UserMessage([$item]);
-                } else {
-                    throw new \InvalidArgumentException(
-                        'Array must contain only Message or MessagePart objects'
-                    );
-                }
-            }
-            return $messages;
-        }
-
-        throw new \InvalidArgumentException('Invalid prompt format provided');
-    }
-
-    /**
-     * Finds a suitable text generation model.
-     *
-     * @since n.e.x.t
-     *
-     * @return ModelInterface A suitable text generation model.
-     *
-     * @throws \RuntimeException If no suitable model is found.
-     */
-    private static function findSuitableTextModel(): ModelInterface
-    {
-        $requirements = new ModelRequirements([CapabilityEnum::textGeneration()], []);
-        $providerModelsMetadata = self::defaultRegistry()->findModelsMetadataForSupport($requirements);
-
-        if (empty($providerModelsMetadata)) {
-            throw new \RuntimeException('No text generation models available');
-        }
-
-        // Get the first suitable provider and model
-        $providerMetadata = $providerModelsMetadata[0];
-        $models = $providerMetadata->getModels();
-
-        if (empty($models)) {
-            throw new \RuntimeException('No models available in provider');
-        }
-
-        return self::defaultRegistry()->getProviderModel(
-            $providerMetadata->getProvider()->getId(),
-            $models[0]->getId()
-        );
-    }
-
-    /**
-     * Finds a suitable image generation model.
-     *
-     * @since n.e.x.t
-     *
-     * @return ModelInterface A suitable image generation model.
-     *
-     * @throws \RuntimeException If no suitable model is found.
-     */
-    private static function findSuitableImageModel(): ModelInterface
-    {
-        $requirements = new ModelRequirements([CapabilityEnum::imageGeneration()], []);
-        $providerModelsMetadata = self::defaultRegistry()->findModelsMetadataForSupport($requirements);
-
-        if (empty($providerModelsMetadata)) {
-            throw new \RuntimeException('No image generation models available');
-        }
-
-        // Get the first suitable provider and model
-        $providerMetadata = $providerModelsMetadata[0];
-        $models = $providerMetadata->getModels();
-
-        if (empty($models)) {
-            throw new \RuntimeException('No models available in provider');
-        }
-
-        return self::defaultRegistry()->getProviderModel(
-            $providerMetadata->getProvider()->getId(),
-            $models[0]->getId()
-        );
-    }
-
-    /**
-     * Finds a suitable text-to-speech conversion model.
-     *
-     * @since n.e.x.t
-     *
-     * @return ModelInterface A suitable text-to-speech conversion model.
-     *
-     * @throws \RuntimeException If no suitable model is found.
-     */
-    private static function findSuitableTextToSpeechModel(): ModelInterface
-    {
-        $requirements = new ModelRequirements([CapabilityEnum::textToSpeechConversion()], []);
-        $providerModelsMetadata = self::defaultRegistry()->findModelsMetadataForSupport($requirements);
-
-        if (empty($providerModelsMetadata)) {
-            throw new \RuntimeException('No text-to-speech conversion models available');
-        }
-
-        // Get the first suitable provider and model
-        $providerMetadata = $providerModelsMetadata[0];
-        $models = $providerMetadata->getModels();
-
-        if (empty($models)) {
-            throw new \RuntimeException('No models available in provider');
-        }
-
-        return self::defaultRegistry()->getProviderModel(
-            $providerMetadata->getProvider()->getId(),
-            $models[0]->getId()
-        );
-    }
-
-    /**
-     * Finds a suitable speech generation model.
-     *
-     * @since n.e.x.t
-     *
-     * @return ModelInterface A suitable speech generation model.
-     *
-     * @throws \RuntimeException If no suitable model is found.
-     */
-    private static function findSuitableSpeechModel(): ModelInterface
-    {
-        $requirements = new ModelRequirements([CapabilityEnum::speechGeneration()], []);
-        $providerModelsMetadata = self::defaultRegistry()->findModelsMetadataForSupport($requirements);
-
-        if (empty($providerModelsMetadata)) {
-            throw new \RuntimeException('No speech generation models available');
-        }
-
-        // Get the first suitable provider and model
-        $providerMetadata = $providerModelsMetadata[0];
-        $models = $providerMetadata->getModels();
-
-        if (empty($models)) {
-            throw new \RuntimeException('No models available in provider');
-        }
-
-        return self::defaultRegistry()->getProviderModel(
-            $providerMetadata->getProvider()->getId(),
-            $models[0]->getId()
-        );
-    }
-
-    /**
-     * Finds a suitable embedding generation model.
-     *
-     * @since n.e.x.t
-     *
-     * @return ModelInterface A suitable embedding generation model.
-     *
-     * @throws \RuntimeException If no suitable model is found.
-     */
-    private static function findSuitableEmbeddingModel(): ModelInterface
-    {
-        $requirements = new ModelRequirements([CapabilityEnum::embeddingGeneration()], []);
-        $providerModelsMetadata = self::defaultRegistry()->findModelsMetadataForSupport($requirements);
-
-        if (empty($providerModelsMetadata)) {
-            throw new \RuntimeException('No embedding generation models available');
-        }
-
-        // Get the first suitable provider and model
-        $providerMetadata = $providerModelsMetadata[0];
-        $models = $providerMetadata->getModels();
-
-        if (empty($models)) {
-            throw new \RuntimeException('No models available in provider');
-        }
-
-        return self::defaultRegistry()->getProviderModel(
-            $providerMetadata->getProvider()->getId(),
-            $models[0]->getId()
-        );
     }
 }
