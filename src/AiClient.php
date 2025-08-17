@@ -16,6 +16,8 @@ use WordPress\AiClient\Providers\Models\DTO\ModelRequirements;
 use WordPress\AiClient\Providers\Models\Enums\CapabilityEnum;
 use WordPress\AiClient\Providers\Models\ImageGeneration\Contracts\ImageGenerationModelInterface;
 use WordPress\AiClient\Providers\Models\TextGeneration\Contracts\TextGenerationModelInterface;
+use WordPress\AiClient\Providers\Models\TextToSpeechConversion\Contracts\TextToSpeechConversionModelInterface;
+use WordPress\AiClient\Providers\Models\TextToSpeechConversion\Contracts\TextToSpeechConversionOperationModelInterface;
 use WordPress\AiClient\Providers\ProviderRegistry;
 use WordPress\AiClient\Results\DTO\GenerativeAiResult;
 
@@ -122,9 +124,15 @@ class AiClient
             return self::generateImageResult($prompt, $model);
         }
 
+        // Delegate to text-to-speech conversion if model supports it
+        if ($model instanceof TextToSpeechConversionModelInterface) {
+            return self::convertTextToSpeechResult($prompt, $model);
+        }
+
         // If no supported interface is found, throw an exception
         throw new \InvalidArgumentException(
-            'Model must implement at least one supported generation interface (TextGeneration, ImageGeneration)'
+            'Model must implement at least one supported generation interface ' .
+            '(TextGeneration, ImageGeneration, TextToSpeechConversion)'
         );
     }
 
@@ -222,6 +230,37 @@ class AiClient
     }
 
     /**
+     * Converts text to speech using the traditional API approach.
+     *
+     * @since n.e.x.t
+     *
+     * @param string|MessagePart|MessagePart[]|Message|Message[] $prompt The prompt content.
+     * @param ModelInterface|null $model Optional specific model to use.
+     * @return GenerativeAiResult The generation result.
+     *
+     * @throws \InvalidArgumentException If the prompt format is invalid.
+     * @throws \RuntimeException If no suitable model is found.
+     */
+    public static function convertTextToSpeechResult($prompt, ModelInterface $model = null): GenerativeAiResult
+    {
+        // Convert prompt to standardized Message array format
+        $messages = self::normalizePromptToMessages($prompt);
+
+        // Get model - either provided or auto-discovered
+        $resolvedModel = $model ?? self::findSuitableTextToSpeechModel();
+
+        // Ensure the model supports text-to-speech conversion
+        if (!$resolvedModel instanceof TextToSpeechConversionModelInterface) {
+            throw new \InvalidArgumentException(
+                'Model must implement TextToSpeechConversionModelInterface for text-to-speech conversion'
+            );
+        }
+
+        // Generate the result using the model
+        return $resolvedModel->convertTextToSpeechResult($messages);
+    }
+
+    /**
      * Creates a generation operation for async processing.
      *
      * @since n.e.x.t
@@ -302,6 +341,38 @@ class AiClient
         // Create and return the operation (starting state, no result yet)
         return new GenerativeAiOperation(
             uniqid('image_op_', true),
+            OperationStateEnum::starting(),
+            null
+        );
+    }
+
+    /**
+     * Creates a text-to-speech conversion operation for async processing.
+     *
+     * @since n.e.x.t
+     *
+     * @param string|MessagePart|MessagePart[]|Message|Message[] $prompt The prompt content.
+     * @param ModelInterface $model The model to use for text-to-speech conversion.
+     * @return GenerativeAiOperation The operation for async text-to-speech processing.
+     *
+     * @throws \InvalidArgumentException If the prompt format is invalid or model doesn't support text-to-speech.
+     */
+    public static function convertTextToSpeechOperation($prompt, ModelInterface $model): GenerativeAiOperation
+    {
+        // Convert prompt to standardized Message array format
+        $messages = self::normalizePromptToMessages($prompt);
+
+        // Ensure the model supports text-to-speech conversion operations
+        if (!$model instanceof TextToSpeechConversionOperationModelInterface) {
+            throw new \InvalidArgumentException(
+                'Model must implement TextToSpeechConversionOperationModelInterface ' .
+                'for text-to-speech conversion operations'
+            );
+        }
+
+        // Create and return the operation (starting state, no result yet)
+        return new GenerativeAiOperation(
+            uniqid('tts_op_', true),
             OperationStateEnum::starting(),
             null
         );
@@ -401,6 +472,38 @@ class AiClient
 
         if (empty($providerModelsMetadata)) {
             throw new \RuntimeException('No image generation models available');
+        }
+
+        // Get the first suitable provider and model
+        $providerMetadata = $providerModelsMetadata[0];
+        $models = $providerMetadata->getModels();
+
+        if (empty($models)) {
+            throw new \RuntimeException('No models available in provider');
+        }
+
+        return self::defaultRegistry()->getProviderModel(
+            $providerMetadata->getProvider()->getId(),
+            $models[0]->getId()
+        );
+    }
+
+    /**
+     * Finds a suitable text-to-speech conversion model.
+     *
+     * @since n.e.x.t
+     *
+     * @return ModelInterface A suitable text-to-speech conversion model.
+     *
+     * @throws \RuntimeException If no suitable model is found.
+     */
+    private static function findSuitableTextToSpeechModel(): ModelInterface
+    {
+        $requirements = new ModelRequirements([CapabilityEnum::textToSpeechConversion()], []);
+        $providerModelsMetadata = self::defaultRegistry()->findModelsMetadataForSupport($requirements);
+
+        if (empty($providerModelsMetadata)) {
+            throw new \RuntimeException('No text-to-speech conversion models available');
         }
 
         // Get the first suitable provider and model

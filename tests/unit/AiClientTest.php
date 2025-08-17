@@ -404,7 +404,8 @@ class AiClientTest extends TestCase
 
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage(
-            'Model must implement at least one supported generation interface (TextGeneration, ImageGeneration)'
+            'Model must implement at least one supported generation interface ' .
+            '(TextGeneration, ImageGeneration, TextToSpeechConversion)'
         );
 
         AiClient::generateResult($prompt, $unsupportedModel);
