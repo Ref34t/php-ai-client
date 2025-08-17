@@ -9,6 +9,7 @@ use WordPress\AiClient\Messages\DTO\MessagePart;
 use WordPress\AiClient\Messages\DTO\UserMessage;
 use WordPress\AiClient\Operations\DTO\GenerativeAiOperation;
 use WordPress\AiClient\Operations\Enums\OperationStateEnum;
+use WordPress\AiClient\Providers\Contracts\ProviderAvailabilityInterface;
 use WordPress\AiClient\Providers\Models\Contracts\ModelInterface;
 use WordPress\AiClient\Providers\Models\DTO\ModelRequirements;
 use WordPress\AiClient\Providers\Models\Enums\CapabilityEnum;
@@ -60,6 +61,19 @@ class AiClient
     public static function setDefaultRegistry(ProviderRegistry $registry): void
     {
         self::$defaultRegistry = $registry;
+    }
+
+    /**
+     * Checks if a provider is configured and available for use.
+     *
+     * @since n.e.x.t
+     *
+     * @param ProviderAvailabilityInterface $availability The provider availability instance to check.
+     * @return bool True if the provider is configured and available, false otherwise.
+     */
+    public static function isConfigured(ProviderAvailabilityInterface $availability): bool
+    {
+        return $availability->isConfigured();
     }
 
     /**

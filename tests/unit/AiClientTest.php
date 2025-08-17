@@ -11,6 +11,7 @@ use WordPress\AiClient\AiClient;
 use WordPress\AiClient\Messages\DTO\MessagePart;
 use WordPress\AiClient\Messages\DTO\UserMessage;
 use WordPress\AiClient\Operations\DTO\GenerativeAiOperation;
+use WordPress\AiClient\Providers\Contracts\ProviderAvailabilityInterface;
 use WordPress\AiClient\Providers\Models\Contracts\ModelInterface;
 use WordPress\AiClient\Providers\ProviderRegistry;
 use WordPress\AiClient\Results\DTO\GenerativeAiResult;
@@ -308,5 +309,35 @@ class AiClientTest extends TestCase
         $this->expectExceptionMessage('No image generation models available');
 
         AiClient::generateImageResult($prompt);
+    }
+
+    /**
+     * Tests isConfigured method returns true when provider availability is configured.
+     */
+    public function testIsConfiguredReturnsTrueWhenProviderIsConfigured(): void
+    {
+        $mockAvailability = $this->createMock(ProviderAvailabilityInterface::class);
+        $mockAvailability->expects($this->once())
+            ->method('isConfigured')
+            ->willReturn(true);
+
+        $result = AiClient::isConfigured($mockAvailability);
+
+        $this->assertTrue($result);
+    }
+
+    /**
+     * Tests isConfigured method returns false when provider availability is not configured.
+     */
+    public function testIsConfiguredReturnsFalseWhenProviderIsNotConfigured(): void
+    {
+        $mockAvailability = $this->createMock(ProviderAvailabilityInterface::class);
+        $mockAvailability->expects($this->once())
+            ->method('isConfigured')
+            ->willReturn(false);
+
+        $result = AiClient::isConfigured($mockAvailability);
+
+        $this->assertFalse($result);
     }
 }
