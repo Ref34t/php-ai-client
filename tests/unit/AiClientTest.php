@@ -12,6 +12,7 @@ use WordPress\AiClient\Messages\DTO\MessagePart;
 use WordPress\AiClient\Messages\DTO\ModelMessage;
 use WordPress\AiClient\Messages\DTO\UserMessage;
 use WordPress\AiClient\Operations\DTO\GenerativeAiOperation;
+use WordPress\AiClient\Operations\Enums\OperationStateEnum;
 use WordPress\AiClient\Providers\Contracts\ProviderAvailabilityInterface;
 use WordPress\AiClient\Providers\Models\Contracts\ModelInterface;
 use WordPress\AiClient\Providers\ProviderRegistry;
@@ -463,5 +464,67 @@ class AiClientTest extends TestCase
         $this->expectExceptionMessage('Model must implement TextGenerationModelInterface for text generation');
 
         iterator_to_array(AiClient::streamGenerateTextResult($prompt, $nonTextModel));
+    }
+
+    /**
+     * Tests generateTextOperation creates operation with text model validation.
+     */
+    public function testGenerateTextOperationWithValidTextModel(): void
+    {
+        $prompt = 'Text operation prompt';
+        
+        $operation = AiClient::generateTextOperation($prompt, $this->mockTextModel);
+
+        $this->assertInstanceOf(GenerativeAiOperation::class, $operation);
+        $this->assertStringStartsWith('text_op_', $operation->getId());
+        $this->assertEquals(OperationStateEnum::starting(), $operation->getState());
+        $this->assertNull($operation->getResult());
+    }
+
+    /**
+     * Tests generateTextOperation throws exception for non-text model.
+     */
+    public function testGenerateTextOperationThrowsExceptionForNonTextModel(): void
+    {
+        $prompt = 'Text operation prompt';
+        $nonTextModel = $this->createMock(ModelInterface::class);
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage(
+            'Model must implement TextGenerationModelInterface for text generation operations'
+        );
+
+        AiClient::generateTextOperation($prompt, $nonTextModel);
+    }
+
+    /**
+     * Tests generateImageOperation creates operation with image model validation.
+     */
+    public function testGenerateImageOperationWithValidImageModel(): void
+    {
+        $prompt = 'Image operation prompt';
+        
+        $operation = AiClient::generateImageOperation($prompt, $this->mockImageModel);
+
+        $this->assertInstanceOf(GenerativeAiOperation::class, $operation);
+        $this->assertStringStartsWith('image_op_', $operation->getId());
+        $this->assertEquals(OperationStateEnum::starting(), $operation->getState());
+        $this->assertNull($operation->getResult());
+    }
+
+    /**
+     * Tests generateImageOperation throws exception for non-image model.
+     */
+    public function testGenerateImageOperationThrowsExceptionForNonImageModel(): void
+    {
+        $prompt = 'Image operation prompt';
+        $nonImageModel = $this->createMock(ModelInterface::class);
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage(
+            'Model must implement ImageGenerationModelInterface for image generation operations'
+        );
+
+        AiClient::generateImageOperation($prompt, $nonImageModel);
     }
 }

@@ -246,6 +246,68 @@ class AiClient
     }
 
     /**
+     * Creates a text generation operation for async processing.
+     *
+     * @since n.e.x.t
+     *
+     * @param string|MessagePart|MessagePart[]|Message|Message[] $prompt The prompt content.
+     * @param ModelInterface $model The model to use for text generation.
+     * @return GenerativeAiOperation The operation for async text processing.
+     *
+     * @throws \InvalidArgumentException If the prompt format is invalid or model doesn't support text generation.
+     */
+    public static function generateTextOperation($prompt, ModelInterface $model): GenerativeAiOperation
+    {
+        // Convert prompt to standardized Message array format
+        $messages = self::normalizePromptToMessages($prompt);
+
+        // Ensure the model supports text generation
+        if (!$model instanceof TextGenerationModelInterface) {
+            throw new \InvalidArgumentException(
+                'Model must implement TextGenerationModelInterface for text generation operations'
+            );
+        }
+
+        // Create and return the operation (starting state, no result yet)
+        return new GenerativeAiOperation(
+            uniqid('text_op_', true),
+            OperationStateEnum::starting(),
+            null
+        );
+    }
+
+    /**
+     * Creates an image generation operation for async processing.
+     *
+     * @since n.e.x.t
+     *
+     * @param string|MessagePart|MessagePart[]|Message|Message[] $prompt The prompt content.
+     * @param ModelInterface $model The model to use for image generation.
+     * @return GenerativeAiOperation The operation for async image processing.
+     *
+     * @throws \InvalidArgumentException If the prompt format is invalid or model doesn't support image generation.
+     */
+    public static function generateImageOperation($prompt, ModelInterface $model): GenerativeAiOperation
+    {
+        // Convert prompt to standardized Message array format
+        $messages = self::normalizePromptToMessages($prompt);
+
+        // Ensure the model supports image generation
+        if (!$model instanceof ImageGenerationModelInterface) {
+            throw new \InvalidArgumentException(
+                'Model must implement ImageGenerationModelInterface for image generation operations'
+            );
+        }
+
+        // Create and return the operation (starting state, no result yet)
+        return new GenerativeAiOperation(
+            uniqid('image_op_', true),
+            OperationStateEnum::starting(),
+            null
+        );
+    }
+
+    /**
      * Normalizes various prompt formats into a standardized Message array.
      *
      * @since n.e.x.t
