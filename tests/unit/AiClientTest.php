@@ -9,12 +9,16 @@ use PHPUnit\Framework\TestCase;
 use RuntimeException;
 use WordPress\AiClient\AiClient;
 use WordPress\AiClient\Messages\DTO\MessagePart;
+use WordPress\AiClient\Messages\DTO\ModelMessage;
 use WordPress\AiClient\Messages\DTO\UserMessage;
 use WordPress\AiClient\Operations\DTO\GenerativeAiOperation;
 use WordPress\AiClient\Providers\Contracts\ProviderAvailabilityInterface;
 use WordPress\AiClient\Providers\Models\Contracts\ModelInterface;
 use WordPress\AiClient\Providers\ProviderRegistry;
+use WordPress\AiClient\Results\DTO\Candidate;
 use WordPress\AiClient\Results\DTO\GenerativeAiResult;
+use WordPress\AiClient\Results\DTO\TokenUsage;
+use WordPress\AiClient\Results\Enums\FinishReasonEnum;
 use WordPress\AiClient\Tests\mocks\MockImageGenerationModel;
 use WordPress\AiClient\Tests\mocks\MockTextGenerationModel;
 
@@ -38,6 +42,20 @@ class AiClientTest extends TestCase
 
         // Set the test registry as the default
         AiClient::setDefaultRegistry($this->registry);
+    }
+
+    /**
+     * Creates a test GenerativeAiResult for testing purposes.
+     */
+    private function createTestResult(): GenerativeAiResult
+    {
+        $candidate = new Candidate(
+            new ModelMessage([new MessagePart('Test response')]),
+            FinishReasonEnum::stop()
+        );
+        $tokenUsage = new TokenUsage(10, 20, 30);
+        
+        return new GenerativeAiResult('test-result-id', [$candidate], $tokenUsage);
     }
 
     protected function tearDown(): void
@@ -339,5 +357,53 @@ class AiClientTest extends TestCase
         $result = AiClient::isConfigured($mockAvailability);
 
         $this->assertFalse($result);
+    }
+
+    /**
+     * Tests generateResult delegates to generateTextResult when model supports text generation.
+     */
+    public function testGenerateResultDelegatesToTextGeneration(): void
+    {
+        $prompt = 'Test prompt';
+        $expectedResult = $this->createTestResult();
+
+        $this->mockTextModel->expects($this->once())
+            ->method('generateTextResult')
+            ->willReturn($expectedResult);
+
+        $result = AiClient::generateResult($prompt, $this->mockTextModel);
+
+        $this->assertSame($expectedResult, $result);
+    }
+
+    /**
+     * Tests generateResult delegates to generateImageResult when model supports image generation.
+     */
+    public function testGenerateResultDelegatesToImageGeneration(): void
+    {
+        $prompt = 'Generate image prompt';
+        $expectedResult = $this->createTestResult();
+
+        $this->mockImageModel->expects($this->once())
+            ->method('generateImageResult')
+            ->willReturn($expectedResult);
+
+        $result = AiClient::generateResult($prompt, $this->mockImageModel);
+
+        $this->assertSame($expectedResult, $result);
+    }
+
+    /**
+     * Tests generateResult throws exception when model doesn't support any generation interface.
+     */
+    public function testGenerateResultThrowsExceptionForUnsupportedModel(): void
+    {
+        $prompt = 'Test prompt';
+        $unsupportedModel = $this->createMock(ModelInterface::class);
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Model must implement at least one supported generation interface (TextGeneration, ImageGeneration)');
+
+        AiClient::generateResult($prompt, $unsupportedModel);
     }
 }

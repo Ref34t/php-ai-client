@@ -96,6 +96,38 @@ class AiClient
     }
 
     /**
+     * Generates content using a unified API that delegates to specific generation methods.
+     *
+     * This method automatically detects the model's capabilities and routes to the
+     * appropriate generation method (text, image, etc.).
+     *
+     * @since n.e.x.t
+     *
+     * @param string|MessagePart|MessagePart[]|Message|Message[] $prompt The prompt content.
+     * @param ModelInterface $model The model to use for generation.
+     * @return GenerativeAiResult The generation result.
+     *
+     * @throws \InvalidArgumentException If the prompt format is invalid or model type is unsupported.
+     */
+    public static function generateResult($prompt, ModelInterface $model): GenerativeAiResult
+    {
+        // Delegate to text generation if model supports it
+        if ($model instanceof TextGenerationModelInterface) {
+            return self::generateTextResult($prompt, $model);
+        }
+
+        // Delegate to image generation if model supports it
+        if ($model instanceof ImageGenerationModelInterface) {
+            return self::generateImageResult($prompt, $model);
+        }
+
+        // If no supported interface is found, throw an exception
+        throw new \InvalidArgumentException(
+            'Model must implement at least one supported generation interface (TextGeneration, ImageGeneration)'
+        );
+    }
+
+    /**
      * Generates text using the traditional API approach.
      *
      * @since n.e.x.t
