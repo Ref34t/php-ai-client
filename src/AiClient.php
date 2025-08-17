@@ -7,23 +7,17 @@ namespace WordPress\AiClient;
 use Generator;
 use WordPress\AiClient\Messages\DTO\Message;
 use WordPress\AiClient\Messages\DTO\MessagePart;
-use WordPress\AiClient\Messages\DTO\UserMessage;
 use WordPress\AiClient\Operations\DTO\EmbeddingOperation;
 use WordPress\AiClient\Operations\DTO\GenerativeAiOperation;
-use WordPress\AiClient\Operations\Enums\OperationStateEnum;
+use WordPress\AiClient\Operations\OperationFactory;
 use WordPress\AiClient\Providers\Contracts\ProviderAvailabilityInterface;
 use WordPress\AiClient\Providers\Models\Contracts\ModelInterface;
-use WordPress\AiClient\Providers\Models\EmbeddingGeneration\Contracts\EmbeddingGenerationModelInterface;
-use WordPress\AiClient\Providers\Models\EmbeddingGeneration\Contracts\EmbeddingGenerationOperationModelInterface;
-use WordPress\AiClient\Providers\Models\ImageGeneration\Contracts\ImageGenerationModelInterface;
-use WordPress\AiClient\Providers\Models\SpeechGeneration\Contracts\SpeechGenerationModelInterface;
-use WordPress\AiClient\Providers\Models\SpeechGeneration\Contracts\SpeechGenerationOperationModelInterface;
-use WordPress\AiClient\Providers\Models\TextGeneration\Contracts\TextGenerationModelInterface;
-use WordPress\AiClient\Providers\Models\TextToSpeechConversion\Contracts\TextToSpeechConversionModelInterface;
-use WordPress\AiClient\Providers\Models\TextToSpeechConversion\Contracts\TextToSpeechConversionOperationModelInterface;
 use WordPress\AiClient\Providers\ProviderRegistry;
 use WordPress\AiClient\Results\DTO\EmbeddingResult;
 use WordPress\AiClient\Results\DTO\GenerativeAiResult;
+use WordPress\AiClient\Utils\EmbeddingInputNormalizer;
+use WordPress\AiClient\Utils\GenerationStrategyResolver;
+use WordPress\AiClient\Utils\InterfaceValidator;
 use WordPress\AiClient\Utils\ModelDiscovery;
 use WordPress\AiClient\Utils\PromptNormalizer;
 
@@ -127,31 +121,11 @@ class AiClient
      */
     public static function generateResult($prompt, ModelInterface $model): GenerativeAiResult
     {
-        // Delegate to text generation if model supports it
-        if ($model instanceof TextGenerationModelInterface) {
-            return self::generateTextResult($prompt, $model);
-        }
+        // Use strategy resolver to determine the appropriate method
+        $method = GenerationStrategyResolver::resolve($model);
 
-        // Delegate to image generation if model supports it
-        if ($model instanceof ImageGenerationModelInterface) {
-            return self::generateImageResult($prompt, $model);
-        }
-
-        // Delegate to text-to-speech conversion if model supports it
-        if ($model instanceof TextToSpeechConversionModelInterface) {
-            return self::convertTextToSpeechResult($prompt, $model);
-        }
-
-        // Delegate to speech generation if model supports it
-        if ($model instanceof SpeechGenerationModelInterface) {
-            return self::generateSpeechResult($prompt, $model);
-        }
-
-        // If no supported interface is found, throw an exception
-        throw new \InvalidArgumentException(
-            'Model must implement at least one supported generation interface ' .
-            '(TextGeneration, ImageGeneration, TextToSpeechConversion, SpeechGeneration)'
-        );
+        // Call the resolved method dynamically
+        return self::$method($prompt, $model);
     }
 
     /**
@@ -198,12 +172,8 @@ class AiClient
         // Get model - either provided or auto-discovered
         $resolvedModel = $model ?? ModelDiscovery::findTextModel(self::defaultRegistry());
 
-        // Ensure the model supports text generation
-        if (!$resolvedModel instanceof TextGenerationModelInterface) {
-            throw new \InvalidArgumentException(
-                'Model must implement TextGenerationModelInterface for text generation'
-            );
-        }
+        // Validate model supports text generation
+        InterfaceValidator::validateTextGeneration($resolvedModel);
 
         // Generate the result using the model
         return $resolvedModel->generateTextResult($messageList);
@@ -231,12 +201,8 @@ class AiClient
         // Get model - either provided or auto-discovered
         $resolvedModel = $model ?? ModelDiscovery::findTextModel(self::defaultRegistry());
 
-        // Ensure the model supports text generation
-        if (!$resolvedModel instanceof TextGenerationModelInterface) {
-            throw new \InvalidArgumentException(
-                'Model must implement TextGenerationModelInterface for text generation'
-            );
-        }
+        // Validate model supports text generation
+        InterfaceValidator::validateTextGeneration($resolvedModel);
 
         // Stream the results using the model
         yield from $resolvedModel->streamGenerateTextResult($messageList);
@@ -264,12 +230,8 @@ class AiClient
         // Get model - either provided or auto-discovered
         $resolvedModel = $model ?? ModelDiscovery::findImageModel(self::defaultRegistry());
 
-        // Ensure the model supports image generation
-        if (!$resolvedModel instanceof ImageGenerationModelInterface) {
-            throw new \InvalidArgumentException(
-                'Model must implement ImageGenerationModelInterface for image generation'
-            );
-        }
+        // Validate model supports image generation
+        InterfaceValidator::validateImageGeneration($resolvedModel);
 
         // Generate the result using the model
         return $resolvedModel->generateImageResult($messageList);
@@ -297,12 +259,8 @@ class AiClient
         // Get model - either provided or auto-discovered
         $resolvedModel = $model ?? ModelDiscovery::findTextToSpeechModel(self::defaultRegistry());
 
-        // Ensure the model supports text-to-speech conversion
-        if (!$resolvedModel instanceof TextToSpeechConversionModelInterface) {
-            throw new \InvalidArgumentException(
-                'Model must implement TextToSpeechConversionModelInterface for text-to-speech conversion'
-            );
-        }
+        // Validate model supports text-to-speech conversion
+        InterfaceValidator::validateTextToSpeechConversion($resolvedModel);
 
         // Generate the result using the model
         return $resolvedModel->convertTextToSpeechResult($messageList);
@@ -330,12 +288,8 @@ class AiClient
         // Get model - either provided or auto-discovered
         $resolvedModel = $model ?? ModelDiscovery::findSpeechModel(self::defaultRegistry());
 
-        // Ensure the model supports speech generation
-        if (!$resolvedModel instanceof SpeechGenerationModelInterface) {
-            throw new \InvalidArgumentException(
-                'Model must implement SpeechGenerationModelInterface for speech generation'
-            );
-        }
+        // Validate model supports speech generation
+        InterfaceValidator::validateSpeechGeneration($resolvedModel);
 
         // Generate the result using the model
         return $resolvedModel->generateSpeechResult($messageList);
@@ -355,29 +309,16 @@ class AiClient
      */
     public static function generateEmbeddingsResult($input, ModelInterface $model = null): EmbeddingResult
     {
-        // Convert input to standardized Message array format
-        if (is_array($input) && !empty($input) && is_string($input[0])) {
-            /** @var string[] $stringArray */
-            $stringArray = $input;
-            $messages = array_map(fn(string $text) => new UserMessage([new MessagePart($text)]), $stringArray);
-        } else {
-            /** @var string|MessagePart|MessagePart[]|Message|Message[] $input */
-            $messages = PromptNormalizer::normalize($input);
-        }
-
-        // Ensure messages is a proper list (sequential array with numeric keys starting from 0)
+        // Normalize embedding input using specialized normalizer
+        $messages = EmbeddingInputNormalizer::normalize($input);
         /** @var list<Message> $messageList */
         $messageList = array_values($messages);
 
         // Get model - either provided or auto-discovered
         $resolvedModel = $model ?? ModelDiscovery::findEmbeddingModel(self::defaultRegistry());
 
-        // Ensure the model supports embedding generation
-        if (!$resolvedModel instanceof EmbeddingGenerationModelInterface) {
-            throw new \InvalidArgumentException(
-                'Model must implement EmbeddingGenerationModelInterface for embedding generation'
-            );
-        }
+        // Validate model supports embedding generation
+        InterfaceValidator::validateEmbeddingGeneration($resolvedModel);
 
         // Generate the result using the model
         return $resolvedModel->generateEmbeddingsResult($messageList);
@@ -401,12 +342,8 @@ class AiClient
         /** @var list<Message> $messageList */
         $messageList = array_values($messages);
 
-        // Create and return the operation (starting state, no result yet)
-        return new GenerativeAiOperation(
-            uniqid('op_', true),
-            OperationStateEnum::starting(),
-            null
-        );
+        // Create operation using factory
+        return OperationFactory::createGenericOperation($messageList);
     }
 
     /**
@@ -427,19 +364,11 @@ class AiClient
         /** @var list<Message> $messageList */
         $messageList = array_values($messages);
 
-        // Ensure the model supports text generation
-        if (!$model instanceof TextGenerationModelInterface) {
-            throw new \InvalidArgumentException(
-                'Model must implement TextGenerationModelInterface for text generation operations'
-            );
-        }
+        // Validate model supports text generation operations
+        InterfaceValidator::validateTextGenerationOperation($model);
 
-        // Create and return the operation (starting state, no result yet)
-        return new GenerativeAiOperation(
-            uniqid('text_op_', true),
-            OperationStateEnum::starting(),
-            null
-        );
+        // Create operation using factory
+        return OperationFactory::createTextOperation($messageList);
     }
 
     /**
@@ -460,19 +389,11 @@ class AiClient
         /** @var list<Message> $messageList */
         $messageList = array_values($messages);
 
-        // Ensure the model supports image generation
-        if (!$model instanceof ImageGenerationModelInterface) {
-            throw new \InvalidArgumentException(
-                'Model must implement ImageGenerationModelInterface for image generation operations'
-            );
-        }
+        // Validate model supports image generation operations
+        InterfaceValidator::validateImageGenerationOperation($model);
 
-        // Create and return the operation (starting state, no result yet)
-        return new GenerativeAiOperation(
-            uniqid('image_op_', true),
-            OperationStateEnum::starting(),
-            null
-        );
+        // Create operation using factory
+        return OperationFactory::createImageOperation($messageList);
     }
 
     /**
@@ -493,20 +414,11 @@ class AiClient
         /** @var list<Message> $messageList */
         $messageList = array_values($messages);
 
-        // Ensure the model supports text-to-speech conversion operations
-        if (!$model instanceof TextToSpeechConversionOperationModelInterface) {
-            throw new \InvalidArgumentException(
-                'Model must implement TextToSpeechConversionOperationModelInterface ' .
-                'for text-to-speech conversion operations'
-            );
-        }
+        // Validate model supports text-to-speech conversion operations
+        InterfaceValidator::validateTextToSpeechConversionOperation($model);
 
-        // Create and return the operation (starting state, no result yet)
-        return new GenerativeAiOperation(
-            uniqid('tts_op_', true),
-            OperationStateEnum::starting(),
-            null
-        );
+        // Create operation using factory
+        return OperationFactory::createTextToSpeechOperation($messageList);
     }
 
     /**
@@ -527,20 +439,11 @@ class AiClient
         /** @var list<Message> $messageList */
         $messageList = array_values($messages);
 
-        // Ensure the model supports speech generation operations
-        if (!$model instanceof SpeechGenerationOperationModelInterface) {
-            throw new \InvalidArgumentException(
-                'Model must implement SpeechGenerationOperationModelInterface ' .
-                'for speech generation operations'
-            );
-        }
+        // Validate model supports speech generation operations
+        InterfaceValidator::validateSpeechGenerationOperation($model);
 
-        // Create and return the operation (starting state, no result yet)
-        return new GenerativeAiOperation(
-            uniqid('speech_op_', true),
-            OperationStateEnum::starting(),
-            null
-        );
+        // Create operation using factory
+        return OperationFactory::createSpeechOperation($messageList);
     }
 
     /**
@@ -556,27 +459,13 @@ class AiClient
      */
     public static function generateEmbeddingsOperation($input, ModelInterface $model): EmbeddingOperation
     {
-        // Convert input to standardized Message array format
-        if (is_array($input) && !empty($input) && is_string($input[0])) {
-            /** @var string[] $stringArray */
-            $stringArray = $input;
-            $messages = array_map(fn(string $text) => new UserMessage([new MessagePart($text)]), $stringArray);
-        } else {
-            /** @var string|MessagePart|MessagePart[]|Message|Message[] $input */
-            $messages = PromptNormalizer::normalize($input);
-        }
-
-        // Ensure messages is a proper list (sequential array with numeric keys starting from 0)
+        // Normalize embedding input using specialized normalizer
+        $messages = EmbeddingInputNormalizer::normalize($input);
         /** @var list<Message> $messageList */
         $messageList = array_values($messages);
 
-        // Ensure the model supports embedding generation operations
-        if (!$model instanceof EmbeddingGenerationOperationModelInterface) {
-            throw new \InvalidArgumentException(
-                'Model must implement EmbeddingGenerationOperationModelInterface ' .
-                'for embedding generation operations'
-            );
-        }
+        // Validate model supports embedding generation operations
+        InterfaceValidator::validateEmbeddingGenerationOperation($model);
 
         // Delegate to the model's operation method with proper list type
         return $model->generateEmbeddingsOperation($messageList);
