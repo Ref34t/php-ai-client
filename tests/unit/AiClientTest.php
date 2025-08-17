@@ -472,7 +472,7 @@ class AiClientTest extends TestCase
     public function testGenerateTextOperationWithValidTextModel(): void
     {
         $prompt = 'Text operation prompt';
-        
+
         $operation = AiClient::generateTextOperation($prompt, $this->mockTextModel);
 
         $this->assertInstanceOf(GenerativeAiOperation::class, $operation);
@@ -503,7 +503,7 @@ class AiClientTest extends TestCase
     public function testGenerateImageOperationWithValidImageModel(): void
     {
         $prompt = 'Image operation prompt';
-        
+
         $operation = AiClient::generateImageOperation($prompt, $this->mockImageModel);
 
         $this->assertInstanceOf(GenerativeAiOperation::class, $operation);
