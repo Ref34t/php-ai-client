@@ -11,7 +11,11 @@ use WordPress\AiClient\Providers\Contracts\ProviderWithOperationsHandlerInterfac
 use WordPress\AiClient\Providers\DTO\ProviderMetadata;
 use WordPress\AiClient\Providers\DTO\ProviderModelsMetadata;
 use WordPress\AiClient\Providers\Http\Contracts\HttpTransporterInterface;
+use WordPress\AiClient\Providers\Http\Contracts\RequestAuthenticationInterface;
 use WordPress\AiClient\Providers\Http\Contracts\WithHttpTransporterInterface;
+use WordPress\AiClient\Providers\Http\Contracts\WithRequestAuthenticationInterface;
+use WordPress\AiClient\Providers\Http\DTO\ApiKeyRequestAuthentication;
+use WordPress\AiClient\Providers\Http\DTO\NullRequestAuthentication;
 use WordPress\AiClient\Providers\Http\Traits\WithHttpTransporterTrait;
 use WordPress\AiClient\Providers\Models\Contracts\ModelInterface;
 use WordPress\AiClient\Providers\Models\DTO\ModelConfig;
@@ -41,6 +45,12 @@ class ProviderRegistry implements WithHttpTransporterInterface
      * @var array<class-string<ProviderInterface>, true> Set of registered class names for fast lookup.
      */
     private array $registeredClassNames = [];
+
+    /**
+     * @var array<class-string<ProviderInterface>, RequestAuthenticationInterface> Mapping of provider class names to
+     *                                                                             authentication instances.
+     */
+    private array $providerAuthenticationInstances = [];
 
     /**
      * Registers a provider class with the registry.
@@ -81,6 +91,14 @@ class ProviderRegistry implements WithHttpTransporterInterface
         } catch (RuntimeException $e) {
             // Ignore.
         }
+
+        // Hook up the request authentication instance, using a default if not set.
+        if (!isset($this->providerAuthenticationInstances[$className])) {
+            $this->providerAuthenticationInstances[$className] = $this->createDefaultProviderRequestAuthentication(
+                $className
+            );
+        }
+        $this->setRequestAuthenticationForProvider($className, $this->providerAuthenticationInstances[$className]);
 
         $this->providerClassNames[$metadata->getId()] = $className;
         $this->registeredClassNames[$className] = true;
@@ -259,7 +277,40 @@ class ProviderRegistry implements WithHttpTransporterInterface
     }
 
     /**
-     * Sets the HTTP transporter for a specific provider.
+     * Sets the request authentication instance for the given provider.
+     *
+     * @since n.e.x.t
+     *
+     * @param string|class-string<ProviderInterface> $idOrClassName The provider ID or class name.
+     * @param RequestAuthenticationInterface $requestAuthentication The request authentication instance.
+     */
+    public function setProviderRequestAuthentication(
+        string $idOrClassName,
+        RequestAuthenticationInterface $requestAuthentication
+    ): void {
+        $className = $this->resolveProviderClassName($idOrClassName);
+
+        $this->providerAuthenticationInstances[$className] = $requestAuthentication;
+
+        $this->setRequestAuthenticationForProvider($className, $requestAuthentication);
+    }
+
+    /**
+     * Gets the request authentication instance for the given provider.
+     *
+     * @since n.e.x.t
+     *
+     * @param string|class-string<ProviderInterface> $idOrClassName The provider ID or class name.
+     * @return RequestAuthenticationInterface The request authentication instance.
+     */
+    public function getProviderRequestAuthentication(string $idOrClassName): RequestAuthenticationInterface
+    {
+        $className = $this->resolveProviderClassName($idOrClassName);
+        return $this->providerAuthenticationInstances[$className];
+    }
+
+    /**
+     * Sets the HTTP transporter for a specific provider, hooking up its class instances.
      *
      * @since n.e.x.t
      *
@@ -286,5 +337,128 @@ class ProviderRegistry implements WithHttpTransporterInterface
                 $operationsHandler->setHttpTransporter($httpTransporter);
             }
         }
+    }
+
+    /**
+     * Sets the request authentication for a specific provider, hooking up its class instances.
+     *
+     * @since n.e.x.t
+     *
+     * @param class-string<ProviderInterface> $className The provider class name.
+     * @param RequestAuthenticationInterface $requestAuthentication The authentication instance.
+     */
+    private function setRequestAuthenticationForProvider(
+        string $className,
+        RequestAuthenticationInterface $requestAuthentication
+    ): void {
+        $availability = $className::availability();
+        if ($availability instanceof WithRequestAuthenticationInterface) {
+            $availability->setRequestAuthentication($requestAuthentication);
+        }
+
+        $modelMetadataDirectory = $className::modelMetadataDirectory();
+        if ($modelMetadataDirectory instanceof WithRequestAuthenticationInterface) {
+            $modelMetadataDirectory->setRequestAuthentication($requestAuthentication);
+        }
+
+        if (is_subclass_of($className, ProviderWithOperationsHandlerInterface::class)) {
+            $operationsHandler = $className::operationsHandler();
+            if ($operationsHandler instanceof WithRequestAuthenticationInterface) {
+                $operationsHandler->setRequestAuthentication($requestAuthentication);
+            }
+        }
+    }
+
+    /**
+     * Creates a default request authentication instance for a provider.
+     *
+     * @since n.e.x.t
+     *
+     * @param class-string<ProviderInterface> $className The provider class name.
+     * @return RequestAuthenticationInterface The default request authentication instance.
+     */
+    private function createDefaultProviderRequestAuthentication(
+        string $className
+    ): RequestAuthenticationInterface {
+        $providerId = $className::metadata()->getId();
+
+        /*
+         * For now, we assume API key authentication is used by default.
+         * In the future, this could be made more flexible by allowing the provider to express a specific type of
+         * request authentication to use.
+         */
+        $authenticationClass = ApiKeyRequestAuthentication::class;
+        $authenticationSchema = $authenticationClass::getJsonSchema();
+
+        // Iterate over all JSON schema object properties to try to determine the necessary authentication data.
+        $authenticationData = [];
+        if (isset($authenticationSchema['properties']) && is_array($authenticationSchema['properties'])) {
+            /** @var array<string, mixed> $details */
+            foreach ($authenticationSchema['properties'] as $property => $details) {
+                $envVarName = $this->getEnvVarName($providerId, $property);
+
+                // Try to get the value from environment variable or constant.
+                $envValue = getenv($envVarName);
+                if ($envValue === false) {
+                    if (!defined($envVarName)) {
+                        continue; // Skip if neither environment variable nor constant is defined.
+                    }
+                    $envValue = constant($envVarName);
+                    if (!is_scalar($envValue)) {
+                        continue;
+                    }
+                }
+
+                if (isset($details['type'])) {
+                    switch ($details['type']) {
+                        case 'boolean':
+                            $authenticationData[$property] = filter_var($envValue, FILTER_VALIDATE_BOOLEAN);
+                            break;
+                        case 'number':
+                            $authenticationData[$property] = (int) $envValue;
+                            break;
+                        case 'string':
+                        default:
+                            $authenticationData[$property] = (string) $envValue;
+                    }
+                } else {
+                    // Default to string if no type is specified.
+                    $authenticationData[$property] = (string) $envValue;
+                }
+            }
+
+            // If any required fields are missing, use an empty authentication instance to avoid errors.
+            if (isset($authenticationSchema['required']) && is_array($authenticationSchema['required'])) {
+                /** @var list<string> $requiredProperties */
+                $requiredProperties = $authenticationSchema['required'];
+                if (array_diff_key($authenticationData, array_flip($requiredProperties))) {
+                    $authenticationClass = NullRequestAuthentication::class;
+                }
+            }
+        }
+
+        return $authenticationClass::fromArray($authenticationData);
+    }
+
+    /**
+     * Converts a provider ID and field name to a constant case environment variable name.
+     *
+     * @since n.e.x.t
+     *
+     * @param string $providerId The provider ID.
+     * @param string $field The field name.
+     * @return string The environment variable name in CONSTANT_CASE.
+     */
+    private function getEnvVarName(string $providerId, string $field): string
+    {
+        // Convert camelCase or kebab-case or snake_case to CONSTANT_CASE.
+        $constantCaseProviderId = strtoupper(
+            (string) preg_replace('/([a-z])([A-Z])/', '$1_$2', str_replace('-', '_', $providerId))
+        );
+        $constantCaseField = strtoupper(
+            (string) preg_replace('/([a-z])([A-Z])/', '$1_$2', str_replace('-', '_', $field))
+        );
+
+        return "{$constantCaseProviderId}_{$constantCaseField}";
     }
 }

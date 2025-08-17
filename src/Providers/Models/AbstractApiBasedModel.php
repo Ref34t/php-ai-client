@@ -6,7 +6,9 @@ namespace WordPress\AiClient\Providers\Models;
 
 use WordPress\AiClient\Providers\DTO\ProviderMetadata;
 use WordPress\AiClient\Providers\Http\Contracts\WithHttpTransporterInterface;
+use WordPress\AiClient\Providers\Http\Contracts\WithRequestAuthenticationInterface;
 use WordPress\AiClient\Providers\Http\Traits\WithHttpTransporterTrait;
+use WordPress\AiClient\Providers\Http\Traits\WithRequestAuthenticationTrait;
 use WordPress\AiClient\Providers\Models\Contracts\ModelInterface;
 use WordPress\AiClient\Providers\Models\DTO\ModelConfig;
 use WordPress\AiClient\Providers\Models\DTO\ModelMetadata;
@@ -21,9 +23,11 @@ use WordPress\AiClient\Providers\Models\DTO\ModelMetadata;
  */
 abstract class AbstractApiBasedModel implements
     ModelInterface,
-    WithHttpTransporterInterface
+    WithHttpTransporterInterface,
+    WithRequestAuthenticationInterface
 {
     use WithHttpTransporterTrait;
+    use WithRequestAuthenticationTrait;
 
     /**
      * @var ModelMetadata The metadata for the model.
