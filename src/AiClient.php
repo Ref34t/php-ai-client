@@ -329,8 +329,13 @@ class AiClient
             $stringArray = $input;
             $messages = array_map(fn(string $text) => new UserMessage([new MessagePart($text)]), $stringArray);
         } else {
+            /** @var string|MessagePart|MessagePart[]|Message|Message[] $input */
             $messages = self::normalizePromptToMessages($input);
         }
+
+        // Ensure messages is a proper list (sequential array with numeric keys starting from 0)
+        /** @var list<Message> $messageList */
+        $messageList = array_values($messages);
 
         // Get model - either provided or auto-discovered
         $resolvedModel = $model ?? self::findSuitableEmbeddingModel();
@@ -343,7 +348,7 @@ class AiClient
         }
 
         // Generate the result using the model
-        return $resolvedModel->generateEmbeddingsResult($messages);
+        return $resolvedModel->generateEmbeddingsResult($messageList);
     }
 
     /**
@@ -515,8 +520,13 @@ class AiClient
             $stringArray = $input;
             $messages = array_map(fn(string $text) => new UserMessage([new MessagePart($text)]), $stringArray);
         } else {
+            /** @var string|MessagePart|MessagePart[]|Message|Message[] $input */
             $messages = self::normalizePromptToMessages($input);
         }
+
+        // Ensure messages is a proper list (sequential array with numeric keys starting from 0)
+        /** @var list<Message> $messageList */
+        $messageList = array_values($messages);
 
         // Ensure the model supports embedding generation operations
         if (!$model instanceof EmbeddingGenerationOperationModelInterface) {
@@ -526,8 +536,8 @@ class AiClient
             );
         }
 
-        // Delegate to the model's operation method
-        return $model->generateEmbeddingsOperation($input);
+        // Delegate to the model's operation method with proper list type
+        return $model->generateEmbeddingsOperation($messageList);
     }
 
     /**
