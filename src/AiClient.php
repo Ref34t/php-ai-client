@@ -15,7 +15,6 @@ use WordPress\AiClient\Providers\Models\Contracts\ModelInterface;
 use WordPress\AiClient\Providers\ProviderRegistry;
 use WordPress\AiClient\Results\DTO\EmbeddingResult;
 use WordPress\AiClient\Results\DTO\GenerativeAiResult;
-use WordPress\AiClient\Utils\EmbeddingInputNormalizer;
 use WordPress\AiClient\Utils\GenerationStrategyResolver;
 use WordPress\AiClient\Utils\InterfaceValidator;
 use WordPress\AiClient\Utils\ModelDiscovery;
@@ -152,6 +151,40 @@ class AiClient
     }
 
     /**
+     * Template method for executing generation operations.
+     *
+     * @since n.e.x.t
+     *
+     * @param string|MessagePart|MessagePart[]|Message|Message[] $prompt The prompt content.
+     * @param ModelInterface|null $model Optional specific model to use.
+     * @param string $type The generation type (text, image, speech).
+     * @return GenerativeAiResult The generation result.
+     *
+     * @throws \InvalidArgumentException If the prompt format is invalid.
+     * @throws \RuntimeException If no suitable model is found.
+     */
+    private static function executeGeneration($prompt, ?ModelInterface $model, string $type): GenerativeAiResult
+    {
+        // Convert prompt to standardized Message array format
+        $messages = PromptNormalizer::normalize($prompt);
+        /** @var list<Message> $messageList */
+        $messageList = array_values($messages);
+
+        // Get model - either provided or auto-discovered
+        $discoveryMethod = 'find' . ucfirst($type) . 'Model';
+        $resolvedModel = $model ?? ModelDiscovery::$discoveryMethod(self::defaultRegistry());
+
+        // Validate model supports the generation type
+        $validationMethod = 'validate' . ucfirst($type) . 'Generation';
+        InterfaceValidator::$validationMethod($resolvedModel);
+
+        // Generate the result using the model
+        $generationMethod = 'generate' . ucfirst($type) . 'Result';
+        /** @phpstan-ignore-next-line */
+        return $resolvedModel->$generationMethod($messageList);
+    }
+
+    /**
      * Generates text using the traditional API approach.
      *
      * @since n.e.x.t
@@ -165,20 +198,7 @@ class AiClient
      */
     public static function generateTextResult($prompt, ModelInterface $model = null): GenerativeAiResult
     {
-        // Convert prompt to standardized Message array format
-        $messages = PromptNormalizer::normalize($prompt);
-        /** @var list<Message> $messageList */
-        $messageList = array_values($messages);
-
-        // Get model - either provided or auto-discovered
-        $resolvedModel = $model ?? ModelDiscovery::findTextModel(self::defaultRegistry());
-
-        // Validate model supports text generation
-        InterfaceValidator::validateTextGeneration($resolvedModel);
-
-        // Generate the result using the model
-        /** @phpstan-ignore-next-line */
-        return $resolvedModel->generateTextResult($messageList);
+        return self::executeGeneration($prompt, $model, 'text');
     }
 
     /**
@@ -225,24 +245,11 @@ class AiClient
      */
     public static function generateImageResult($prompt, ModelInterface $model = null): GenerativeAiResult
     {
-        // Convert prompt to standardized Message array format
-        $messages = PromptNormalizer::normalize($prompt);
-        /** @var list<Message> $messageList */
-        $messageList = array_values($messages);
-
-        // Get model - either provided or auto-discovered
-        $resolvedModel = $model ?? ModelDiscovery::findImageModel(self::defaultRegistry());
-
-        // Validate model supports image generation
-        InterfaceValidator::validateImageGeneration($resolvedModel);
-
-        // Generate the result using the model
-        /** @phpstan-ignore-next-line */
-        return $resolvedModel->generateImageResult($messageList);
+        return self::executeGeneration($prompt, $model, 'image');
     }
 
     /**
-     * Converts text to speech using the traditional API approach.
+     * Template method for text-to-speech conversion.
      *
      * @since n.e.x.t
      *
@@ -253,7 +260,7 @@ class AiClient
      * @throws \InvalidArgumentException If the prompt format is invalid.
      * @throws \RuntimeException If no suitable model is found.
      */
-    public static function convertTextToSpeechResult($prompt, ModelInterface $model = null): GenerativeAiResult
+    private static function executeTextToSpeechGeneration($prompt, ?ModelInterface $model): GenerativeAiResult
     {
         // Convert prompt to standardized Message array format
         $messages = PromptNormalizer::normalize($prompt);
@@ -272,6 +279,23 @@ class AiClient
     }
 
     /**
+     * Converts text to speech using the traditional API approach.
+     *
+     * @since n.e.x.t
+     *
+     * @param string|MessagePart|MessagePart[]|Message|Message[] $prompt The prompt content.
+     * @param ModelInterface|null $model Optional specific model to use.
+     * @return GenerativeAiResult The generation result.
+     *
+     * @throws \InvalidArgumentException If the prompt format is invalid.
+     * @throws \RuntimeException If no suitable model is found.
+     */
+    public static function convertTextToSpeechResult($prompt, ModelInterface $model = null): GenerativeAiResult
+    {
+        return self::executeTextToSpeechGeneration($prompt, $model);
+    }
+
+    /**
      * Generates speech using the traditional API approach.
      *
      * @since n.e.x.t
@@ -285,20 +309,7 @@ class AiClient
      */
     public static function generateSpeechResult($prompt, ModelInterface $model = null): GenerativeAiResult
     {
-        // Convert prompt to standardized Message array format
-        $messages = PromptNormalizer::normalize($prompt);
-        /** @var list<Message> $messageList */
-        $messageList = array_values($messages);
-
-        // Get model - either provided or auto-discovered
-        $resolvedModel = $model ?? ModelDiscovery::findSpeechModel(self::defaultRegistry());
-
-        // Validate model supports speech generation
-        InterfaceValidator::validateSpeechGeneration($resolvedModel);
-
-        // Generate the result using the model
-        /** @phpstan-ignore-next-line */
-        return $resolvedModel->generateSpeechResult($messageList);
+        return self::executeGeneration($prompt, $model, 'speech');
     }
 
     /**
@@ -315,8 +326,8 @@ class AiClient
      */
     public static function generateEmbeddingsResult($input, ModelInterface $model = null): EmbeddingResult
     {
-        // Normalize embedding input using specialized normalizer
-        $messages = EmbeddingInputNormalizer::normalize($input);
+        // Normalize embedding input using consolidated normalizer
+        $messages = PromptNormalizer::normalizeEmbeddingInput($input);
         /** @var list<Message> $messageList */
         $messageList = array_values($messages);
 
@@ -329,6 +340,42 @@ class AiClient
         // Generate the result using the model
         /** @phpstan-ignore-next-line */
         return $resolvedModel->generateEmbeddingsResult($messageList);
+    }
+
+    /**
+     * Template method for creating operations.
+     *
+     * @since n.e.x.t
+     *
+     * @param string|MessagePart|MessagePart[]|Message|Message[] $prompt The prompt content.
+     * @param ModelInterface $model The model to use for the operation.
+     * @param string $type The operation type (text, image, textToSpeech, speech).
+     * @return GenerativeAiOperation|EmbeddingOperation The operation for async processing.
+     *
+     * @throws \InvalidArgumentException If the prompt format is invalid.
+     */
+    private static function createOperation($prompt, ModelInterface $model, string $type): object
+    {
+        // Convert prompt to standardized Message array format
+        $messages = PromptNormalizer::normalize($prompt);
+        /** @var list<Message> $messageList */
+        $messageList = array_values($messages);
+
+        // Special handling for embedding operations
+        if ($type === 'embedding') {
+            InterfaceValidator::validateEmbeddingGenerationOperation($model);
+            /** @phpstan-ignore-next-line */
+            return $model->generateEmbeddingsOperation($messageList);
+        }
+
+        // Validate model supports the operation type
+        $validationMethod = 'validate' . ucfirst($type) . 'GenerationOperation';
+        InterfaceValidator::$validationMethod($model);
+
+        // Create operation using factory
+        $factoryMethod = 'create' . ucfirst($type) . 'Operation';
+        /** @var GenerativeAiOperation */
+        return OperationFactory::$factoryMethod($messageList);
     }
 
     /**
@@ -366,16 +413,8 @@ class AiClient
      */
     public static function generateTextOperation($prompt, ModelInterface $model): GenerativeAiOperation
     {
-        // Convert prompt to standardized Message array format
-        $messages = PromptNormalizer::normalize($prompt);
-        /** @var list<Message> $messageList */
-        $messageList = array_values($messages);
-
-        // Validate model supports text generation operations
-        InterfaceValidator::validateTextGenerationOperation($model);
-
-        // Create operation using factory
-        return OperationFactory::createTextOperation($messageList);
+        /** @var GenerativeAiOperation */
+        return self::createOperation($prompt, $model, 'text');
     }
 
     /**
@@ -391,16 +430,8 @@ class AiClient
      */
     public static function generateImageOperation($prompt, ModelInterface $model): GenerativeAiOperation
     {
-        // Convert prompt to standardized Message array format
-        $messages = PromptNormalizer::normalize($prompt);
-        /** @var list<Message> $messageList */
-        $messageList = array_values($messages);
-
-        // Validate model supports image generation operations
-        InterfaceValidator::validateImageGenerationOperation($model);
-
-        // Create operation using factory
-        return OperationFactory::createImageOperation($messageList);
+        /** @var GenerativeAiOperation */
+        return self::createOperation($prompt, $model, 'image');
     }
 
     /**
@@ -416,16 +447,8 @@ class AiClient
      */
     public static function convertTextToSpeechOperation($prompt, ModelInterface $model): GenerativeAiOperation
     {
-        // Convert prompt to standardized Message array format
-        $messages = PromptNormalizer::normalize($prompt);
-        /** @var list<Message> $messageList */
-        $messageList = array_values($messages);
-
-        // Validate model supports text-to-speech conversion operations
-        InterfaceValidator::validateTextToSpeechConversionOperation($model);
-
-        // Create operation using factory
-        return OperationFactory::createTextToSpeechOperation($messageList);
+        /** @var GenerativeAiOperation */
+        return self::createOperation($prompt, $model, 'textToSpeech');
     }
 
     /**
@@ -441,16 +464,8 @@ class AiClient
      */
     public static function generateSpeechOperation($prompt, ModelInterface $model): GenerativeAiOperation
     {
-        // Convert prompt to standardized Message array format
-        $messages = PromptNormalizer::normalize($prompt);
-        /** @var list<Message> $messageList */
-        $messageList = array_values($messages);
-
-        // Validate model supports speech generation operations
-        InterfaceValidator::validateSpeechGenerationOperation($model);
-
-        // Create operation using factory
-        return OperationFactory::createSpeechOperation($messageList);
+        /** @var GenerativeAiOperation */
+        return self::createOperation($prompt, $model, 'speech');
     }
 
     /**
@@ -466,16 +481,10 @@ class AiClient
      */
     public static function generateEmbeddingsOperation($input, ModelInterface $model): EmbeddingOperation
     {
-        // Normalize embedding input using specialized normalizer
-        $messages = EmbeddingInputNormalizer::normalize($input);
-        /** @var list<Message> $messageList */
-        $messageList = array_values($messages);
-
-        // Validate model supports embedding generation operations
-        InterfaceValidator::validateEmbeddingGenerationOperation($model);
-
-        // Delegate to the model's operation method with proper list type
-        /** @phpstan-ignore-next-line */
-        return $model->generateEmbeddingsOperation($messageList);
+        // Normalize embedding input using consolidated normalizer
+        $messages = PromptNormalizer::normalizeEmbeddingInput($input);
+        
+        /** @var EmbeddingOperation */
+        return self::createOperation($messages, $model, 'embedding');
     }
 }

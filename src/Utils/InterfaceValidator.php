@@ -25,6 +25,48 @@ use WordPress\AiClient\Providers\Models\TextToSpeechConversion\Contracts\TextToS
 class InterfaceValidator
 {
     /**
+     * Validation configuration mapping generation types to their interfaces.
+     *
+     * @var array<string, array{string, string, string}>
+     */
+    private const VALIDATION_CONFIG = [
+        'textGeneration' => [TextGenerationModelInterface::class, 'TextGenerationModelInterface', 'text generation'],
+        'imageGeneration' => [ImageGenerationModelInterface::class, 'ImageGenerationModelInterface', 'image generation'],
+        'textToSpeechConversion' => [TextToSpeechConversionModelInterface::class, 'TextToSpeechConversionModelInterface', 'text-to-speech conversion'],
+        'speechGeneration' => [SpeechGenerationModelInterface::class, 'SpeechGenerationModelInterface', 'speech generation'],
+        'embeddingGeneration' => [EmbeddingGenerationModelInterface::class, 'EmbeddingGenerationModelInterface', 'embedding generation'],
+        'textGenerationOperation' => [TextGenerationModelInterface::class, 'TextGenerationModelInterface', 'text generation operations'],
+        'imageGenerationOperation' => [ImageGenerationModelInterface::class, 'ImageGenerationModelInterface', 'image generation operations'],
+        'textToSpeechConversionOperation' => [TextToSpeechConversionOperationModelInterface::class, 'TextToSpeechConversionOperationModelInterface', 'text-to-speech conversion operations'],
+        'speechGenerationOperation' => [SpeechGenerationOperationModelInterface::class, 'SpeechGenerationOperationModelInterface', 'speech generation operations'],
+        'embeddingGenerationOperation' => [EmbeddingGenerationOperationModelInterface::class, 'EmbeddingGenerationOperationModelInterface', 'embedding generation operations'],
+    ];
+
+    /**
+     * Generic interface validation method.
+     *
+     * @since n.e.x.t
+     *
+     * @param ModelInterface $model The model to validate.
+     * @param string $type The validation type from VALIDATION_CONFIG.
+     * @return void
+     *
+     * @throws \InvalidArgumentException If the model doesn't implement the required interface.
+     */
+    private static function validateInterface(ModelInterface $model, string $type): void
+    {
+        if (!isset(self::VALIDATION_CONFIG[$type])) {
+            throw new \InvalidArgumentException("Unknown validation type: {$type}");
+        }
+
+        [$interface, $interfaceName, $description] = self::VALIDATION_CONFIG[$type];
+        if (!$model instanceof $interface) {
+            throw new \InvalidArgumentException(
+                "Model must implement {$interfaceName} for {$description}"
+            );
+        }
+    }
+    /**
      * Validates that a model implements TextGenerationModelInterface.
      *
      * @since n.e.x.t
@@ -36,11 +78,7 @@ class InterfaceValidator
      */
     public static function validateTextGeneration(ModelInterface $model): void
     {
-        if (!$model instanceof TextGenerationModelInterface) {
-            throw new \InvalidArgumentException(
-                'Model must implement TextGenerationModelInterface for text generation'
-            );
-        }
+        self::validateInterface($model, 'textGeneration');
     }
 
     /**
@@ -55,11 +93,7 @@ class InterfaceValidator
      */
     public static function validateImageGeneration(ModelInterface $model): void
     {
-        if (!$model instanceof ImageGenerationModelInterface) {
-            throw new \InvalidArgumentException(
-                'Model must implement ImageGenerationModelInterface for image generation'
-            );
-        }
+        self::validateInterface($model, 'imageGeneration');
     }
 
     /**
@@ -74,11 +108,7 @@ class InterfaceValidator
      */
     public static function validateTextToSpeechConversion(ModelInterface $model): void
     {
-        if (!$model instanceof TextToSpeechConversionModelInterface) {
-            throw new \InvalidArgumentException(
-                'Model must implement TextToSpeechConversionModelInterface for text-to-speech conversion'
-            );
-        }
+        self::validateInterface($model, 'textToSpeechConversion');
     }
 
     /**
@@ -93,11 +123,7 @@ class InterfaceValidator
      */
     public static function validateSpeechGeneration(ModelInterface $model): void
     {
-        if (!$model instanceof SpeechGenerationModelInterface) {
-            throw new \InvalidArgumentException(
-                'Model must implement SpeechGenerationModelInterface for speech generation'
-            );
-        }
+        self::validateInterface($model, 'speechGeneration');
     }
 
     /**
@@ -112,11 +138,7 @@ class InterfaceValidator
      */
     public static function validateEmbeddingGeneration(ModelInterface $model): void
     {
-        if (!$model instanceof EmbeddingGenerationModelInterface) {
-            throw new \InvalidArgumentException(
-                'Model must implement EmbeddingGenerationModelInterface for embedding generation'
-            );
-        }
+        self::validateInterface($model, 'embeddingGeneration');
     }
 
     /**
@@ -131,11 +153,7 @@ class InterfaceValidator
      */
     public static function validateTextGenerationOperation(ModelInterface $model): void
     {
-        if (!$model instanceof TextGenerationModelInterface) {
-            throw new \InvalidArgumentException(
-                'Model must implement TextGenerationModelInterface for text generation operations'
-            );
-        }
+        self::validateInterface($model, 'textGenerationOperation');
     }
 
     /**
@@ -150,11 +168,7 @@ class InterfaceValidator
      */
     public static function validateImageGenerationOperation(ModelInterface $model): void
     {
-        if (!$model instanceof ImageGenerationModelInterface) {
-            throw new \InvalidArgumentException(
-                'Model must implement ImageGenerationModelInterface for image generation operations'
-            );
-        }
+        self::validateInterface($model, 'imageGenerationOperation');
     }
 
     /**
@@ -169,12 +183,7 @@ class InterfaceValidator
      */
     public static function validateTextToSpeechConversionOperation(ModelInterface $model): void
     {
-        if (!$model instanceof TextToSpeechConversionOperationModelInterface) {
-            throw new \InvalidArgumentException(
-                'Model must implement TextToSpeechConversionOperationModelInterface ' .
-                'for text-to-speech conversion operations'
-            );
-        }
+        self::validateInterface($model, 'textToSpeechConversionOperation');
     }
 
     /**
@@ -189,12 +198,7 @@ class InterfaceValidator
      */
     public static function validateSpeechGenerationOperation(ModelInterface $model): void
     {
-        if (!$model instanceof SpeechGenerationOperationModelInterface) {
-            throw new \InvalidArgumentException(
-                'Model must implement SpeechGenerationOperationModelInterface ' .
-                'for speech generation operations'
-            );
-        }
+        self::validateInterface($model, 'speechGenerationOperation');
     }
 
     /**
@@ -209,11 +213,6 @@ class InterfaceValidator
      */
     public static function validateEmbeddingGenerationOperation(ModelInterface $model): void
     {
-        if (!$model instanceof EmbeddingGenerationOperationModelInterface) {
-            throw new \InvalidArgumentException(
-                'Model must implement EmbeddingGenerationOperationModelInterface ' .
-                'for embedding generation operations'
-            );
-        }
+        self::validateInterface($model, 'embeddingGenerationOperation');
     }
 }

@@ -7,10 +7,12 @@ namespace WordPress\AiClient\Tests\unit\Utils;
 use PHPUnit\Framework\TestCase;
 use WordPress\AiClient\Messages\DTO\MessagePart;
 use WordPress\AiClient\Messages\DTO\UserMessage;
-use WordPress\AiClient\Utils\EmbeddingInputNormalizer;
+use WordPress\AiClient\Utils\PromptNormalizer;
 
 /**
- * @covers \WordPress\AiClient\Utils\EmbeddingInputNormalizer
+ * @covers \WordPress\AiClient\Utils\PromptNormalizer::normalizeEmbeddingInput
+ * @covers \WordPress\AiClient\Utils\PromptNormalizer::isValidEmbeddingInput
+ * @covers \WordPress\AiClient\Utils\PromptNormalizer::getEmbeddingInputCount
  */
 class EmbeddingInputNormalizerTest extends TestCase
 {
@@ -20,7 +22,7 @@ class EmbeddingInputNormalizerTest extends TestCase
     public function testNormalizeStringArray(): void
     {
         $input = ['First text', 'Second text', 'Third text'];
-        $result = EmbeddingInputNormalizer::normalize($input);
+        $result = PromptNormalizer::normalizeEmbeddingInput($input);
 
         $this->assertCount(3, $result);
 
@@ -44,7 +46,7 @@ class EmbeddingInputNormalizerTest extends TestCase
     public function testNormalizeSingleString(): void
     {
         $input = 'Single text input';
-        $result = EmbeddingInputNormalizer::normalize($input);
+        $result = PromptNormalizer::normalizeEmbeddingInput($input);
 
         $this->assertCount(1, $result);
         $this->assertInstanceOf(UserMessage::class, $result[0]);
@@ -57,7 +59,7 @@ class EmbeddingInputNormalizerTest extends TestCase
     public function testNormalizeMessagePart(): void
     {
         $messagePart = new MessagePart('Test message part');
-        $result = EmbeddingInputNormalizer::normalize($messagePart);
+        $result = PromptNormalizer::normalizeEmbeddingInput($messagePart);
 
         $this->assertCount(1, $result);
         $this->assertInstanceOf(UserMessage::class, $result[0]);
@@ -70,7 +72,7 @@ class EmbeddingInputNormalizerTest extends TestCase
     public function testNormalizeSingleMessage(): void
     {
         $message = new UserMessage([new MessagePart('Test message')]);
-        $result = EmbeddingInputNormalizer::normalize($message);
+        $result = PromptNormalizer::normalizeEmbeddingInput($message);
 
         $this->assertCount(1, $result);
         $this->assertSame($message, $result[0]);
@@ -85,7 +87,7 @@ class EmbeddingInputNormalizerTest extends TestCase
         $message2 = new UserMessage([new MessagePart('Second message')]);
         $messages = [$message1, $message2];
 
-        $result = EmbeddingInputNormalizer::normalize($messages);
+        $result = PromptNormalizer::normalizeEmbeddingInput($messages);
 
         $this->assertCount(2, $result);
         $this->assertSame($message1, $result[0]);
@@ -101,7 +103,7 @@ class EmbeddingInputNormalizerTest extends TestCase
         $part2 = new MessagePart('Second part');
         $parts = [$part1, $part2];
 
-        $result = EmbeddingInputNormalizer::normalize($parts);
+        $result = PromptNormalizer::normalizeEmbeddingInput($parts);
 
         $this->assertCount(2, $result);
         $this->assertInstanceOf(UserMessage::class, $result[0]);
@@ -120,7 +122,7 @@ class EmbeddingInputNormalizerTest extends TestCase
         $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('Array element at index 1 must be a string, integer given');
 
-        EmbeddingInputNormalizer::normalize($input);
+        PromptNormalizer::normalizeEmbeddingInput($input);
     }
 
     /**
@@ -133,7 +135,7 @@ class EmbeddingInputNormalizerTest extends TestCase
         $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('Prompt array cannot be empty');
 
-        EmbeddingInputNormalizer::normalize($input);
+        PromptNormalizer::normalizeEmbeddingInput($input);
     }
 
     /**
@@ -144,7 +146,7 @@ class EmbeddingInputNormalizerTest extends TestCase
         $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('Invalid prompt format provided');
 
-        EmbeddingInputNormalizer::normalize(123);
+        PromptNormalizer::normalizeEmbeddingInput(123);
     }
 
     /**
@@ -152,10 +154,10 @@ class EmbeddingInputNormalizerTest extends TestCase
      */
     public function testIsValidEmbeddingInputReturnsTrueForValidInputs(): void
     {
-        $this->assertTrue(EmbeddingInputNormalizer::isValidEmbeddingInput('Single string'));
-        $this->assertTrue(EmbeddingInputNormalizer::isValidEmbeddingInput(['String array', 'element']));
-        $this->assertTrue(EmbeddingInputNormalizer::isValidEmbeddingInput(new MessagePart('Test')));
-        $this->assertTrue(EmbeddingInputNormalizer::isValidEmbeddingInput(
+        $this->assertTrue(PromptNormalizer::isValidEmbeddingInput('Single string'));
+        $this->assertTrue(PromptNormalizer::isValidEmbeddingInput(['String array', 'element']));
+        $this->assertTrue(PromptNormalizer::isValidEmbeddingInput(new MessagePart('Test')));
+        $this->assertTrue(PromptNormalizer::isValidEmbeddingInput(
             new UserMessage([new MessagePart('Test')])
         ));
     }
@@ -165,10 +167,10 @@ class EmbeddingInputNormalizerTest extends TestCase
      */
     public function testIsValidEmbeddingInputReturnsFalseForInvalidInputs(): void
     {
-        $this->assertFalse(EmbeddingInputNormalizer::isValidEmbeddingInput(123));
-        $this->assertFalse(EmbeddingInputNormalizer::isValidEmbeddingInput([]));
-        $this->assertFalse(EmbeddingInputNormalizer::isValidEmbeddingInput(['valid', 123]));
-        $this->assertFalse(EmbeddingInputNormalizer::isValidEmbeddingInput(new \stdClass()));
+        $this->assertFalse(PromptNormalizer::isValidEmbeddingInput(123));
+        $this->assertFalse(PromptNormalizer::isValidEmbeddingInput([]));
+        $this->assertFalse(PromptNormalizer::isValidEmbeddingInput(['valid', 123]));
+        $this->assertFalse(PromptNormalizer::isValidEmbeddingInput(new \stdClass()));
     }
 
     /**
@@ -176,15 +178,15 @@ class EmbeddingInputNormalizerTest extends TestCase
      */
     public function testGetInputCountReturnsCorrectCount(): void
     {
-        $this->assertEquals(1, EmbeddingInputNormalizer::getInputCount('Single string'));
-        $this->assertEquals(3, EmbeddingInputNormalizer::getInputCount(['One', 'Two', 'Three']));
-        $this->assertEquals(1, EmbeddingInputNormalizer::getInputCount(new MessagePart('Test')));
+        $this->assertEquals(1, PromptNormalizer::getEmbeddingInputCount('Single string'));
+        $this->assertEquals(3, PromptNormalizer::getEmbeddingInputCount(['One', 'Two', 'Three']));
+        $this->assertEquals(1, PromptNormalizer::getEmbeddingInputCount(new MessagePart('Test')));
 
         $messages = [
             new UserMessage([new MessagePart('First')]),
             new UserMessage([new MessagePart('Second')])
         ];
-        $this->assertEquals(2, EmbeddingInputNormalizer::getInputCount($messages));
+        $this->assertEquals(2, PromptNormalizer::getEmbeddingInputCount($messages));
     }
 
     /**
@@ -195,7 +197,7 @@ class EmbeddingInputNormalizerTest extends TestCase
         $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('Invalid prompt format provided');
 
-        EmbeddingInputNormalizer::getInputCount(123);
+        PromptNormalizer::getEmbeddingInputCount(123);
     }
 
     /**
@@ -204,7 +206,7 @@ class EmbeddingInputNormalizerTest extends TestCase
     public function testStringArrayNormalizationPreservesOrder(): void
     {
         $input = ['First', 'Second', 'Third', 'Fourth'];
-        $result = EmbeddingInputNormalizer::normalize($input);
+        $result = PromptNormalizer::normalizeEmbeddingInput($input);
 
         $this->assertCount(4, $result);
         $this->assertEquals('First', $result[0]->getParts()[0]->getText());
