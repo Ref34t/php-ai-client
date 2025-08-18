@@ -109,7 +109,7 @@ class PromptNormalizerTest extends TestCase
         $invalidArray = [$part, 'string', 123];
 
         $this->expectException(\InvalidArgumentException::class);
-        $this->expectExceptionMessage('Array must contain only Message or MessagePart objects');
+        $this->expectExceptionMessage('Array must contain only Message, MessagePart, or string objects');
 
         PromptNormalizer::normalize($invalidArray);
     }
@@ -133,7 +133,7 @@ class PromptNormalizerTest extends TestCase
         $invalidArray = [new \stdClass(), new \DateTime()];
 
         $this->expectException(\InvalidArgumentException::class);
-        $this->expectExceptionMessage('Array must contain only Message or MessagePart objects');
+        $this->expectExceptionMessage('Array must contain only Message, MessagePart, or string objects');
 
         PromptNormalizer::normalize($invalidArray);
     }

@@ -17,22 +17,24 @@ use WordPress\AiClient\Providers\ProviderRegistry;
 class ModelDiscovery
 {
     /**
-     * Finds a suitable text generation model from the registry.
+     * Generic method to find a model by capability.
      *
      * @since n.e.x.t
      *
      * @param ProviderRegistry $registry The provider registry to search.
-     * @return ModelInterface A suitable text generation model.
+     * @param CapabilityEnum $capability The required capability.
+     * @param string $errorType The error description type.
+     * @return ModelInterface A suitable model.
      *
      * @throws \RuntimeException If no suitable model is found.
      */
-    public static function findTextModel(ProviderRegistry $registry): ModelInterface
+    private static function findModelByCapability(ProviderRegistry $registry, CapabilityEnum $capability, string $errorType): ModelInterface
     {
-        $requirements = new ModelRequirements([CapabilityEnum::textGeneration()], []);
+        $requirements = new ModelRequirements([$capability], []);
         $providerModelsMetadata = $registry->findModelsMetadataForSupport($requirements);
 
         if (empty($providerModelsMetadata)) {
-            throw new \RuntimeException('No text generation models available');
+            throw new \RuntimeException("No {$errorType} models available");
         }
 
         // Get the first suitable provider and model
@@ -47,6 +49,21 @@ class ModelDiscovery
             $providerMetadata->getProvider()->getId(),
             $models[0]->getId()
         );
+    }
+
+    /**
+     * Finds a suitable text generation model from the registry.
+     *
+     * @since n.e.x.t
+     *
+     * @param ProviderRegistry $registry The provider registry to search.
+     * @return ModelInterface A suitable text generation model.
+     *
+     * @throws \RuntimeException If no suitable model is found.
+     */
+    public static function findTextModel(ProviderRegistry $registry): ModelInterface
+    {
+        return self::findModelByCapability($registry, CapabilityEnum::textGeneration(), 'text generation');
     }
 
     /**
@@ -61,25 +78,7 @@ class ModelDiscovery
      */
     public static function findImageModel(ProviderRegistry $registry): ModelInterface
     {
-        $requirements = new ModelRequirements([CapabilityEnum::imageGeneration()], []);
-        $providerModelsMetadata = $registry->findModelsMetadataForSupport($requirements);
-
-        if (empty($providerModelsMetadata)) {
-            throw new \RuntimeException('No image generation models available');
-        }
-
-        // Get the first suitable provider and model
-        $providerMetadata = $providerModelsMetadata[0];
-        $models = $providerMetadata->getModels();
-
-        if (empty($models)) {
-            throw new \RuntimeException('No models available in provider');
-        }
-
-        return $registry->getProviderModel(
-            $providerMetadata->getProvider()->getId(),
-            $models[0]->getId()
-        );
+        return self::findModelByCapability($registry, CapabilityEnum::imageGeneration(), 'image generation');
     }
 
     /**
@@ -94,25 +93,7 @@ class ModelDiscovery
      */
     public static function findTextToSpeechModel(ProviderRegistry $registry): ModelInterface
     {
-        $requirements = new ModelRequirements([CapabilityEnum::textToSpeechConversion()], []);
-        $providerModelsMetadata = $registry->findModelsMetadataForSupport($requirements);
-
-        if (empty($providerModelsMetadata)) {
-            throw new \RuntimeException('No text-to-speech conversion models available');
-        }
-
-        // Get the first suitable provider and model
-        $providerMetadata = $providerModelsMetadata[0];
-        $models = $providerMetadata->getModels();
-
-        if (empty($models)) {
-            throw new \RuntimeException('No models available in provider');
-        }
-
-        return $registry->getProviderModel(
-            $providerMetadata->getProvider()->getId(),
-            $models[0]->getId()
-        );
+        return self::findModelByCapability($registry, CapabilityEnum::textToSpeechConversion(), 'text-to-speech conversion');
     }
 
     /**
@@ -127,25 +108,7 @@ class ModelDiscovery
      */
     public static function findSpeechModel(ProviderRegistry $registry): ModelInterface
     {
-        $requirements = new ModelRequirements([CapabilityEnum::speechGeneration()], []);
-        $providerModelsMetadata = $registry->findModelsMetadataForSupport($requirements);
-
-        if (empty($providerModelsMetadata)) {
-            throw new \RuntimeException('No speech generation models available');
-        }
-
-        // Get the first suitable provider and model
-        $providerMetadata = $providerModelsMetadata[0];
-        $models = $providerMetadata->getModels();
-
-        if (empty($models)) {
-            throw new \RuntimeException('No models available in provider');
-        }
-
-        return $registry->getProviderModel(
-            $providerMetadata->getProvider()->getId(),
-            $models[0]->getId()
-        );
+        return self::findModelByCapability($registry, CapabilityEnum::speechGeneration(), 'speech generation');
     }
 
     /**
@@ -160,24 +123,6 @@ class ModelDiscovery
      */
     public static function findEmbeddingModel(ProviderRegistry $registry): ModelInterface
     {
-        $requirements = new ModelRequirements([CapabilityEnum::embeddingGeneration()], []);
-        $providerModelsMetadata = $registry->findModelsMetadataForSupport($requirements);
-
-        if (empty($providerModelsMetadata)) {
-            throw new \RuntimeException('No embedding generation models available');
-        }
-
-        // Get the first suitable provider and model
-        $providerMetadata = $providerModelsMetadata[0];
-        $models = $providerMetadata->getModels();
-
-        if (empty($models)) {
-            throw new \RuntimeException('No models available in provider');
-        }
-
-        return $registry->getProviderModel(
-            $providerMetadata->getProvider()->getId(),
-            $models[0]->getId()
-        );
+        return self::findModelByCapability($registry, CapabilityEnum::embeddingGeneration(), 'embedding generation');
     }
 }
