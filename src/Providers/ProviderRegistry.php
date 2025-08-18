@@ -238,7 +238,19 @@ class ProviderRegistry implements WithHttpTransporterInterface
 
         // Use static method from ProviderInterface
         /** @var class-string<ProviderInterface> $className */
-        return $className::model($modelId, $modelConfig);
+        $modelInstance = $className::model($modelId, $modelConfig);
+
+        if ($modelInstance instanceof WithHttpTransporterInterface) {
+            $modelInstance->setHttpTransporter($this->getHttpTransporter());
+        }
+
+        if ($modelInstance instanceof WithRequestAuthenticationInterface) {
+            $modelInstance->setRequestAuthentication(
+                $this->getProviderRequestAuthentication($className)
+            );
+        }
+
+        return $modelInstance;
     }
 
     /**
