@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace WordPress\AiClient\Providers\Http\Contracts;
 
-use WordPress\AiClient\Common\Contracts\WithArrayTransformationInterface;
 use WordPress\AiClient\Common\Contracts\WithJsonSchemaInterface;
 use WordPress\AiClient\Providers\Http\DTO\Request;
 
@@ -14,7 +13,6 @@ use WordPress\AiClient\Providers\Http\DTO\Request;
  * @since n.e.x.t
  */
 interface RequestAuthenticationInterface extends
-    WithArrayTransformationInterface,
     WithJsonSchemaInterface
 {
     /**
