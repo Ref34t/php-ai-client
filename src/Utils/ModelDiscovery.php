@@ -118,18 +118,4 @@ class ModelDiscovery
         return self::findModelByCapability($registry, CapabilityEnum::speechGeneration(), 'speech generation');
     }
 
-    /**
-     * Finds a suitable embedding generation model from the registry.
-     *
-     * @since n.e.x.t
-     *
-     * @param ProviderRegistry $registry The provider registry to search.
-     * @return ModelInterface A suitable embedding generation model.
-     *
-     * @throws \RuntimeException If no suitable model is found.
-     */
-    public static function findEmbeddingModel(ProviderRegistry $registry): ModelInterface
-    {
-        return self::findModelByCapability($registry, CapabilityEnum::embeddingGeneration(), 'embedding generation');
-    }
 }

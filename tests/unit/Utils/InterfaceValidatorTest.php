@@ -6,8 +6,6 @@ namespace WordPress\AiClient\Tests\unit\Utils;
 
 use PHPUnit\Framework\TestCase;
 use WordPress\AiClient\Providers\Models\Contracts\ModelInterface;
-use WordPress\AiClient\Tests\mocks\MockEmbeddingGenerationModel;
-use WordPress\AiClient\Tests\mocks\MockEmbeddingGenerationOperationModel;
 use WordPress\AiClient\Tests\mocks\MockImageGenerationModel;
 use WordPress\AiClient\Tests\mocks\MockTextGenerationModel;
 use WordPress\AiClient\Utils\InterfaceValidator;
@@ -76,32 +74,24 @@ class InterfaceValidatorTest extends TestCase
     }
 
     /**
-     * Tests validateEmbeddingGeneration with valid embedding model.
      */
-    public function testValidateEmbeddingGenerationWithValidModel(): void
     {
-        $model = $this->createMock(MockEmbeddingGenerationModel::class);
 
         // Should not throw an exception
-        InterfaceValidator::validateEmbeddingGeneration($model);
 
         // If we reach here, validation passed
         $this->assertTrue(true);
     }
 
     /**
-     * Tests validateEmbeddingGeneration with invalid model.
      */
-    public function testValidateEmbeddingGenerationWithInvalidModel(): void
     {
         $model = $this->createMock(ModelInterface::class);
 
         $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage(
-            'Model must implement EmbeddingGenerationModelInterface for embedding generation'
         );
 
-        InterfaceValidator::validateEmbeddingGeneration($model);
     }
 
     /**
@@ -163,32 +153,24 @@ class InterfaceValidatorTest extends TestCase
     }
 
     /**
-     * Tests validateEmbeddingGenerationOperation with valid embedding operation model.
      */
-    public function testValidateEmbeddingGenerationOperationWithValidModel(): void
     {
-        $model = $this->createMock(MockEmbeddingGenerationOperationModel::class);
 
         // Should not throw an exception
-        InterfaceValidator::validateEmbeddingGenerationOperation($model);
 
         // If we reach here, validation passed
         $this->assertTrue(true);
     }
 
     /**
-     * Tests validateEmbeddingGenerationOperation with invalid model.
      */
-    public function testValidateEmbeddingGenerationOperationWithInvalidModel(): void
     {
         $model = $this->createMock(ModelInterface::class);
 
         $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage(
-            'Model must implement EmbeddingGenerationOperationModelInterface ' .
             'for embedding generation operations'
         );
 
-        InterfaceValidator::validateEmbeddingGenerationOperation($model);
     }
 }

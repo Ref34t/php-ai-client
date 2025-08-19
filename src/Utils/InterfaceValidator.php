@@ -5,8 +5,6 @@ declare(strict_types=1);
 namespace WordPress\AiClient\Utils;
 
 use WordPress\AiClient\Providers\Models\Contracts\ModelInterface;
-use WordPress\AiClient\Providers\Models\EmbeddingGeneration\Contracts\EmbeddingGenerationModelInterface;
-use WordPress\AiClient\Providers\Models\EmbeddingGeneration\Contracts\EmbeddingGenerationOperationModelInterface;
 use WordPress\AiClient\Providers\Models\ImageGeneration\Contracts\ImageGenerationModelInterface;
 use WordPress\AiClient\Providers\Models\SpeechGeneration\Contracts\SpeechGenerationModelInterface;
 use WordPress\AiClient\Providers\Models\SpeechGeneration\Contracts\SpeechGenerationOperationModelInterface;
@@ -100,24 +98,6 @@ class InterfaceValidator
         }
     }
 
-    /**
-     * Validates that a model implements EmbeddingGenerationModelInterface.
-     *
-     * @since n.e.x.t
-     *
-     * @param ModelInterface $model The model to validate.
-     * @return void
-     *
-     * @throws \InvalidArgumentException If the model doesn't implement the required interface.
-     */
-    public static function validateEmbeddingGeneration(ModelInterface $model): void
-    {
-        if (!$model instanceof EmbeddingGenerationModelInterface) {
-            throw new \InvalidArgumentException(
-                'Model must implement EmbeddingGenerationModelInterface for embedding generation'
-            );
-        }
-    }
 
     /**
      * Validates that a model implements TextGenerationModelInterface for operations.
@@ -197,23 +177,4 @@ class InterfaceValidator
         }
     }
 
-    /**
-     * Validates that a model implements EmbeddingGenerationOperationModelInterface for operations.
-     *
-     * @since n.e.x.t
-     *
-     * @param ModelInterface $model The model to validate.
-     * @return void
-     *
-     * @throws \InvalidArgumentException If the model doesn't implement the required interface.
-     */
-    public static function validateEmbeddingGenerationOperation(ModelInterface $model): void
-    {
-        if (!$model instanceof EmbeddingGenerationOperationModelInterface) {
-            throw new \InvalidArgumentException(
-                'Model must implement EmbeddingGenerationOperationModelInterface ' .
-                'for embedding generation operations'
-            );
-        }
-    }
 }

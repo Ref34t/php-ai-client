@@ -81,9 +81,7 @@ class ModelDiscoveryTest extends TestCase
     }
 
     /**
-     * Tests findEmbeddingModel throws exception when no models available.
      */
-    public function testFindEmbeddingModelThrowsExceptionWhenNoModelsAvailable(): void
     {
         $this->registry->expects($this->once())
             ->method('findModelsMetadataForSupport')
@@ -92,7 +90,6 @@ class ModelDiscoveryTest extends TestCase
         $this->expectException(\RuntimeException::class);
         $this->expectExceptionMessage('No embedding generation models available');
 
-        ModelDiscovery::findEmbeddingModel($this->registry);
     }
 
     /**

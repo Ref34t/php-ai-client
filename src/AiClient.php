@@ -7,13 +7,11 @@ namespace WordPress\AiClient;
 use Generator;
 use WordPress\AiClient\Messages\DTO\Message;
 use WordPress\AiClient\Messages\DTO\MessagePart;
-use WordPress\AiClient\Operations\DTO\EmbeddingOperation;
 use WordPress\AiClient\Operations\DTO\GenerativeAiOperation;
 use WordPress\AiClient\Operations\OperationFactory;
 use WordPress\AiClient\Providers\Contracts\ProviderAvailabilityInterface;
 use WordPress\AiClient\Providers\Models\Contracts\ModelInterface;
 use WordPress\AiClient\Providers\ProviderRegistry;
-use WordPress\AiClient\Results\DTO\EmbeddingResult;
 use WordPress\AiClient\Results\DTO\GenerativeAiResult;
 use WordPress\AiClient\Utils\GenerationStrategyResolver;
 use WordPress\AiClient\Utils\InterfaceValidator;
@@ -87,7 +85,6 @@ class AiClient
      * - Image generation via generateImageResult()
      * - Text-to-speech via convertTextToSpeechResult()
      * - Speech generation via generateSpeechResult()
-     * - Embedding generation via generateEmbeddingsResult()
      *
      * @since n.e.x.t
      *
@@ -100,7 +97,7 @@ class AiClient
     {
         throw new \RuntimeException(
             'PromptBuilder is not yet available. This method depends on PR #49. ' .
-            'All generation methods (text, image, text-to-speech, speech, embeddings) are ready for integration.'
+            'All generation methods (text, image, text-to-speech, speech) are ready for integration.'
         );
     }
 
@@ -306,36 +303,6 @@ class AiClient
         return self::executeGeneration($prompt, $model, 'speech');
     }
 
-    /**
-     * Generates embeddings using the traditional API approach.
-     *
-     * @since n.e.x.t
-     *
-     * @param string[]|string|MessagePart|MessagePart[]|Message|Message[] $input
-     *        The input data to generate embeddings for.
-     * @param ModelInterface|null $model Optional specific model to use.
-     * @return EmbeddingResult The generation result.
-     *
-     * @throws \InvalidArgumentException If the input format is invalid.
-     * @throws \RuntimeException If no suitable model is found.
-     */
-    public static function generateEmbeddingsResult($input, ModelInterface $model = null): EmbeddingResult
-    {
-        // Normalize embedding input (supports string arrays)
-        $messages = PromptNormalizer::normalize($input);
-        /** @var list<Message> $messageList */
-        $messageList = array_values($messages);
-
-        // Get model - either provided or auto-discovered
-        $resolvedModel = $model ?? ModelDiscovery::findEmbeddingModel(self::defaultRegistry());
-
-        // Validate model supports embedding generation
-        InterfaceValidator::validateEmbeddingGeneration($resolvedModel);
-
-        // Generate the result using the model
-        /** @phpstan-ignore-next-line */
-        return $resolvedModel->generateEmbeddingsResult($messageList);
-    }
 
 
     /**
@@ -444,26 +411,4 @@ class AiClient
         return OperationFactory::createSpeechOperation($messageList);
     }
 
-    /**
-     * Creates an embedding generation operation for async processing.
-     *
-     * @since n.e.x.t
-     *
-     * @param string[]|string|MessagePart|MessagePart[]|Message|Message[] $input
-     *        The input data to generate embeddings for.
-     * @param ModelInterface $model The model to use for embedding generation.
-     * @return EmbeddingOperation The operation for async embedding processing.
-     *
-     * @throws \InvalidArgumentException If the input format is invalid or model doesn't support embedding generation.
-     */
-    public static function generateEmbeddingsOperation($input, ModelInterface $model): EmbeddingOperation
-    {
-        $messages = PromptNormalizer::normalize($input);
-        /** @var list<Message> $messageList */
-        $messageList = array_values($messages);
-
-        InterfaceValidator::validateEmbeddingGenerationOperation($model);
-        /** @phpstan-ignore-next-line */
-        return $model->generateEmbeddingsOperation($messageList);
-    }
 }

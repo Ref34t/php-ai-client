@@ -11,19 +11,15 @@ use WordPress\AiClient\AiClient;
 use WordPress\AiClient\Messages\DTO\MessagePart;
 use WordPress\AiClient\Messages\DTO\ModelMessage;
 use WordPress\AiClient\Messages\DTO\UserMessage;
-use WordPress\AiClient\Operations\DTO\EmbeddingOperation;
 use WordPress\AiClient\Operations\DTO\GenerativeAiOperation;
 use WordPress\AiClient\Operations\Enums\OperationStateEnum;
 use WordPress\AiClient\Providers\Contracts\ProviderAvailabilityInterface;
 use WordPress\AiClient\Providers\Models\Contracts\ModelInterface;
 use WordPress\AiClient\Providers\ProviderRegistry;
 use WordPress\AiClient\Results\DTO\Candidate;
-use WordPress\AiClient\Results\DTO\EmbeddingResult;
 use WordPress\AiClient\Results\DTO\GenerativeAiResult;
 use WordPress\AiClient\Results\DTO\TokenUsage;
 use WordPress\AiClient\Results\Enums\FinishReasonEnum;
-use WordPress\AiClient\Tests\mocks\MockEmbeddingGenerationModel;
-use WordPress\AiClient\Tests\mocks\MockEmbeddingGenerationOperationModel;
 use WordPress\AiClient\Tests\mocks\MockImageGenerationModel;
 use WordPress\AiClient\Tests\mocks\MockTextGenerationModel;
 
@@ -35,8 +31,6 @@ class AiClientTest extends TestCase
     private ProviderRegistry $registry;
     private MockTextGenerationModel $mockTextModel;
     private MockImageGenerationModel $mockImageModel;
-    private MockEmbeddingGenerationModel $mockEmbeddingModel;
-    private MockEmbeddingGenerationOperationModel $mockEmbeddingOperationModel;
 
     protected function setUp(): void
     {
@@ -46,8 +40,6 @@ class AiClientTest extends TestCase
         // Create mock models that implement both base and generation interfaces
         $this->mockTextModel = $this->createMock(MockTextGenerationModel::class);
         $this->mockImageModel = $this->createMock(MockImageGenerationModel::class);
-        $this->mockEmbeddingModel = $this->createMock(MockEmbeddingGenerationModel::class);
-        $this->mockEmbeddingOperationModel = $this->createMock(MockEmbeddingGenerationOperationModel::class);
 
         // Set the test registry as the default
         AiClient::setDefaultRegistry($this->registry);
@@ -95,7 +87,7 @@ class AiClientTest extends TestCase
         $this->expectException(RuntimeException::class);
         $this->expectExceptionMessage(
             'PromptBuilder is not yet available. This method depends on PR #49. ' .
-            'All generation methods (text, image, text-to-speech, speech, embeddings) are ready for integration.'
+            'All generation methods (text, image, text-to-speech, speech) are ready for integration.'
         );
 
         AiClient::prompt('Test prompt');
@@ -505,118 +497,4 @@ class AiClientTest extends TestCase
         AiClient::generateImageOperation($prompt, $nonImageModel);
     }
 
-    /**
-     * Tests generateEmbeddingsResult delegates to model's generateEmbeddingsResult method.
-     */
-    public function testGenerateEmbeddingsResultDelegatesToModel(): void
-    {
-        $input = ['test input text', 'another text'];
-        $expectedResult = $this->createTestEmbeddingResult();
-
-        $this->mockEmbeddingModel
-            ->expects($this->once())
-            ->method('generateEmbeddingsResult')
-            ->willReturn($expectedResult);
-
-        $result = AiClient::generateEmbeddingsResult($input, $this->mockEmbeddingModel);
-
-        $this->assertEquals($expectedResult, $result);
-    }
-
-    /**
-     * Tests generateEmbeddingsResult with Message array input.
-     */
-    public function testGenerateEmbeddingsResultWithMessageInput(): void
-    {
-        $input = [new UserMessage([new MessagePart('test message')])];
-        $expectedResult = $this->createTestEmbeddingResult();
-
-        $this->mockEmbeddingModel
-            ->expects($this->once())
-            ->method('generateEmbeddingsResult')
-            ->willReturn($expectedResult);
-
-        $result = AiClient::generateEmbeddingsResult($input, $this->mockEmbeddingModel);
-
-        $this->assertEquals($expectedResult, $result);
-    }
-
-    /**
-     * Tests generateEmbeddingsResult throws exception for non-embedding model.
-     */
-    public function testGenerateEmbeddingsResultThrowsExceptionForNonEmbeddingModel(): void
-    {
-        $input = ['test input'];
-        $nonEmbeddingModel = $this->createMock(ModelInterface::class);
-
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage(
-            'Model must implement EmbeddingGenerationModelInterface for embedding generation'
-        );
-
-        AiClient::generateEmbeddingsResult($input, $nonEmbeddingModel);
-    }
-
-    /**
-     * Tests generateEmbeddingsOperation delegates to model's generateEmbeddingsOperation method.
-     */
-    public function testGenerateEmbeddingsOperationDelegatesToModel(): void
-    {
-        $input = ['test input text'];
-        $expectedOperation = $this->createTestEmbeddingOperation();
-
-        $this->mockEmbeddingOperationModel
-            ->expects($this->once())
-            ->method('generateEmbeddingsOperation')
-            ->willReturn($expectedOperation);
-
-        $result = AiClient::generateEmbeddingsOperation($input, $this->mockEmbeddingOperationModel);
-
-        $this->assertEquals($expectedOperation, $result);
-    }
-
-    /**
-     * Tests generateEmbeddingsOperation throws exception for non-embedding operation model.
-     */
-    public function testGenerateEmbeddingsOperationThrowsExceptionForNonEmbeddingOperationModel(): void
-    {
-        $input = ['test input'];
-        $nonEmbeddingOperationModel = $this->createMock(ModelInterface::class);
-
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage(
-            'Model must implement EmbeddingGenerationOperationModelInterface ' .
-            'for embedding generation operations'
-        );
-
-        AiClient::generateEmbeddingsOperation($input, $nonEmbeddingOperationModel);
-    }
-
-    /**
-     * Creates a test EmbeddingResult for testing purposes.
-     */
-    private function createTestEmbeddingResult(): EmbeddingResult
-    {
-        $embedding = new \WordPress\AiClient\Embeddings\DTO\Embedding([0.1, 0.2, 0.3]);
-        $tokenUsage = new TokenUsage(5, 0, 5);
-
-        return new EmbeddingResult(
-            'test-embedding-result',
-            [$embedding],
-            $tokenUsage,
-            ['model' => 'test-embedding-model']
-        );
-    }
-
-    /**
-     * Creates a test EmbeddingOperation for testing purposes.
-     */
-    private function createTestEmbeddingOperation(): EmbeddingOperation
-    {
-        return new EmbeddingOperation(
-            'test-embedding-operation',
-            OperationStateEnum::starting(),
-            null
-        );
-    }
 }

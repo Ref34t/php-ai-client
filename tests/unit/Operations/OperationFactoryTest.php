@@ -7,7 +7,6 @@ namespace WordPress\AiClient\Tests\unit\Operations;
 use PHPUnit\Framework\TestCase;
 use WordPress\AiClient\Messages\DTO\MessagePart;
 use WordPress\AiClient\Messages\DTO\UserMessage;
-use WordPress\AiClient\Operations\DTO\EmbeddingOperation;
 use WordPress\AiClient\Operations\DTO\GenerativeAiOperation;
 use WordPress\AiClient\Operations\Enums\OperationStateEnum;
 use WordPress\AiClient\Operations\OperationFactory;
@@ -93,13 +92,9 @@ class OperationFactoryTest extends TestCase
     }
 
     /**
-     * Tests createEmbeddingOperation creates embedding operation with correct prefix.
      */
-    public function testCreateEmbeddingOperation(): void
     {
-        $operation = OperationFactory::createEmbeddingOperation($this->testMessages);
 
-        $this->assertInstanceOf(EmbeddingOperation::class, $operation);
         $this->assertStringStartsWith('embedding_op_', $operation->getId());
         $this->assertEquals(OperationStateEnum::starting(), $operation->getState());
         $this->assertNull($operation->getResult());

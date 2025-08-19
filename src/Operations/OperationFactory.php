@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace WordPress\AiClient\Operations;
 
 use WordPress\AiClient\Messages\DTO\Message;
-use WordPress\AiClient\Operations\DTO\EmbeddingOperation;
 use WordPress\AiClient\Operations\DTO\GenerativeAiOperation;
 use WordPress\AiClient\Operations\Enums\OperationStateEnum;
 
@@ -28,7 +27,6 @@ class OperationFactory
         'image' => 'image_op_',
         'textToSpeech' => 'tts_op_',
         'speech' => 'speech_op_',
-        'embedding' => 'embedding_op_',
     ];
 
     /**
@@ -116,22 +114,6 @@ class OperationFactory
         );
     }
 
-    /**
-     * Creates an embedding generation operation.
-     *
-     * @since n.e.x.t
-     *
-     * @param list<Message> $messages The normalized messages for the operation.
-     * @return EmbeddingOperation The created operation.
-     */
-    public static function createEmbeddingOperation(array $messages): EmbeddingOperation
-    {
-        return new EmbeddingOperation(
-            uniqid(self::OPERATION_PREFIXES['embedding'], true),
-            OperationStateEnum::starting(),
-            null
-        );
-    }
 
     /**
      * Gets the operation prefix for a given operation type.
