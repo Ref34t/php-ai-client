@@ -73,26 +73,6 @@ class InterfaceValidatorTest extends TestCase
         InterfaceValidator::validateImageGeneration($model);
     }
 
-    /**
-     */
-    {
-
-        // Should not throw an exception
-
-        // If we reach here, validation passed
-        $this->assertTrue(true);
-    }
-
-    /**
-     */
-    {
-        $model = $this->createMock(ModelInterface::class);
-
-        $this->expectException(\InvalidArgumentException::class);
-        $this->expectExceptionMessage(
-        );
-
-    }
 
     /**
      * Tests validateTextGenerationOperation with valid text model.
@@ -152,25 +132,4 @@ class InterfaceValidatorTest extends TestCase
         InterfaceValidator::validateImageGenerationOperation($model);
     }
 
-    /**
-     */
-    {
-
-        // Should not throw an exception
-
-        // If we reach here, validation passed
-        $this->assertTrue(true);
-    }
-
-    /**
-     */
-    {
-        $model = $this->createMock(ModelInterface::class);
-
-        $this->expectException(\InvalidArgumentException::class);
-        $this->expectExceptionMessage(
-            'for embedding generation operations'
-        );
-
-    }
 }

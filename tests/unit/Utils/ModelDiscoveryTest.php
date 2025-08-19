@@ -80,17 +80,6 @@ class ModelDiscoveryTest extends TestCase
         ModelDiscovery::findSpeechModel($this->registry);
     }
 
-    /**
-     */
-    {
-        $this->registry->expects($this->once())
-            ->method('findModelsMetadataForSupport')
-            ->willReturn([]);
-
-        $this->expectException(\RuntimeException::class);
-        $this->expectExceptionMessage('No embedding generation models available');
-
-    }
 
     /**
      * Tests that ModelDiscovery properly passes capability requirements to registry.

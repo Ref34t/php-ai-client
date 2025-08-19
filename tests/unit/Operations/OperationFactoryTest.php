@@ -91,14 +91,6 @@ class OperationFactoryTest extends TestCase
         $this->assertNull($operation->getResult());
     }
 
-    /**
-     */
-    {
-
-        $this->assertStringStartsWith('embedding_op_', $operation->getId());
-        $this->assertEquals(OperationStateEnum::starting(), $operation->getState());
-        $this->assertNull($operation->getResult());
-    }
 
     /**
      * Tests getOperationPrefix returns correct prefix for known types.
@@ -110,7 +102,6 @@ class OperationFactoryTest extends TestCase
         $this->assertEquals('image_op_', OperationFactory::getOperationPrefix('image'));
         $this->assertEquals('tts_op_', OperationFactory::getOperationPrefix('textToSpeech'));
         $this->assertEquals('speech_op_', OperationFactory::getOperationPrefix('speech'));
-        $this->assertEquals('embedding_op_', OperationFactory::getOperationPrefix('embedding'));
     }
 
     /**
@@ -137,11 +128,10 @@ class OperationFactoryTest extends TestCase
             'image' => 'image_op_',
             'textToSpeech' => 'tts_op_',
             'speech' => 'speech_op_',
-            'embedding' => 'embedding_op_',
         ];
 
         $this->assertEquals($expected, $prefixes);
-        $this->assertCount(6, $prefixes);
+        $this->assertCount(5, $prefixes);
     }
 
     /**
