@@ -496,5 +496,4 @@ class AiClientTest extends TestCase
 
         AiClient::generateImageOperation($prompt, $nonImageModel);
     }
-
 }

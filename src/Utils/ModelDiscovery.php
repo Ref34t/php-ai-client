@@ -117,5 +117,4 @@ class ModelDiscovery
     {
         return self::findModelByCapability($registry, CapabilityEnum::speechGeneration(), 'speech generation');
     }
-
 }

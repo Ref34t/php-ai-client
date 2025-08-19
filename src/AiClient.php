@@ -410,5 +410,4 @@ class AiClient
         InterfaceValidator::validateSpeechGenerationOperation($model);
         return OperationFactory::createSpeechOperation($messageList);
     }
-
 }

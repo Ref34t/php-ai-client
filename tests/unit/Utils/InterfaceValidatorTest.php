@@ -131,5 +131,4 @@ class InterfaceValidatorTest extends TestCase
 
         InterfaceValidator::validateImageGenerationOperation($model);
     }
-
 }
