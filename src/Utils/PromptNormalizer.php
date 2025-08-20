@@ -37,7 +37,7 @@ class PromptNormalizer
     public static function normalize($prompt): array
     {
         // Handle structured message arrays at the top level
-        if (is_array($prompt) && self::hasStringKeys($prompt) && self::isStructuredMessageArray($prompt)) {
+        if (is_array($prompt) && self::isStructuredMessageArray($prompt)) {
             return [self::normalizeStructuredMessage($prompt, 0)];
         }
 
@@ -79,7 +79,7 @@ class PromptNormalizer
         }
 
         // Handle structured message arrays: {'role': 'system', 'parts': [...]}
-        if (is_array($item) && self::hasStringKeys($item) && self::isStructuredMessageArray($item)) {
+        if (is_array($item) && self::isStructuredMessageArray($item)) {
             return self::normalizeStructuredMessage($item, $index);
         }
 
@@ -108,7 +108,9 @@ class PromptNormalizer
      *
      * @since n.e.x.t
      *
-     * @param array<string,mixed> $item The array to check.
+     * @phpstan-assert-if-true array<string,mixed> $item
+     *
+     * @param array<mixed,mixed> $item The array to check.
      * @return bool True if it's a structured message array.
      */
     private static function isStructuredMessageArray(array $item): bool
@@ -217,19 +219,5 @@ class PromptNormalizer
         }
 
         return $messageParts;
-    }
-
-    /**
-     * Checks if an array has string keys (associative array).
-     *
-     * @since n.e.x.t
-     *
-     * @param array<mixed,mixed> $array The array to check.
-     * @return bool True if the array has string keys.
-     * @phpstan-assert-if-true array<string,mixed> $array
-     */
-    private static function hasStringKeys(array $array): bool
-    {
-        return array_keys($array) !== range(0, count($array) - 1);
     }
 }
