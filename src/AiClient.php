@@ -8,7 +8,6 @@ use Generator;
 use WordPress\AiClient\Messages\DTO\Message;
 use WordPress\AiClient\Messages\DTO\MessagePart;
 use WordPress\AiClient\Operations\DTO\GenerativeAiOperation;
-use WordPress\AiClient\Operations\OperationFactory;
 use WordPress\AiClient\Providers\Contracts\ProviderAvailabilityInterface;
 use WordPress\AiClient\Providers\Models\Contracts\ModelInterface;
 use WordPress\AiClient\Providers\Models\ImageGeneration\Contracts\ImageGenerationModelInterface;
@@ -317,17 +316,13 @@ class AiClient
      * @param ModelInterface $model The model to use for generation.
      * @return GenerativeAiOperation The operation for async processing.
      *
-     * @throws \InvalidArgumentException If the prompt format is invalid.
+     * @throws \RuntimeException Operations are not implemented yet.
      */
     public static function generateOperation($prompt, ModelInterface $model): GenerativeAiOperation
     {
-        // TODO: Replace with PromptBuilder delegation once PR #49 is merged
-        $messages = PromptNormalizer::normalize($prompt);
-        /** @var list<Message> $messageList */
-        $messageList = array_values($messages);
-
-        // Create operation using factory
-        return OperationFactory::createGenericOperation($messageList);
+        throw new \RuntimeException(
+            'Operations are not implemented yet. This functionality is planned for a future release.'
+        );
     }
 
     /**
@@ -339,16 +334,13 @@ class AiClient
      * @param ModelInterface $model The model to use for text generation.
      * @return GenerativeAiOperation The operation for async text processing.
      *
-     * @throws \InvalidArgumentException If the prompt format is invalid or model doesn't support text generation.
+     * @throws \RuntimeException Operations are not implemented yet.
      */
     public static function generateTextOperation($prompt, ModelInterface $model): GenerativeAiOperation
     {
-        $messages = PromptNormalizer::normalize($prompt);
-        /** @var list<Message> $messageList */
-        $messageList = array_values($messages);
-
-        Models::validateTextGenerationOperation($model);
-        return OperationFactory::createTextOperation($messageList);
+        throw new \RuntimeException(
+            'Text generation operations are not implemented yet. This functionality is planned for a future release.'
+        );
     }
 
     /**
@@ -360,16 +352,13 @@ class AiClient
      * @param ModelInterface $model The model to use for image generation.
      * @return GenerativeAiOperation The operation for async image processing.
      *
-     * @throws \InvalidArgumentException If the prompt format is invalid or model doesn't support image generation.
+     * @throws \RuntimeException Operations are not implemented yet.
      */
     public static function generateImageOperation($prompt, ModelInterface $model): GenerativeAiOperation
     {
-        $messages = PromptNormalizer::normalize($prompt);
-        /** @var list<Message> $messageList */
-        $messageList = array_values($messages);
-
-        Models::validateImageGenerationOperation($model);
-        return OperationFactory::createImageOperation($messageList);
+        throw new \RuntimeException(
+            'Image generation operations are not implemented yet. This functionality is planned for a future release.'
+        );
     }
 
     /**
@@ -381,16 +370,14 @@ class AiClient
      * @param ModelInterface $model The model to use for text-to-speech conversion.
      * @return GenerativeAiOperation The operation for async text-to-speech processing.
      *
-     * @throws \InvalidArgumentException If the prompt format is invalid or model doesn't support text-to-speech.
+     * @throws \RuntimeException Operations are not implemented yet.
      */
     public static function convertTextToSpeechOperation($prompt, ModelInterface $model): GenerativeAiOperation
     {
-        $messages = PromptNormalizer::normalize($prompt);
-        /** @var list<Message> $messageList */
-        $messageList = array_values($messages);
-
-        Models::validateTextToSpeechConversionOperation($model);
-        return OperationFactory::createTextToSpeechOperation($messageList);
+        throw new \RuntimeException(
+            'Text-to-speech conversion operations are not implemented yet. ' .
+            'This functionality is planned for a future release.'
+        );
     }
 
     /**
@@ -402,15 +389,12 @@ class AiClient
      * @param ModelInterface $model The model to use for speech generation.
      * @return GenerativeAiOperation The operation for async speech processing.
      *
-     * @throws \InvalidArgumentException If the prompt format is invalid or model doesn't support speech generation.
+     * @throws \RuntimeException Operations are not implemented yet.
      */
     public static function generateSpeechOperation($prompt, ModelInterface $model): GenerativeAiOperation
     {
-        $messages = PromptNormalizer::normalize($prompt);
-        /** @var list<Message> $messageList */
-        $messageList = array_values($messages);
-
-        Models::validateSpeechGenerationOperation($model);
-        return OperationFactory::createSpeechOperation($messageList);
+        throw new \RuntimeException(
+            'Speech generation operations are not implemented yet. This functionality is planned for a future release.'
+        );
     }
 }
