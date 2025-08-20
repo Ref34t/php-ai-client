@@ -19,6 +19,7 @@ use WordPress\AiClient\Utils\Models;
 /**
  * Test case for Models utility class.
  *
+ * @covers \WordPress\AiClient\Utils\Models
  * @since n.e.x.t
  */
 class ModelsTest extends TestCase
@@ -42,6 +43,8 @@ class ModelsTest extends TestCase
 
     /**
      * Tests that validateTextGeneration passes with valid model.
+     *
+     * @covers \WordPress\AiClient\Utils\Models::validateTextGeneration
      */
     public function testValidateTextGenerationPassesWithValidModel(): void
     {
@@ -51,6 +54,8 @@ class ModelsTest extends TestCase
 
     /**
      * Tests that validateTextGeneration throws exception with invalid model.
+     *
+     * @covers \WordPress\AiClient\Utils\Models::validateTextGeneration
      */
     public function testValidateTextGenerationThrowsExceptionWithInvalidModel(): void
     {
@@ -62,6 +67,8 @@ class ModelsTest extends TestCase
 
     /**
      * Tests that validateImageGeneration passes with valid model.
+     *
+     * @covers \WordPress\AiClient\Utils\Models::validateImageGeneration
      */
     public function testValidateImageGenerationPassesWithValidModel(): void
     {
@@ -71,6 +78,8 @@ class ModelsTest extends TestCase
 
     /**
      * Tests that validateImageGeneration throws exception with invalid model.
+     *
+     * @covers \WordPress\AiClient\Utils\Models::validateImageGeneration
      */
     public function testValidateImageGenerationThrowsExceptionWithInvalidModel(): void
     {
@@ -82,6 +91,8 @@ class ModelsTest extends TestCase
 
     /**
      * Tests that validateTextToSpeechConversion throws exception with invalid model.
+     *
+     * @covers \WordPress\AiClient\Utils\Models::validateTextToSpeechConversion
      */
     public function testValidateTextToSpeechConversionThrowsExceptionWithInvalidModel(): void
     {
@@ -93,6 +104,8 @@ class ModelsTest extends TestCase
 
     /**
      * Tests that validateSpeechGeneration throws exception with invalid model.
+     *
+     * @covers \WordPress\AiClient\Utils\Models::validateSpeechGeneration
      */
     public function testValidateSpeechGenerationThrowsExceptionWithInvalidModel(): void
     {
@@ -104,6 +117,8 @@ class ModelsTest extends TestCase
 
     /**
      * Tests that validateTextGenerationOperation throws exception with invalid model.
+     *
+     * @covers \WordPress\AiClient\Utils\Models::validateTextGenerationOperation
      */
     public function testValidateTextGenerationOperationThrowsExceptionWithInvalidModel(): void
     {
@@ -115,6 +130,8 @@ class ModelsTest extends TestCase
 
     /**
      * Tests that validateImageGenerationOperation throws exception with invalid model.
+     *
+     * @covers \WordPress\AiClient\Utils\Models::validateImageGenerationOperation
      */
     public function testValidateImageGenerationOperationThrowsExceptionWithInvalidModel(): void
     {
