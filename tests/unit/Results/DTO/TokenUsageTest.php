@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace WordPress\AiClient\Tests\unit\Results\DTO;
 
 use PHPUnit\Framework\TestCase;
+use WordPress\AiClient\Common\Contracts\WithArrayTransformationInterface;
+use WordPress\AiClient\Common\Contracts\WithJsonSchemaInterface;
 use WordPress\AiClient\Results\DTO\TokenUsage;
 
 /**
@@ -184,7 +186,7 @@ class TokenUsageTest extends TestCase
         $tokenUsage = new TokenUsage(10, 20, 30);
 
         $this->assertInstanceOf(
-            \WordPress\AiClient\Common\Contracts\WithJsonSchemaInterface::class,
+            WithJsonSchemaInterface::class,
             $tokenUsage
         );
     }
@@ -278,7 +280,7 @@ class TokenUsageTest extends TestCase
         $tokenUsage = new TokenUsage(10, 20, 30);
 
         $this->assertInstanceOf(
-            \WordPress\AiClient\Common\Contracts\WithArrayTransformationInterface::class,
+            WithArrayTransformationInterface::class,
             $tokenUsage
         );
     }

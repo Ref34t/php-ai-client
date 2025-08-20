@@ -6,6 +6,8 @@ namespace WordPress\AiClient\Tests\unit\Providers\Models\DTO;
 
 use JsonSerializable;
 use PHPUnit\Framework\TestCase;
+use WordPress\AiClient\Common\Contracts\WithArrayTransformationInterface;
+use WordPress\AiClient\Common\Contracts\WithJsonSchemaInterface;
 use WordPress\AiClient\Providers\Models\DTO\ModelRequirements;
 use WordPress\AiClient\Providers\Models\DTO\RequiredOption;
 use WordPress\AiClient\Providers\Models\Enums\CapabilityEnum;
@@ -371,11 +373,11 @@ class ModelRequirementsTest extends TestCase
         $requirements = new ModelRequirements([], []);
 
         $this->assertInstanceOf(
-            \WordPress\AiClient\Common\Contracts\WithArrayTransformationInterface::class,
+            WithArrayTransformationInterface::class,
             $requirements
         );
         $this->assertInstanceOf(
-            \WordPress\AiClient\Common\Contracts\WithJsonSchemaInterface::class,
+            WithJsonSchemaInterface::class,
             $requirements
         );
         $this->assertInstanceOf(

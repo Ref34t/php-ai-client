@@ -13,6 +13,7 @@ use WordPress\AiClient\Messages\DTO\MessagePart;
 use WordPress\AiClient\Messages\DTO\ModelMessage;
 use WordPress\AiClient\Messages\Enums\MessagePartTypeEnum;
 use WordPress\AiClient\Messages\Enums\MessageRoleEnum;
+use WordPress\AiClient\Results\Contracts\ResultInterface;
 use WordPress\AiClient\Results\DTO\Candidate;
 use WordPress\AiClient\Results\DTO\GenerativeAiResult;
 use WordPress\AiClient\Results\DTO\TokenUsage;
@@ -582,7 +583,7 @@ class GenerativeAiResultTest extends TestCase
         );
 
         $this->assertInstanceOf(
-            \WordPress\AiClient\Results\Contracts\ResultInterface::class,
+            ResultInterface::class,
             $result
         );
     }

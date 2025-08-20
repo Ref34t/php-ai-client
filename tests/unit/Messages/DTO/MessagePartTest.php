@@ -7,6 +7,7 @@ namespace WordPress\AiClient\Tests\unit\Messages\DTO;
 use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
 use stdClass;
+use WordPress\AiClient\Common\Contracts\WithArrayTransformationInterface;
 use WordPress\AiClient\Files\DTO\File;
 use WordPress\AiClient\Files\Enums\FileTypeEnum;
 use WordPress\AiClient\Messages\DTO\MessagePart;
@@ -388,7 +389,7 @@ class MessagePartTest extends TestCase
         $part = new MessagePart('test');
 
         $this->assertInstanceOf(
-            \WordPress\AiClient\Common\Contracts\WithArrayTransformationInterface::class,
+            WithArrayTransformationInterface::class,
             $part
         );
     }

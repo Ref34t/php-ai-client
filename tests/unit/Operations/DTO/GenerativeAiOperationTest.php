@@ -9,6 +9,7 @@ use WordPress\AiClient\Messages\DTO\Message;
 use WordPress\AiClient\Messages\DTO\MessagePart;
 use WordPress\AiClient\Messages\DTO\ModelMessage;
 use WordPress\AiClient\Messages\Enums\MessageRoleEnum;
+use WordPress\AiClient\Operations\Contracts\OperationInterface;
 use WordPress\AiClient\Operations\DTO\GenerativeAiOperation;
 use WordPress\AiClient\Operations\Enums\OperationStateEnum;
 use WordPress\AiClient\Results\DTO\Candidate;
@@ -139,7 +140,7 @@ class GenerativeAiOperationTest extends TestCase
         );
 
         $this->assertInstanceOf(
-            \WordPress\AiClient\Operations\Contracts\OperationInterface::class,
+            OperationInterface::class,
             $operation
         );
     }

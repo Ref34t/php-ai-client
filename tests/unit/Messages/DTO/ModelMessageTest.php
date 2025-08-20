@@ -6,6 +6,7 @@ namespace WordPress\AiClient\Tests\unit\Messages\DTO;
 
 use PHPUnit\Framework\TestCase;
 use WordPress\AiClient\Files\DTO\File;
+use WordPress\AiClient\Messages\DTO\Message;
 use WordPress\AiClient\Messages\DTO\MessagePart;
 use WordPress\AiClient\Messages\DTO\ModelMessage;
 use WordPress\AiClient\Messages\Enums\MessagePartTypeEnum;
@@ -15,7 +16,7 @@ use WordPress\AiClient\Tools\DTO\FunctionCall;
 use WordPress\AiClient\Tools\DTO\FunctionResponse;
 
 /**
- * @covers \WordPress\AiClient\Messages\DTO\ModelMessage
+ * @covers ModelMessage
  */
 class ModelMessageTest extends TestCase
 {
@@ -80,7 +81,7 @@ class ModelMessageTest extends TestCase
     {
         $message = new ModelMessage([]);
 
-        $this->assertInstanceOf(\WordPress\AiClient\Messages\DTO\Message::class, $message);
+        $this->assertInstanceOf(Message::class, $message);
     }
 
     /**
@@ -117,7 +118,7 @@ class ModelMessageTest extends TestCase
     public function testJsonSchemaInheritance(): void
     {
         $schema = ModelMessage::getJsonSchema();
-        $parentSchema = \WordPress\AiClient\Messages\DTO\Message::getJsonSchema();
+        $parentSchema = Message::getJsonSchema();
 
         $this->assertEquals($parentSchema, $schema);
     }

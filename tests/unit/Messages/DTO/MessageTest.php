@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace WordPress\AiClient\Tests\unit\Messages\DTO;
 
 use PHPUnit\Framework\TestCase;
+use WordPress\AiClient\Common\Contracts\WithArrayTransformationInterface;
 use WordPress\AiClient\Files\DTO\File;
 use WordPress\AiClient\Messages\DTO\Message;
 use WordPress\AiClient\Messages\DTO\MessagePart;
@@ -317,7 +318,7 @@ class MessageTest extends TestCase
         $message = new Message(MessageRoleEnum::user(), [new MessagePart('test')]);
 
         $this->assertInstanceOf(
-            \WordPress\AiClient\Common\Contracts\WithArrayTransformationInterface::class,
+            WithArrayTransformationInterface::class,
             $message
         );
     }

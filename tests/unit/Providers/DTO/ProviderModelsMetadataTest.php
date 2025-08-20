@@ -6,6 +6,8 @@ namespace WordPress\AiClient\Tests\unit\Providers\DTO;
 
 use JsonSerializable;
 use PHPUnit\Framework\TestCase;
+use WordPress\AiClient\Common\Contracts\WithArrayTransformationInterface;
+use WordPress\AiClient\Common\Contracts\WithJsonSchemaInterface;
 use WordPress\AiClient\Providers\DTO\ProviderMetadata;
 use WordPress\AiClient\Providers\DTO\ProviderModelsMetadata;
 use WordPress\AiClient\Providers\Enums\ProviderTypeEnum;
@@ -356,11 +358,11 @@ class ProviderModelsMetadataTest extends TestCase
         $metadata = new ProviderModelsMetadata($this->createProviderMetadata(), []);
 
         $this->assertInstanceOf(
-            \WordPress\AiClient\Common\Contracts\WithArrayTransformationInterface::class,
+            WithArrayTransformationInterface::class,
             $metadata
         );
         $this->assertInstanceOf(
-            \WordPress\AiClient\Common\Contracts\WithJsonSchemaInterface::class,
+            WithJsonSchemaInterface::class,
             $metadata
         );
         $this->assertInstanceOf(

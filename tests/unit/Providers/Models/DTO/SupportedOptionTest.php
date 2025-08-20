@@ -6,6 +6,8 @@ namespace WordPress\AiClient\Tests\unit\Providers\Models\DTO;
 
 use JsonSerializable;
 use PHPUnit\Framework\TestCase;
+use WordPress\AiClient\Common\Contracts\WithArrayTransformationInterface;
+use WordPress\AiClient\Common\Contracts\WithJsonSchemaInterface;
 use WordPress\AiClient\Providers\Models\DTO\SupportedOption;
 
 /**
@@ -418,11 +420,11 @@ class SupportedOptionTest extends TestCase
         $option = new SupportedOption('test', ['value']);
 
         $this->assertInstanceOf(
-            \WordPress\AiClient\Common\Contracts\WithArrayTransformationInterface::class,
+            WithArrayTransformationInterface::class,
             $option
         );
         $this->assertInstanceOf(
-            \WordPress\AiClient\Common\Contracts\WithJsonSchemaInterface::class,
+            WithJsonSchemaInterface::class,
             $option
         );
         $this->assertInstanceOf(

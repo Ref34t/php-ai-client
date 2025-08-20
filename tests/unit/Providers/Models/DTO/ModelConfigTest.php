@@ -6,6 +6,8 @@ namespace WordPress\AiClient\Tests\unit\Providers\Models\DTO;
 
 use JsonSerializable;
 use PHPUnit\Framework\TestCase;
+use WordPress\AiClient\Common\Contracts\WithArrayTransformationInterface;
+use WordPress\AiClient\Common\Contracts\WithJsonSchemaInterface;
 use WordPress\AiClient\Files\Enums\FileTypeEnum;
 use WordPress\AiClient\Files\Enums\MediaOrientationEnum;
 use WordPress\AiClient\Messages\Enums\ModalityEnum;
@@ -580,11 +582,11 @@ class ModelConfigTest extends TestCase
         $config = new ModelConfig();
 
         $this->assertInstanceOf(
-            \WordPress\AiClient\Common\Contracts\WithArrayTransformationInterface::class,
+            WithArrayTransformationInterface::class,
             $config
         );
         $this->assertInstanceOf(
-            \WordPress\AiClient\Common\Contracts\WithJsonSchemaInterface::class,
+            WithJsonSchemaInterface::class,
             $config
         );
         $this->assertInstanceOf(

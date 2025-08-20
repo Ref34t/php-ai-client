@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace WordPress\AiClient\Tests\mocks;
 
+use WordPress\AiClient\Providers\DTO\ProviderMetadata;
 use WordPress\AiClient\Providers\Http\Contracts\WithHttpTransporterInterface;
 use WordPress\AiClient\Providers\Http\Contracts\WithRequestAuthenticationInterface;
 use WordPress\AiClient\Providers\Http\Traits\WithHttpTransporterTrait;
@@ -55,10 +56,10 @@ class MockModel implements ModelInterface, WithHttpTransporterInterface, WithReq
     /**
      * {@inheritDoc}
      */
-    public function providerMetadata(): \WordPress\AiClient\Providers\DTO\ProviderMetadata
+    public function providerMetadata(): ProviderMetadata
     {
         // This mock doesn't need to return actual provider metadata for its tests.
-        return $this->createMock(\WordPress\AiClient\Providers\DTO\ProviderMetadata::class);
+        return $this->createMock(ProviderMetadata::class);
     }
 
     /**
