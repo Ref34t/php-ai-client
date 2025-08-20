@@ -94,6 +94,7 @@ class GoogleModelMetadataDirectory extends AbstractOpenAiCompatibleModelMetadata
             new SupportedOption(ModelConfig::KEY_OUTPUT_MIME_TYPE, ['text/plain', 'application/json']),
             new SupportedOption(ModelConfig::KEY_OUTPUT_SCHEMA),
             new SupportedOption(ModelConfig::KEY_FUNCTION_DECLARATIONS),
+            new SupportedOption(ModelConfig::KEY_CUSTOM_OPTIONS),
         ];
         $geminiOptions = $geminiLegacyOptions + [
             new SupportedOption(
