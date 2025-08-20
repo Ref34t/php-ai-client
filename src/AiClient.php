@@ -28,6 +28,11 @@ use WordPress\AiClient\Utils\PromptNormalizer;
  * - Integration with provider registry for model discovery
  *
  * @since n.e.x.t
+ *
+ * @phpstan-import-type MessageArrayShape from Message
+ *
+ * phpcs:ignore Generic.Files.LineLength.TooLong
+ * @phpstan-type Prompt string|MessagePart|Message|MessageArrayShape|list<string|MessagePart|MessageArrayShape>|list<Message>
  */
 class AiClient
 {
@@ -107,7 +112,7 @@ class AiClient
      *
      * @since n.e.x.t
      *
-     * @param string|MessagePart|Message|list<string|MessagePart|Message> $prompt The prompt content.
+     * @param Prompt $prompt The prompt content.
      * @param ModelInterface $model The model to use for generation.
      * @return GenerativeAiResult The generation result.
      *
@@ -169,7 +174,7 @@ class AiClient
      *
      * @since n.e.x.t
      *
-     * @param string|MessagePart|Message|list<string|MessagePart|Message> $prompt The prompt content.
+     * @param Prompt $prompt The prompt content.
      * @param ModelInterface|null $model Optional specific model to use.
      * @param string $type The generation type.
      * @return GenerativeAiResult The generation result.
@@ -181,7 +186,15 @@ class AiClient
     {
         // TODO: Replace with PromptBuilder delegation once PR #49 is merged
         // This should become: return self::prompt($prompt)->usingModel($model)->generate();
-        $messages = PromptNormalizer::normalize($prompt);
+
+        // Check if it's already a list of Messages
+        if (PromptNormalizer::isMessagesList($prompt)) {
+            $messages = $prompt;
+        } else {
+            // Otherwise normalize to a single Message and wrap in array
+            $message = PromptNormalizer::normalize($prompt);
+            $messages = [$message];
+        }
 
         // Map type to specific methods
         switch ($type) {
@@ -210,7 +223,7 @@ class AiClient
      *
      * @since n.e.x.t
      *
-     * @param string|MessagePart|Message|list<string|MessagePart|Message> $prompt The prompt content.
+     * @param Prompt $prompt The prompt content.
      * @param ModelInterface|null $model Optional specific model to use.
      * @return GenerativeAiResult The generation result.
      *
@@ -227,7 +240,7 @@ class AiClient
      *
      * @since n.e.x.t
      *
-     * @param string|MessagePart|Message|list<string|MessagePart|Message> $prompt The prompt content.
+     * @param Prompt $prompt The prompt content.
      * @param ModelInterface|null $model Optional specific model to use.
      * @return Generator<GenerativeAiResult> Generator yielding partial text generation results.
      *
@@ -245,7 +258,7 @@ class AiClient
      *
      * @since n.e.x.t
      *
-     * @param string|MessagePart|Message|list<string|MessagePart|Message> $prompt The prompt content.
+     * @param Prompt $prompt The prompt content.
      * @param ModelInterface|null $model Optional specific model to use.
      * @return GenerativeAiResult The generation result.
      *
@@ -262,7 +275,7 @@ class AiClient
      *
      * @since n.e.x.t
      *
-     * @param string|MessagePart|Message|list<string|MessagePart|Message> $prompt The prompt content.
+     * @param Prompt $prompt The prompt content.
      * @param ModelInterface|null $model Optional specific model to use.
      * @return GenerativeAiResult The generation result.
      *
@@ -272,7 +285,15 @@ class AiClient
     public static function convertTextToSpeechResult($prompt, ?ModelInterface $model = null): GenerativeAiResult
     {
         // TODO: Replace with PromptBuilder delegation once PR #49 is merged
-        $messages = PromptNormalizer::normalize($prompt);
+
+        // Check if it's already a list of Messages
+        if (PromptNormalizer::isMessagesList($prompt)) {
+            $messages = $prompt;
+        } else {
+            // Otherwise normalize to a single Message and wrap in array
+            $message = PromptNormalizer::normalize($prompt);
+            $messages = [$message];
+        }
 
         // Get model - either provided or auto-discovered
         $resolvedModel = $model ?? Models::findTextToSpeechModel(self::defaultRegistry());
@@ -289,7 +310,7 @@ class AiClient
      *
      * @since n.e.x.t
      *
-     * @param string|MessagePart|Message|list<string|MessagePart|Message> $prompt The prompt content.
+     * @param Prompt $prompt The prompt content.
      * @param ModelInterface|null $model Optional specific model to use.
      * @return GenerativeAiResult The generation result.
      *
@@ -308,7 +329,7 @@ class AiClient
      *
      * @since n.e.x.t
      *
-     * @param string|MessagePart|Message|list<string|MessagePart|Message> $prompt The prompt content.
+     * @param Prompt $prompt The prompt content.
      * @param ModelInterface $model The model to use for generation.
      * @return GenerativeAiOperation The operation for async processing.
      *
@@ -326,7 +347,7 @@ class AiClient
      *
      * @since n.e.x.t
      *
-     * @param string|MessagePart|Message|list<string|MessagePart|Message> $prompt The prompt content.
+     * @param Prompt $prompt The prompt content.
      * @param ModelInterface $model The model to use for text generation.
      * @return GenerativeAiOperation The operation for async text processing.
      *
@@ -344,7 +365,7 @@ class AiClient
      *
      * @since n.e.x.t
      *
-     * @param string|MessagePart|Message|list<string|MessagePart|Message> $prompt The prompt content.
+     * @param Prompt $prompt The prompt content.
      * @param ModelInterface $model The model to use for image generation.
      * @return GenerativeAiOperation The operation for async image processing.
      *
@@ -362,7 +383,7 @@ class AiClient
      *
      * @since n.e.x.t
      *
-     * @param string|MessagePart|Message|list<string|MessagePart|Message> $prompt The prompt content.
+     * @param Prompt $prompt The prompt content.
      * @param ModelInterface $model The model to use for text-to-speech conversion.
      * @return GenerativeAiOperation The operation for async text-to-speech processing.
      *
@@ -381,7 +402,7 @@ class AiClient
      *
      * @since n.e.x.t
      *
-     * @param string|MessagePart|Message|list<string|MessagePart|Message> $prompt The prompt content.
+     * @param Prompt $prompt The prompt content.
      * @param ModelInterface $model The model to use for speech generation.
      * @return GenerativeAiOperation The operation for async speech processing.
      *

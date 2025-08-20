@@ -112,8 +112,8 @@ class PromptNormalizerTest extends TestCase
 
         $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage(
-            'Array element at index 2 must be a string, MessagePart, Message, or ' .
-            'structured message array, integer given'
+            'Invalid prompt format: expected string, MessagePart, Message, ' .
+            'or structured array with "role" key, got integer'
         );
 
         PromptNormalizer::normalize($invalidArray);
@@ -126,8 +126,8 @@ class PromptNormalizerTest extends TestCase
     {
         $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage(
-            'Array element at index 0 must be a string, MessagePart, Message, or ' .
-            'structured message array, integer given'
+            'Invalid prompt format: expected string, MessagePart, Message, ' .
+            'or structured array with "role" key, got integer'
         );
 
         PromptNormalizer::normalize(123);
@@ -142,7 +142,8 @@ class PromptNormalizerTest extends TestCase
 
         $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage(
-            'Array element at index 0 must be a string, MessagePart, Message, or structured message array, object given'
+            'Invalid prompt format: expected string, MessagePart, Message, ' .
+            'or structured array with "role" key, got object'
         );
 
         PromptNormalizer::normalize($invalidArray);
@@ -207,7 +208,7 @@ class PromptNormalizerTest extends TestCase
         ];
 
         $this->expectException(\InvalidArgumentException::class);
-        $this->expectExceptionMessage('Invalid role "invalid_role" at index 0');
+        $this->expectExceptionMessage('invalid_role is not a valid backing value for enum');
 
         PromptNormalizer::normalize($structuredMessage);
     }
@@ -223,7 +224,7 @@ class PromptNormalizerTest extends TestCase
         ];
 
         $this->expectException(\InvalidArgumentException::class);
-        $this->expectExceptionMessage('Structured message at index 0 is missing required "parts" field');
+        $this->expectExceptionMessage('missing required keys: parts');
 
         PromptNormalizer::normalize($structuredMessage);
     }
