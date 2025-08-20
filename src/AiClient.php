@@ -121,19 +121,19 @@ class AiClient
         if ($model instanceof TextGenerationModelInterface) {
             return self::generateTextResult($prompt, $model);
         }
-        
+
         if ($model instanceof ImageGenerationModelInterface) {
             return self::generateImageResult($prompt, $model);
         }
-        
+
         if ($model instanceof TextToSpeechConversionModelInterface) {
             return self::convertTextToSpeechResult($prompt, $model);
         }
-        
+
         if ($model instanceof SpeechGenerationModelInterface) {
             return self::generateSpeechResult($prompt, $model);
         }
-        
+
         throw new \InvalidArgumentException(
             'Model must implement at least one supported generation interface ' .
             '(TextGeneration, ImageGeneration, TextToSpeechConversion, SpeechGeneration)'
