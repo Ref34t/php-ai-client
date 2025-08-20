@@ -36,7 +36,7 @@ class PromptNormalizer
     public static function normalize($prompt): array
     {
         // Handle structured message arrays at the top level
-        if (is_array($prompt) && self::isStructuredMessageArray($prompt)) {
+        if (is_array($prompt) && self::hasStringKeys($prompt) && self::isStructuredMessageArray($prompt)) {
             return [self::normalizeStructuredMessage($prompt, 0)];
         }
 
@@ -78,7 +78,7 @@ class PromptNormalizer
         }
 
         // Handle structured message arrays: {'role': 'system', 'parts': [...]}
-        if (is_array($item) && self::isStructuredMessageArray($item)) {
+        if (is_array($item) && self::hasStringKeys($item) && self::isStructuredMessageArray($item)) {
             return self::normalizeStructuredMessage($item, $index);
         }
 
@@ -116,7 +116,7 @@ class PromptNormalizer
     }
 
     /**
-     * Normalizes a structured message array using Message::fromArray() with role mapping.
+     * Normalizes a structured message array by creating Message directly.
      *
      * @since n.e.x.t
      *
@@ -135,35 +135,25 @@ class PromptNormalizer
             );
         }
 
-        // Map role to standard format and let Message::fromArray handle the rest
-        $normalizedArray = [
-            Message::KEY_ROLE => self::mapRole($item['role'], $index),
-            Message::KEY_PARTS => self::normalizeParts($item['parts'], $index),
-        ];
+        // Map role and create message parts
+        $role = self::mapRoleToEnum($item['role'], $index);
+        $parts = self::createMessageParts($item['parts'], $index);
 
-        try {
-            return Message::fromArray($normalizedArray);
-        } catch (\Exception $e) {
-            throw new \InvalidArgumentException(
-                sprintf('Invalid structured message at index %d: %s', $index, $e->getMessage()),
-                0,
-                $e
-            );
-        }
+        return new Message($role, $parts);
     }
 
     /**
-     * Maps role strings to MessageRoleEnum values with support for common aliases.
+     * Maps role strings to MessageRoleEnum instances with support for common aliases.
      *
      * @since n.e.x.t
      *
      * @param mixed $role The role value to map.
      * @param int $index The array index for error reporting.
-     * @return string The mapped role value.
+     * @return MessageRoleEnum The mapped role enum.
      *
      * @throws \InvalidArgumentException If the role is invalid.
      */
-    private static function mapRole($role, int $index): string
+    private static function mapRoleToEnum($role, int $index): MessageRoleEnum
     {
         if (!is_string($role)) {
             throw new \InvalidArgumentException(
@@ -171,15 +161,15 @@ class PromptNormalizer
             );
         }
 
-        // Map common role aliases to standard enum values
+        // Map common role aliases to enum instances
         switch (strtolower($role)) {
             case 'system':
-                return MessageRoleEnum::system()->value;
+                return MessageRoleEnum::system();
             case 'user':
-                return MessageRoleEnum::user()->value;
+                return MessageRoleEnum::user();
             case 'model':
             case 'assistant':
-                return MessageRoleEnum::model()->value;
+                return MessageRoleEnum::model();
             default:
                 throw new \InvalidArgumentException(
                     sprintf(
@@ -192,17 +182,17 @@ class PromptNormalizer
     }
 
     /**
-     * Normalizes parts array for Message::fromArray().
+     * Creates MessagePart objects from various input formats.
      *
      * @since n.e.x.t
      *
-     * @param mixed $parts The parts to normalize.
+     * @param mixed $parts The parts to create.
      * @param int $index The array index for error reporting.
-     * @return list<array<string,mixed>|string> The normalized parts.
+     * @return list<MessagePart> The created message parts.
      *
      * @throws \InvalidArgumentException If the parts format is invalid.
      */
-    private static function normalizeParts($parts, int $index): array
+    private static function createMessageParts($parts, int $index): array
     {
         if (!is_array($parts)) {
             throw new \InvalidArgumentException(
@@ -210,17 +200,27 @@ class PromptNormalizer
             );
         }
 
-        $normalizedParts = [];
+        $messageParts = [];
         foreach ($parts as $partIndex => $part) {
             if (is_string($part)) {
-                // Simple text part - Message::fromArray will handle it
-                $normalizedParts[] = [MessagePart::KEY_TEXT => $part];
+                $messageParts[] = new MessagePart($part);
             } elseif ($part instanceof MessagePart) {
-                // Convert MessagePart to array for Message::fromArray
-                $normalizedParts[] = $part->toArray();
+                $messageParts[] = $part;
             } elseif (is_array($part)) {
-                // Assume it's already in the correct format for MessagePart::fromArray
-                $normalizedParts[] = $part;
+                try {
+                    $messageParts[] = MessagePart::fromArray($part);
+                } catch (\Exception $e) {
+                    throw new \InvalidArgumentException(
+                        sprintf(
+                            'Invalid message part at index %d[%d]: %s',
+                            $index,
+                            $partIndex,
+                            $e->getMessage()
+                        ),
+                        0,
+                        $e
+                    );
+                }
             } else {
                 throw new \InvalidArgumentException(
                     sprintf(
@@ -233,6 +233,19 @@ class PromptNormalizer
             }
         }
 
-        return $normalizedParts;
+        return $messageParts;
+    }
+
+    /**
+     * Checks if an array has string keys (associative array).
+     *
+     * @since n.e.x.t
+     *
+     * @param array<mixed,mixed> $array The array to check.
+     * @return bool True if the array has string keys.
+     */
+    private static function hasStringKeys(array $array): bool
+    {
+        return array_keys($array) !== range(0, count($array) - 1);
     }
 }
