@@ -118,8 +118,8 @@ class AiClientTest extends TestCase
             ->method('generateTextResult')
             ->with($this->callback(function ($messages) {
                 return is_array($messages) &&
-                       count($messages) === 1 &&
-                       $messages[0] instanceof UserMessage;
+                    count($messages) === 1 &&
+                    $messages[0] instanceof UserMessage;
             }))
             ->willReturn($mockResult);
 
@@ -155,8 +155,8 @@ class AiClientTest extends TestCase
             ->method('generateImageResult')
             ->with($this->callback(function ($messages) {
                 return is_array($messages) &&
-                       count($messages) === 1 &&
-                       $messages[0] instanceof UserMessage;
+                    count($messages) === 1 &&
+                    $messages[0] instanceof UserMessage;
             }))
             ->willReturn($mockResult);
 
@@ -208,8 +208,8 @@ class AiClientTest extends TestCase
             ->method('generateTextResult')
             ->with($this->callback(function ($messages) use ($message) {
                 return is_array($messages) &&
-                       count($messages) === 1 &&
-                       $messages[0] === $message;
+                    count($messages) === 1 &&
+                    $messages[0] === $message;
             }))
             ->willReturn($mockResult);
 
@@ -231,8 +231,8 @@ class AiClientTest extends TestCase
             ->method('generateTextResult')
             ->with($this->callback(function ($messages) {
                 return is_array($messages) &&
-                       count($messages) === 1 &&
-                       $messages[0] instanceof UserMessage;
+                    count($messages) === 1 &&
+                    $messages[0] instanceof UserMessage;
             }))
             ->willReturn($mockResult);
 
@@ -259,9 +259,9 @@ class AiClientTest extends TestCase
             ->method('generateTextResult')
             ->with($this->callback(function ($result) use ($messages) {
                 return is_array($result) &&
-                       count($result) === 2 &&
-                       $result[0] === $messages[0] &&
-                       $result[1] === $messages[1];
+                    count($result) === 2 &&
+                    $result[0] === $messages[0] &&
+                    $result[1] === $messages[1];
             }))
             ->willReturn($mockResult);
 
@@ -286,9 +286,9 @@ class AiClientTest extends TestCase
             ->method('generateTextResult')
             ->with($this->callback(function ($messages) {
                 return is_array($messages) &&
-                       count($messages) === 2 &&
-                       $messages[0] instanceof UserMessage &&
-                       $messages[1] instanceof UserMessage;
+                    count($messages) === 1 &&
+                    $messages[0] instanceof UserMessage &&
+                    count($messages[0]->getParts()) === 2;
             }))
             ->willReturn($mockResult);
 

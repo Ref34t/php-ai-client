@@ -24,10 +24,9 @@ class PromptNormalizerTest extends TestCase
         $prompt = 'Test prompt';
         $result = PromptNormalizer::normalize($prompt);
 
-        $this->assertCount(1, $result);
-        $this->assertInstanceOf(UserMessage::class, $result[0]);
-        $this->assertCount(1, $result[0]->getParts());
-        $this->assertEquals('Test prompt', $result[0]->getParts()[0]->getText());
+        $this->assertInstanceOf(UserMessage::class, $result);
+        $this->assertCount(1, $result->getParts());
+        $this->assertEquals('Test prompt', $result->getParts()[0]->getText());
     }
 
     /**
@@ -38,10 +37,9 @@ class PromptNormalizerTest extends TestCase
         $messagePart = new MessagePart('Test message part');
         $result = PromptNormalizer::normalize($messagePart);
 
-        $this->assertCount(1, $result);
-        $this->assertInstanceOf(UserMessage::class, $result[0]);
-        $this->assertCount(1, $result[0]->getParts());
-        $this->assertSame($messagePart, $result[0]->getParts()[0]);
+        $this->assertInstanceOf(UserMessage::class, $result);
+        $this->assertCount(1, $result->getParts());
+        $this->assertSame($messagePart, $result->getParts()[0]);
     }
 
     /**
@@ -53,12 +51,11 @@ class PromptNormalizerTest extends TestCase
         $message = new UserMessage([$messagePart]);
         $result = PromptNormalizer::normalize($message);
 
-        $this->assertCount(1, $result);
-        $this->assertSame($message, $result[0]);
+        $this->assertSame($message, $result);
     }
 
     /**
-     * Tests normalizing array of Messages.
+     * Tests normalizing array of Messages throws exception.
      */
     public function testNormalizeMessageArray(): void
     {
@@ -66,11 +63,12 @@ class PromptNormalizerTest extends TestCase
         $message2 = new UserMessage([new MessagePart('Second message')]);
         $messages = [$message1, $message2];
 
-        $result = PromptNormalizer::normalize($messages);
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage(
+            'Array items must be strings or MessagePart objects, got ' . UserMessage::class
+        );
 
-        $this->assertCount(2, $result);
-        $this->assertSame($message1, $result[0]);
-        $this->assertSame($message2, $result[1]);
+        PromptNormalizer::normalize($messages);
     }
 
     /**
@@ -84,11 +82,10 @@ class PromptNormalizerTest extends TestCase
 
         $result = PromptNormalizer::normalize($parts);
 
-        $this->assertCount(2, $result);
-        $this->assertInstanceOf(UserMessage::class, $result[0]);
-        $this->assertInstanceOf(UserMessage::class, $result[1]);
-        $this->assertSame($part1, $result[0]->getParts()[0]);
-        $this->assertSame($part2, $result[1]->getParts()[0]);
+        $this->assertInstanceOf(UserMessage::class, $result);
+        $this->assertCount(2, $result->getParts());
+        $this->assertSame($part1, $result->getParts()[0]);
+        $this->assertSame($part2, $result->getParts()[1]);
     }
 
     /**
@@ -112,8 +109,7 @@ class PromptNormalizerTest extends TestCase
 
         $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage(
-            'Invalid prompt format: expected string, MessagePart, Message, ' .
-            'or structured array with "role" key, got integer'
+            'Array items must be strings or MessagePart objects, got integer'
         );
 
         PromptNormalizer::normalize($invalidArray);
@@ -126,8 +122,8 @@ class PromptNormalizerTest extends TestCase
     {
         $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage(
-            'Invalid prompt format: expected string, MessagePart, Message, ' .
-            'or structured array with "role" key, got integer'
+            'Invalid prompt format: expected string, Message, MessagePart, structured array, ' .
+            'or array of strings/MessageParts, got integer'
         );
 
         PromptNormalizer::normalize(123);
@@ -142,91 +138,84 @@ class PromptNormalizerTest extends TestCase
 
         $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage(
-            'Invalid prompt format: expected string, MessagePart, Message, ' .
-            'or structured array with "role" key, got object'
+            'Array items must be strings or MessagePart objects, got stdClass'
         );
 
         PromptNormalizer::normalize($invalidArray);
     }
 
     /**
-     * Tests normalizing structured message array.
+     * Tests normalizing message array.
      */
-    public function testNormalizeStructuredMessage(): void
+    public function testNormalizeMessageArrayShape(): void
     {
-        $structuredMessage = [
+        $messageArray = [
             'role' => 'system',
-            'parts' => ['You are a helpful assistant.', 'Be concise.']
+            'parts' => [
+                ['text' => 'You are a helpful assistant.'],
+                ['text' => 'Be concise.']
+            ]
         ];
 
-        $result = PromptNormalizer::normalize($structuredMessage);
+        $result = PromptNormalizer::normalize($messageArray);
 
-        $this->assertCount(1, $result);
-        $this->assertInstanceOf(Message::class, $result[0]);
-        $this->assertTrue($result[0]->getRole()->equals(MessageRoleEnum::system()));
-        $this->assertCount(2, $result[0]->getParts());
-        $this->assertEquals('You are a helpful assistant.', $result[0]->getParts()[0]->getText());
-        $this->assertEquals('Be concise.', $result[0]->getParts()[1]->getText());
+        $this->assertInstanceOf(Message::class, $result);
+        $this->assertTrue($result->getRole()->equals(MessageRoleEnum::system()));
+        $this->assertCount(2, $result->getParts());
+        $this->assertEquals('You are a helpful assistant.', $result->getParts()[0]->getText());
+        $this->assertEquals('Be concise.', $result->getParts()[1]->getText());
     }
 
     /**
-     * Tests normalizing mixed array with structured messages.
+     * Tests normalizing mixed array with strings and MessageParts.
      */
-    public function testNormalizeMixedWithStructuredMessages(): void
+    public function testNormalizeMixedStringAndMessageParts(): void
     {
         $mixed = [
-            ['role' => 'system', 'parts' => ['System prompt']],
             'User message',
             new MessagePart('Part message')
         ];
 
         $result = PromptNormalizer::normalize($mixed);
 
-        $this->assertCount(3, $result);
-
-        // First: structured system message
-        $this->assertTrue($result[0]->getRole()->equals(MessageRoleEnum::system()));
-        $this->assertEquals('System prompt', $result[0]->getParts()[0]->getText());
-
-        // Second: user message from string
-        $this->assertInstanceOf(UserMessage::class, $result[1]);
-        $this->assertEquals('User message', $result[1]->getParts()[0]->getText());
-
-        // Third: user message from MessagePart
-        $this->assertInstanceOf(UserMessage::class, $result[2]);
-        $this->assertEquals('Part message', $result[2]->getParts()[0]->getText());
+        $this->assertInstanceOf(UserMessage::class, $result);
+        $this->assertCount(2, $result->getParts());
+        $this->assertEquals('User message', $result->getParts()[0]->getText());
+        $this->assertEquals('Part message', $result->getParts()[1]->getText());
     }
 
     /**
-     * Tests structured message with invalid role throws exception.
+     * Tests message array with invalid role throws exception.
      */
-    public function testStructuredMessageInvalidRoleThrowsException(): void
+    public function testMessageArrayInvalidRoleThrowsException(): void
     {
-        $structuredMessage = [
+        $messageArray = [
             'role' => 'invalid_role',
-            'parts' => ['Some text']
+            'parts' => [['text' => 'Some text']]
         ];
 
         $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('invalid_role is not a valid backing value for enum');
 
-        PromptNormalizer::normalize($structuredMessage);
+        PromptNormalizer::normalize($messageArray);
     }
 
     /**
-     * Tests structured message with missing parts throws exception.
+     * Tests message array with missing parts is treated as string array.
      */
-    public function testStructuredMessageMissingPartsThrowsException(): void
+    public function testMessageArrayMissingPartsTreatedAsStringArray(): void
     {
-        $structuredMessage = [
+        $messageArray = [
             'role' => 'user'
-            // Missing 'parts'
+            // Missing 'parts' - will be treated as array with string value 'user'
         ];
 
-        $this->expectException(\InvalidArgumentException::class);
-        $this->expectExceptionMessage('missing required keys: parts');
+        $result = PromptNormalizer::normalize($messageArray);
 
-        PromptNormalizer::normalize($structuredMessage);
+        // It should create a UserMessage with a single part containing 'user' text
+        $this->assertInstanceOf(UserMessage::class, $result);
+        $this->assertCount(1, $result->getParts());
+        $this->assertEquals('user', $result->getParts()[0]->getText());
     }
 
     /**
@@ -234,19 +223,85 @@ class PromptNormalizerTest extends TestCase
      */
     public function testRoleMapping(): void
     {
+        // Test system role
+        $systemMsg = [
+            'role' => 'system',
+            'parts' => [['text' => 'System']]
+        ];
+        $result = PromptNormalizer::normalize($systemMsg);
+        $this->assertTrue($result->getRole()->equals(MessageRoleEnum::system()));
+
+        // Test user role
+        $userMsg = [
+            'role' => 'user',
+            'parts' => [['text' => 'User']]
+        ];
+        $result = PromptNormalizer::normalize($userMsg);
+        $this->assertTrue($result->getRole()->equals(MessageRoleEnum::user()));
+
+        // Test model role
+        $modelMsg = [
+            'role' => 'model',
+            'parts' => [['text' => 'Model']]
+        ];
+        $result = PromptNormalizer::normalize($modelMsg);
+        $this->assertTrue($result->getRole()->equals(MessageRoleEnum::model()));
+    }
+
+    /**
+     * Tests that isMessagesList returns true for a list of Message objects.
+     */
+    public function testIsMessagesListReturnsTrueForMessages(): void
+    {
         $messages = [
-            ['role' => 'system', 'parts' => ['System']],
-            ['role' => 'user', 'parts' => ['User']],
-            ['role' => 'model', 'parts' => ['Model']],
-            ['role' => 'assistant', 'parts' => ['Assistant']],
+            new UserMessage([new MessagePart('First')]),
+            new UserMessage([new MessagePart('Second')]),
         ];
 
-        $result = PromptNormalizer::normalize($messages);
+        $this->assertTrue(PromptNormalizer::isMessagesList($messages));
+    }
 
-        $this->assertCount(4, $result);
-        $this->assertTrue($result[0]->getRole()->equals(MessageRoleEnum::system()));
-        $this->assertTrue($result[1]->getRole()->equals(MessageRoleEnum::user()));
-        $this->assertTrue($result[2]->getRole()->equals(MessageRoleEnum::model()));
-        $this->assertTrue($result[3]->getRole()->equals(MessageRoleEnum::model())); // assistant maps to model
+    /**
+     * Tests that isMessagesList returns false for non-list arrays.
+     */
+    public function testIsMessagesListReturnsFalseForNonList(): void
+    {
+        $messages = [
+            1 => new UserMessage([new MessagePart('First')]),
+            2 => new UserMessage([new MessagePart('Second')]),
+        ];
+
+        $this->assertFalse(PromptNormalizer::isMessagesList($messages));
+    }
+
+    /**
+     * Tests that isMessagesList returns false for empty arrays.
+     */
+    public function testIsMessagesListReturnsFalseForEmpty(): void
+    {
+        $this->assertFalse(PromptNormalizer::isMessagesList([]));
+    }
+
+    /**
+     * Tests that isMessagesList returns false for arrays with non-Message objects.
+     */
+    public function testIsMessagesListReturnsFalseForMixedTypes(): void
+    {
+        $mixed = [
+            new UserMessage([new MessagePart('First')]),
+            'string',
+        ];
+
+        $this->assertFalse(PromptNormalizer::isMessagesList($mixed));
+    }
+
+    /**
+     * Tests that isMessagesList returns false for non-array types.
+     */
+    public function testIsMessagesListReturnsFalseForNonArray(): void
+    {
+        $this->assertFalse(PromptNormalizer::isMessagesList('string'));
+        $this->assertFalse(PromptNormalizer::isMessagesList(123));
+        $this->assertFalse(PromptNormalizer::isMessagesList(new UserMessage([new MessagePart('Test')])));
     }
 }

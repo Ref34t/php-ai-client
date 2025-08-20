@@ -192,6 +192,8 @@ class AiClient
             $messages = $prompt;
         } else {
             // Otherwise normalize to a single Message and wrap in array
+            // PHPStan needs help narrowing the type after isMessagesList() check
+            /** @var string|MessagePart|Message|MessageArrayShape|list<string|MessagePart> $prompt */
             $message = PromptNormalizer::normalize($prompt);
             $messages = [$message];
         }
@@ -291,6 +293,8 @@ class AiClient
             $messages = $prompt;
         } else {
             // Otherwise normalize to a single Message and wrap in array
+            // PHPStan needs help narrowing the type after isMessagesList() check
+            /** @var string|MessagePart|Message|MessageArrayShape|list<string|MessagePart> $prompt */
             $message = PromptNormalizer::normalize($prompt);
             $messages = [$message];
         }

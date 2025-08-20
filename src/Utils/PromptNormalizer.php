@@ -48,16 +48,19 @@ class PromptNormalizer
      *
      * Supports:
      * - String: converted to UserMessage with single MessagePart
-     * - Structured array: {'role': 'system', 'parts': [...]} format
+     * - MessagePart: wrapped in UserMessage
+     * - Message array: {'role': 'system', 'parts': [...]} format
      * - Message: returned as-is
      * - Array of strings/MessageParts: converted to UserMessage with multiple parts
      *
      * @since n.e.x.t
      *
-     * @param mixed $prompt The prompt content in various formats.
+     * @param string|MessagePart|Message|MessageArrayShape|list<string|MessagePart> $prompt The prompt content.
      * @return Message The normalized message.
      *
      * @throws \InvalidArgumentException If the prompt format is invalid.
+     *
+     * @phpstan-param string|MessagePart|Message|MessageArrayShape|list<string|MessagePart> $prompt
      */
     public static function normalize($prompt): Message
     {
@@ -69,6 +72,11 @@ class PromptNormalizer
         // Simple string
         if (is_string($prompt)) {
             return new UserMessage([new MessagePart($prompt)]);
+        }
+
+        // Single MessagePart
+        if ($prompt instanceof MessagePart) {
+            return new UserMessage([$prompt]);
         }
 
         // Structured message array with role and parts
@@ -105,7 +113,7 @@ class PromptNormalizer
         // Invalid format
         throw new \InvalidArgumentException(
             sprintf(
-                'Invalid prompt format: expected string, Message, structured array, ' .
+                'Invalid prompt format: expected string, Message, MessagePart, structured array, ' .
                 'or array of strings/MessageParts, got %s',
                 is_object($prompt) ? get_class($prompt) : gettype($prompt)
             )
