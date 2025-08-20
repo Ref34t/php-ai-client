@@ -234,24 +234,13 @@ class AiClient
      * @param ModelInterface|null $model Optional specific model to use.
      * @return Generator<GenerativeAiResult> Generator yielding partial text generation results.
      *
-     * @throws \InvalidArgumentException If the prompt format is invalid.
-     * @throws \RuntimeException If no suitable model is found.
+     * @throws \RuntimeException Always throws - streaming is not implemented yet.
      */
     public static function streamGenerateTextResult($prompt, ?ModelInterface $model = null): Generator
     {
-        // TODO: Replace with PromptBuilder delegation once PR #49 is merged
-        $messages = PromptNormalizer::normalize($prompt);
-        /** @var list<Message> $messageList */
-        $messageList = array_values($messages);
-
-        // Get model - either provided or auto-discovered
-        $resolvedModel = $model ?? Models::findTextModel(self::defaultRegistry());
-
-        // Validate model supports text generation
-        Models::validateTextGeneration($resolvedModel);
-
-        // Stream the results using the model
-        yield from $resolvedModel->streamGenerateTextResult($messageList);
+        throw new \RuntimeException(
+            'Text streaming is not implemented yet. Use generateTextResult() for non-streaming text generation.'
+        );
     }
 
     /**
