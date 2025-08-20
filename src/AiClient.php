@@ -11,9 +11,12 @@ use WordPress\AiClient\Operations\DTO\GenerativeAiOperation;
 use WordPress\AiClient\Operations\OperationFactory;
 use WordPress\AiClient\Providers\Contracts\ProviderAvailabilityInterface;
 use WordPress\AiClient\Providers\Models\Contracts\ModelInterface;
+use WordPress\AiClient\Providers\Models\ImageGeneration\Contracts\ImageGenerationModelInterface;
+use WordPress\AiClient\Providers\Models\SpeechGeneration\Contracts\SpeechGenerationModelInterface;
+use WordPress\AiClient\Providers\Models\TextGeneration\Contracts\TextGenerationModelInterface;
+use WordPress\AiClient\Providers\Models\TextToSpeechConversion\Contracts\TextToSpeechConversionModelInterface;
 use WordPress\AiClient\Providers\ProviderRegistry;
 use WordPress\AiClient\Results\DTO\GenerativeAiResult;
-use WordPress\AiClient\Utils\GenerationStrategyResolver;
 use WordPress\AiClient\Utils\InterfaceValidator;
 use WordPress\AiClient\Utils\ModelDiscovery;
 use WordPress\AiClient\Utils\PromptNormalizer;
@@ -79,33 +82,30 @@ class AiClient
     /**
      * Creates a new prompt builder for fluent API usage.
      *
-     * This method will be implemented once PromptBuilder is available from PR #49.
-     * When available, PromptBuilder will support all generation types including:
-     * - Text generation via generateTextResult()
-     * - Image generation via generateImageResult()
-     * - Text-to-speech via convertTextToSpeechResult()
-     * - Speech generation via generateSpeechResult()
+     * This method will return an actual PromptBuilder instance once PR #49 is merged.
+     * The traditional API methods in this class will then delegate to PromptBuilder
+     * rather than implementing their own generation logic.
      *
      * @since n.e.x.t
      *
      * @param string|Message|null $text Optional initial prompt text or message.
      * @return object PromptBuilder instance (type will be updated when PromptBuilder is available).
      *
-     * @throws \RuntimeException When PromptBuilder is not yet available.
+     * @throws \RuntimeException Until PromptBuilder integration is complete.
      */
     public static function prompt($text = null)
     {
         throw new \RuntimeException(
-            'PromptBuilder is not yet available. This method depends on PR #49. ' .
-            'All generation methods (text, image, text-to-speech, speech) are ready for integration.'
+            'PromptBuilder integration pending. This method will return an actual PromptBuilder ' .
+            'instance once PR #49 is merged, enabling the fluent API pattern.'
         );
     }
 
     /**
-     * Generates content using a unified API that delegates to specific generation methods.
+     * Generates content using a unified API that automatically detects model capabilities.
      *
-     * This method automatically detects the model's capabilities and routes to the
-     * appropriate generation method (text, image, etc.).
+     * This method uses simple type checking to route to the appropriate generation method.
+     * In the future, this will be refactored to delegate to PromptBuilder when PR #49 is merged.
      *
      * @since n.e.x.t
      *
@@ -113,16 +113,31 @@ class AiClient
      * @param ModelInterface $model The model to use for generation.
      * @return GenerativeAiResult The generation result.
      *
-     * @throws \InvalidArgumentException If the prompt format is invalid or model type is unsupported.
+     * @throws \InvalidArgumentException If the model doesn't support any known generation type.
      */
     public static function generateResult($prompt, ModelInterface $model): GenerativeAiResult
     {
-        // Use strategy resolver to determine the appropriate method
-        $method = GenerationStrategyResolver::resolve($model);
-
-        // Call the resolved method dynamically
-        /** @var GenerativeAiResult */
-        return self::$method($prompt, $model);
+        // Simple type checking instead of over-engineered resolver
+        if ($model instanceof TextGenerationModelInterface) {
+            return self::generateTextResult($prompt, $model);
+        }
+        
+        if ($model instanceof ImageGenerationModelInterface) {
+            return self::generateImageResult($prompt, $model);
+        }
+        
+        if ($model instanceof TextToSpeechConversionModelInterface) {
+            return self::convertTextToSpeechResult($prompt, $model);
+        }
+        
+        if ($model instanceof SpeechGenerationModelInterface) {
+            return self::generateSpeechResult($prompt, $model);
+        }
+        
+        throw new \InvalidArgumentException(
+            'Model must implement at least one supported generation interface ' .
+            '(TextGeneration, ImageGeneration, TextToSpeechConversion, SpeechGeneration)'
+        );
     }
 
     /**
