@@ -12,6 +12,7 @@ use WordPress\AiClient\Messages\Enums\MessageRoleEnum;
 /**
  * Utility class for normalizing various prompt formats into standardized Message arrays.
  *
+ * @phpstan-import-type MessagePartArrayShape from MessagePart
  * @since n.e.x.t
  */
 class PromptNormalizer
@@ -207,29 +208,11 @@ class PromptNormalizer
             } elseif ($part instanceof MessagePart) {
                 $messageParts[] = $part;
             } elseif (is_array($part)) {
-                try {
-                    $messageParts[] = MessagePart::fromArray($part);
-                } catch (\Exception $e) {
-                    throw new \InvalidArgumentException(
-                        sprintf(
-                            'Invalid message part at index %d[%d]: %s',
-                            $index,
-                            $partIndex,
-                            $e->getMessage()
-                        ),
-                        0,
-                        $e
-                    );
-                }
+                /** @var MessagePartArrayShape $part */
+                $messageParts[] = MessagePart::fromArray($part);
             } else {
-                throw new \InvalidArgumentException(
-                    sprintf(
-                        'Part at index %d[%d] must be a string, MessagePart, or array, %s given',
-                        $index,
-                        $partIndex,
-                        gettype($part)
-                    )
-                );
+                // Fallback like MessageUtil - convert anything else to string
+                $messageParts[] = new MessagePart($part);
             }
         }
 
