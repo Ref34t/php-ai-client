@@ -97,11 +97,53 @@ if (empty($positional_args[0])) {
     logError('Missing required positional argument "prompt input".');
 }
 
+// Prompt input. Allow complex input as a JSON string.
 $promptInput = $positional_args[0];
+if (strpos($promptInput, '{') === 0 || strpos($promptInput, '[') === 0) {
+    $decodedInput = json_decode($promptInput, true);
+    if ($decodedInput) {
+        $promptInput = $decodedInput;
+    }
+}
 
+// Provider ID, model ID, and output format.
 $providerId = $named_args['providerId'] ?? null;
 $modelId = $named_args['modelId'] ?? null;
 $outputFormat = $named_args['outputFormat'] ?? 'message-text';
+
+// Any model configuration options.
+$schema = ModelConfig::getJsonSchema()['properties'];
+$model_config_data = [];
+foreach ($named_args as $key => $value) {
+    if (!isset($schema[$key])) {
+        continue;
+    }
+
+    $property_schema = $schema[$key];
+    $type = $property_schema['type'] ?? null;
+
+    $processed_value = $value;
+    if ($type === 'array' || $type === 'object') {
+        $decoded = json_decode((string) $value, true);
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            logWarning("Invalid JSON for argument --{$key}: " . json_last_error_msg());
+            continue;
+        }
+        $processed_value = $decoded;
+    } elseif ($type === 'integer') {
+        $processed_value = (int) $value;
+    } elseif ($type === 'number') {
+        $processed_value = (float) $value;
+    } elseif ($type === 'boolean') {
+        $processed_value = filter_var($value, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
+        if (null === $processed_value) {
+            logWarning("Invalid boolean for argument --{$key}: {$value}");
+            continue;
+        }
+    }
+
+    $model_config_data[$key] = $processed_value;
+}
 
 // --- SDK setup ---
 
@@ -114,26 +156,19 @@ $providerRegistry->registerProvider(OpenAiProvider::class);
 
 // --- Main logic ---
 
-// Allow complex input to be passed as a JSON string.
-if (strpos($promptInput, '{') === 0 || strpos($promptInput, '[') === 0) {
-    $decodedInput = json_decode($promptInput, true);
-    if ($decodedInput) {
-        $promptInput = $decodedInput;
-    }
-}
-
 $messages = MessageUtil::parseMessagesFromInput($promptInput);
 
-$modelConfig = new ModelConfig();
-$modelConfig->setTemperature(0.1);
+$modelConfig = ModelConfig::fromArray($model_config_data);
 
+$requiredOptions = [];
+foreach ($modelConfig->toArray() as $option => $value) {
+    $requiredOptions[] = new RequiredOption($option, $value);
+}
 $modelRequirements = new ModelRequirements(
     [
         CapabilityEnum::textGeneration(),
     ],
-    [
-        new RequiredOption(ModelConfig::KEY_TEMPERATURE, 0.1),
-    ],
+    $requiredOptions
 );
 
 try {
