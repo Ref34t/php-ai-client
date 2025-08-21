@@ -16,6 +16,7 @@ use WordPress\AiClient\Providers\Models\Contracts\ModelInterface;
 use WordPress\AiClient\Providers\Models\DTO\ModelConfig;
 use WordPress\AiClient\Providers\Models\DTO\ModelRequirements;
 use WordPress\AiClient\Providers\Models\DTO\RequiredOption;
+use WordPress\AiClient\Providers\Models\Enums\CapabilityEnum;
 use WordPress\AiClient\Providers\Models\Enums\OptionEnum;
 use WordPress\AiClient\Providers\ProviderRegistry;
 use WordPress\AiClient\Tools\DTO\FunctionResponse;
@@ -36,7 +37,6 @@ class PromptBuilder
 {
     /**
      * @var ProviderRegistry The provider registry for finding suitable models.
-     * @phpstan-ignore-next-line
      */
     private ProviderRegistry $registry;
 
@@ -499,14 +499,72 @@ class PromptBuilder
      */
     public function getModelRequirements(): ModelRequirements
     {
+        $capabilities = [];
+        $inputModalities = [];
+
+        // Always need text generation capability
+        $capabilities[] = CapabilityEnum::textGeneration();
+
+        // Check if we have chat history (multiple messages)
+        if (count($this->messages) > 1) {
+            $capabilities[] = CapabilityEnum::chatHistory();
+        }
+
+        // Analyze all messages to determine required input modalities
+        foreach ($this->messages as $message) {
+            foreach ($message->getParts() as $part) {
+                // Check for text input
+                if ($part->getText() !== null) {
+                    $inputModalities[ModalityEnum::text()->value] = ModalityEnum::text();
+                }
+
+                // Check for file inputs
+                if ($part->getFile() !== null) {
+                    $mimeType = $part->getFile()->getMimeType();
+
+                    // Determine modality based on MIME type
+                    if (strpos($mimeType, 'image/') === 0) {
+                        $inputModalities[ModalityEnum::image()->value] = ModalityEnum::image();
+                    } elseif (strpos($mimeType, 'audio/') === 0) {
+                        $inputModalities[ModalityEnum::audio()->value] = ModalityEnum::audio();
+                    } elseif (strpos($mimeType, 'video/') === 0) {
+                        $inputModalities[ModalityEnum::video()->value] = ModalityEnum::video();
+                    } elseif (
+                        strpos($mimeType, 'application/pdf') === 0 ||
+                        strpos($mimeType, 'application/msword') === 0 ||
+                        strpos($mimeType, 'application/vnd.openxmlformats-officedocument') === 0 ||
+                        strpos($mimeType, 'text/plain') === 0
+                    ) {
+                        $inputModalities[ModalityEnum::document()->value] = ModalityEnum::document();
+                    }
+                }
+
+                // Check for function calls/responses (these might require special capabilities)
+                if ($part->getFunctionCall() !== null || $part->getFunctionResponse() !== null) {
+                    // Function calling capability would go here if we had it in CapabilityEnum
+                    // For now, we'll just note this requires text generation
+                }
+            }
+        }
+
+        // Build required options
         $requiredOptions = [];
+
+        // Add input modalities if we have non-text inputs
+        if (count($inputModalities) > 0) {
+            $requiredOptions[] = new RequiredOption(
+                OptionEnum::inputModalities()->value,
+                array_values($inputModalities)
+            );
+        }
+
+        // Add other inferred options
         foreach ($this->inferredOptions as $name => $value) {
             $requiredOptions[] = new RequiredOption($name, $value);
         }
 
-        // TODO: Derive capabilities from messages and parts
         return new ModelRequirements(
-            [],
+            $capabilities,
             $requiredOptions
         );
     }
@@ -535,10 +593,11 @@ class PromptBuilder
      * @since n.e.x.t
      *
      * @return string The generated text.
-     * @throws InvalidArgumentException If the selected model doesn't meet requirements.
+     * @throws InvalidArgumentException If the prompt or model validation fails.
      */
     public function generateText(): string
     {
+        $this->validateMessages();
         $this->validateModel();
 
         // This is a placeholder - actual implementation would call the model
@@ -552,7 +611,7 @@ class PromptBuilder
      *
      * @param int|null $candidateCount The number of candidates to generate.
      * @return list<string> The generated texts.
-     * @throws InvalidArgumentException If the selected model doesn't meet requirements.
+     * @throws InvalidArgumentException If the prompt or model validation fails.
      */
     public function generateTexts(?int $candidateCount = null): array
     {
@@ -560,6 +619,7 @@ class PromptBuilder
             $this->usingCandidateCount($candidateCount);
         }
 
+        $this->validateMessages();
         $this->validateModel();
 
         // This is a placeholder - actual implementation would call the model
@@ -598,24 +658,91 @@ class PromptBuilder
      * @since n.e.x.t
      *
      * @return void
-     * @throws InvalidArgumentException If model doesn't meet requirements.
+     * @throws InvalidArgumentException If model doesn't meet requirements or no suitable model found.
      */
     protected function validateModel(): void
     {
+        $requirements = $this->getModelRequirements();
+
+        // If no model is specified, find one that meets requirements
         if ($this->model === null) {
-            // TODO: Use $this->registry to find a suitable model based on requirements
-            // $requirements = $this->getModelRequirements();
-            // $this->model = $this->registry->findModel($requirements);
+            $modelsMetadata = $this->registry->findModelsMetadataForSupport($requirements);
+
+            if (empty($modelsMetadata)) {
+                throw new InvalidArgumentException(
+                    'No models found that support the required capabilities and options for this prompt. ' .
+                    'Required capabilities: ' . implode(', ', array_map(function ($cap) {
+                        return $cap->value;
+                    }, $requirements->getRequiredCapabilities())) .
+                    '. Required options: ' . implode(', ', array_map(function ($opt) {
+                        return $opt->getName() . '=' . json_encode($opt->getValue());
+                    }, $requirements->getRequiredOptions()))
+                );
+            }
+
+            // Get the first available model from the first provider
+            $firstProviderModels = $modelsMetadata[0];
+            $firstModelMetadata = $firstProviderModels->getModels()[0];
+
+            // Get the model instance from the provider
+            $this->model = $this->registry->getProviderModel(
+                $firstProviderModels->getProvider()->getId(),
+                $firstModelMetadata->getId(),
+                $this->modelConfig
+            );
+
             return;
         }
 
-        $requirements = $this->getModelRequirements();
+        // Validate existing model meets requirements
         if (!$this->model->metadata()->meetsRequirements($requirements)) {
             throw new InvalidArgumentException(
                 sprintf(
                     'The selected model "%s" does not meet the required capabilities and options for this prompt.',
                     $this->model->metadata()->getId()
                 )
+            );
+        }
+    }
+
+    /**
+     * Validates the messages array for prompt generation.
+     *
+     * Ensures that:
+     * - The first message is a user or system message
+     * - The last message is a user message
+     * - The last message has parts
+     *
+     * @since n.e.x.t
+     *
+     * @return void
+     * @throws InvalidArgumentException If validation fails.
+     */
+    private function validateMessages(): void
+    {
+        if (empty($this->messages)) {
+            throw new InvalidArgumentException(
+                'Cannot generate from an empty prompt. Add content using withText() or similar methods.'
+            );
+        }
+
+        $firstMessage = reset($this->messages);
+        if (!$firstMessage->getRole()->isUser() && !$firstMessage->getRole()->isSystem()) {
+            throw new InvalidArgumentException(
+                'The first message must be from a user or system role, not from ' . $firstMessage->getRole()->value
+            );
+        }
+
+        $lastMessage = end($this->messages);
+        if (!$lastMessage->getRole()->isUser()) {
+            throw new InvalidArgumentException(
+                'The last message must be from a user role, not from ' . $lastMessage->getRole()->value
+            );
+        }
+
+        if (empty($lastMessage->getParts())) {
+            throw new InvalidArgumentException(
+                'The last message must have content parts. Add content using withText() or similar methods.'
             );
         }
     }
