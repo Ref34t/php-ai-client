@@ -98,7 +98,7 @@ class PromptBuilder
         }
 
         // Check if it's a MessageArrayShape - add to messages
-        if (Prompts::isMessageArrayShape($prompt)) {
+        if (is_array($prompt) && Message::isArrayShape($prompt)) {
             $this->messages[] = Message::fromArray($prompt);
             return;
         }
@@ -117,7 +117,7 @@ class PromptBuilder
                     $parts[] = new MessagePart($item);
                 } elseif ($item instanceof MessagePart) {
                     $parts[] = $item;
-                } elseif (Prompts::isMessagePartArrayShape($item)) {
+                } elseif (is_array($item) && MessagePart::isArrayShape($item)) {
                     $parts[] = MessagePart::fromArray($item);
                 }
             }

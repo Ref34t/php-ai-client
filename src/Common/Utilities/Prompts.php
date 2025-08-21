@@ -48,7 +48,7 @@ class Prompts
         }
 
         // 3. Check if it's a MessageArrayShape (single message as array)
-        if (self::isMessageArrayShape($prompt)) {
+        if (is_array($prompt) && Message::isArrayShape($prompt)) {
             return [Message::fromArray($prompt)];
         }
 
@@ -65,7 +65,7 @@ class Prompts
                 $parts[] = new MessagePart($item);
             } elseif ($item instanceof MessagePart) {
                 $parts[] = $item;
-            } elseif (self::isMessagePartArrayShape($item)) {
+            } elseif (is_array($item) && MessagePart::isArrayShape($item)) {
                 $parts[] = MessagePart::fromArray($item);
             } else {
                 $type = is_object($item) ? get_class($item) : gettype($item);
@@ -102,73 +102,5 @@ class Prompts
         }
 
         return true;
-    }
-
-    /**
-     * Checks if the value is a MessageArrayShape.
-     *
-     * @since n.e.x.t
-     *
-     * @param mixed $value The value to check.
-     * @return bool True if the value is a MessageArrayShape.
-     *
-     * @phpstan-assert-if-true MessageArrayShape $value
-     */
-    public static function isMessageArrayShape($value): bool
-    {
-        if (!is_array($value)) {
-            return false;
-        }
-
-        // Must have required keys
-        if (!isset($value['role']) || !isset($value['parts'])) {
-            return false;
-        }
-
-        // Role must be a string
-        if (!is_string($value['role'])) {
-            return false;
-        }
-
-        // Parts must be an array
-        if (!is_array($value['parts'])) {
-            return false;
-        }
-
-        return true;
-    }
-
-    /**
-     * Checks if the value is a MessagePartArrayShape.
-     *
-     * @since n.e.x.t
-     *
-     * @param mixed $value The value to check.
-     * @return bool True if the value is a MessagePartArrayShape.
-     *
-     * @phpstan-assert-if-true MessagePartArrayShape $value
-     */
-    public static function isMessagePartArrayShape($value): bool
-    {
-        if (!is_array($value)) {
-            return false;
-        }
-
-        // Channel is optional but if present must be a string
-        if (isset($value['channel']) && !is_string($value['channel'])) {
-            return false;
-        }
-
-        // Must have exactly one of the content fields: text, file, functionCall, or functionResponse
-        // This matches the logic in MessagePart::fromArray()
-        $contentFields = [
-            isset($value['text']),
-            isset($value['file']),
-            isset($value['functionCall']),
-            isset($value['functionResponse'])
-        ];
-
-        // Count how many are true - must be exactly 1
-        return count(array_filter($contentFields)) === 1;
     }
 }
