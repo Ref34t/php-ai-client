@@ -1015,7 +1015,7 @@ class ModelConfig extends AbstractDataTransferObject
         if ($this->outputSchema !== null) {
             $requiredOptions[] = new RequiredOption(
                 OptionEnum::outputSchema()->value,
-                true // Just indicate that schema is required
+                $this->outputSchema
             );
         }
 
