@@ -86,12 +86,6 @@ class PromptBuilder
             return;
         }
 
-        // Check if it's a MessageArrayShape - add to messages
-        if (is_array($prompt) && Message::isArrayShape($prompt)) {
-            $this->messages[] = Message::fromArray($prompt);
-            return;
-        }
-
         // Parse it as a user message
         $userMessage = $this->parseMessage($prompt, MessageRoleEnum::user());
         $this->messages[] = $userMessage;
@@ -1140,11 +1134,11 @@ class PromptBuilder
      * @since n.e.x.t
      *
      * @param mixed $input The input to parse.
-     * @param MessageRoleEnum $role The role for the message.
+     * @param MessageRoleEnum $defaultRole The role for the message if not specified by input.
      * @return Message The parsed message.
      * @throws InvalidArgumentException If the input type is not supported or results in empty message.
      */
-    private function parseMessage($input, MessageRoleEnum $role): Message
+    private function parseMessage($input, MessageRoleEnum $defaultRole): Message
     {
         // Handle Message input directly
         if ($input instanceof Message) {
@@ -1153,7 +1147,7 @@ class PromptBuilder
 
         // Handle single MessagePart
         if ($input instanceof MessagePart) {
-            return new Message($role, [$input]);
+            return new Message($defaultRole, [$input]);
         }
 
         // Handle string input
@@ -1161,7 +1155,7 @@ class PromptBuilder
             if (trim($input) === '') {
                 throw new InvalidArgumentException('Cannot create a message from an empty string.');
             }
-            return new Message($role, [new MessagePart($input)]);
+            return new Message($defaultRole, [new MessagePart($input)]);
         }
 
         // Handle array input
@@ -1172,9 +1166,14 @@ class PromptBuilder
             );
         }
 
+        // Handle MessageArrayShape input
+        if (Message::isArrayShape($input)) {
+            return Message::fromArray($input);
+        }
+
         // Check if it's a MessagePartArrayShape
         if (MessagePart::isArrayShape($input)) {
-            return new Message($role, [MessagePart::fromArray($input)]);
+            return new Message($defaultRole, [MessagePart::fromArray($input)]);
         }
 
         // It should be a list of string|MessagePart|MessagePartArrayShape
@@ -1202,7 +1201,7 @@ class PromptBuilder
             }
         }
 
-        return new Message($role, $parts);
+        return new Message($defaultRole, $parts);
     }
 
     /**
