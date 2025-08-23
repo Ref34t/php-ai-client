@@ -410,15 +410,15 @@ class PromptBuilderTest extends TestCase
     }
 
     /**
-     * Tests withInlineImage method.
+     * Tests withFile method with base64 data.
      *
      * @return void
      */
-    public function testWithInlineImage(): void
+    public function testWithInlineFile(): void
     {
         $builder = new PromptBuilder($this->registry);
         $base64 = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==';
-        $result = $builder->withInlineImage($base64, 'image/png');
+        $result = $builder->withFile($base64, 'image/png');
 
         $this->assertSame($builder, $result);
 
@@ -436,14 +436,14 @@ class PromptBuilderTest extends TestCase
     }
 
     /**
-     * Tests withRemoteImage method.
+     * Tests withFile method with remote URL.
      *
      * @return void
      */
-    public function testWithRemoteImage(): void
+    public function testWithRemoteFile(): void
     {
         $builder = new PromptBuilder($this->registry);
-        $result = $builder->withRemoteImage('https://example.com/image.jpg', 'image/jpeg');
+        $result = $builder->withFile('https://example.com/image.jpg', 'image/jpeg');
 
         $this->assertSame($builder, $result);
 
@@ -461,15 +461,15 @@ class PromptBuilderTest extends TestCase
     }
 
     /**
-     * Tests withImageFile method.
+     * Tests withFile with data URI.
      *
      * @return void
      */
-    public function testWithImageFile(): void
+    public function testWithInlineFileDataUri(): void
     {
-        $file = new File('https://example.com/test.png', 'image/png');
         $builder = new PromptBuilder($this->registry);
-        $result = $builder->withImageFile($file);
+        $dataUri = 'data:image/jpeg;base64,/9j/4AAQSkZJRg==';
+        $result = $builder->withFile($dataUri);
 
         $this->assertSame($builder, $result);
 
@@ -480,19 +480,21 @@ class PromptBuilderTest extends TestCase
         $messages = $messagesProperty->getValue($builder);
 
         $this->assertCount(1, $messages);
-        $this->assertSame($file, $messages[0]->getParts()[0]->getFile());
+        $file = $messages[0]->getParts()[0]->getFile();
+        $this->assertInstanceOf(File::class, $file);
+        $this->assertEquals('image/jpeg', $file->getMimeType());
     }
 
     /**
-     * Tests withAudioFile method.
+     * Tests withFile with URL without explicit MIME type.
      *
      * @return void
      */
-    public function testWithAudioFile(): void
+    public function testWithRemoteFileWithoutMimeType(): void
     {
-        $file = new File('https://example.com/audio.mp3', 'audio/mp3');
         $builder = new PromptBuilder($this->registry);
-        $result = $builder->withAudioFile($file);
+        // File extension should be used to determine MIME type
+        $result = $builder->withFile('https://example.com/audio.mp3');
 
         $this->assertSame($builder, $result);
 
@@ -503,30 +505,10 @@ class PromptBuilderTest extends TestCase
         $messages = $messagesProperty->getValue($builder);
 
         $this->assertCount(1, $messages);
-        $this->assertSame($file, $messages[0]->getParts()[0]->getFile());
-    }
-
-    /**
-     * Tests withVideoFile method.
-     *
-     * @return void
-     */
-    public function testWithVideoFile(): void
-    {
-        $file = new File('https://example.com/video.mp4', 'video/mp4');
-        $builder = new PromptBuilder($this->registry);
-        $result = $builder->withVideoFile($file);
-
-        $this->assertSame($builder, $result);
-
-        $reflection = new \ReflectionClass($builder);
-        $messagesProperty = $reflection->getProperty('messages');
-        $messagesProperty->setAccessible(true);
-        /** @var list<Message> $messages */
-        $messages = $messagesProperty->getValue($builder);
-
-        $this->assertCount(1, $messages);
-        $this->assertSame($file, $messages[0]->getParts()[0]->getFile());
+        $file = $messages[0]->getParts()[0]->getFile();
+        $this->assertInstanceOf(File::class, $file);
+        $this->assertEquals('https://example.com/audio.mp3', $file->getUrl());
+        $this->assertEquals('audio/mpeg', $file->getMimeType());
     }
 
     /**
@@ -995,7 +977,7 @@ class PromptBuilderTest extends TestCase
     {
         $builder = new PromptBuilder($this->registry);
         $builder->withText('Describe this image')
-                ->withRemoteImage('https://example.com/image.jpg', 'image/jpeg');
+                ->withFile('https://example.com/image.jpg', 'image/jpeg');
 
         $requirements = $builder->getModelRequirements();
         $options = $requirements->getRequiredOptions();
@@ -1192,7 +1174,7 @@ class PromptBuilderTest extends TestCase
         $builder = new PromptBuilder($this->registry);
         $result = $builder
             ->withText('Start of prompt')
-            ->withRemoteImage('https://example.com/img.jpg', 'image/jpeg')
+            ->withFile('https://example.com/img.jpg', 'image/jpeg')
             ->usingModel($model)
             ->usingSystemInstruction('Be helpful')
             ->usingMaxTokens(500)
@@ -2253,9 +2235,9 @@ class PromptBuilderTest extends TestCase
 
         $builder = new PromptBuilder($this->registry);
         $builder->withText('Analyze this data:')
-                ->withImageFile($file1)
+                ->withFile($file1)
                 ->withText(' and this audio:')
-                ->withAudioFile($file2)
+                ->withFile($file2)
                 ->withFunctionResponse($functionResponse)
                 ->withHistory(
                     new UserMessage([new MessagePart('Previous question')]),
@@ -2417,10 +2399,10 @@ class PromptBuilderTest extends TestCase
     {
         $builder = new PromptBuilder($this->registry);
         $builder->withText('Analyze:')
-                ->withRemoteImage('https://example.com/img.jpg', 'image/jpeg')
-                ->withAudioFile(new File('https://example.com/audio.mp3', 'audio/mp3'))
-                ->withVideoFile(new File('https://example.com/video.mp4', 'video/mp4'))
-                ->withImageFile(new File('https://example.com/doc.pdf', 'application/pdf'));
+                ->withFile('https://example.com/img.jpg', 'image/jpeg')
+                ->withFile('https://example.com/audio.mp3', 'audio/mp3')
+                ->withFile('https://example.com/video.mp4', 'video/mp4')
+                ->withFile('https://example.com/doc.pdf', 'application/pdf');
 
         $requirements = $builder->getModelRequirements();
         $options = $requirements->getRequiredOptions();

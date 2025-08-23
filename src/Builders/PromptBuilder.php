@@ -107,85 +107,30 @@ class PromptBuilder
     }
 
     /**
-     * Adds an inline image to the current message.
+     * Adds a file to the current message.
+     *
+     * Accepts:
+     * - File object
+     * - URL string (remote file)
+     * - Base64-encoded data string
+     * - Data URI string (data:mime/type;base64,data)
+     * - Local file path string
      *
      * @since n.e.x.t
      *
-     * @param string $base64Blob The base64-encoded image data.
-     * @param string $mimeType The MIME type of the image.
+     * @param string|File $file The file (File object or string representation).
+     * @param string|null $mimeType The MIME type (optional, ignored if File object provided).
      * @return self
+     * @throws InvalidArgumentException If the file is invalid or MIME type cannot be determined.
      */
-    public function withInlineImage(string $base64Blob, string $mimeType): self
+    public function withFile($file, ?string $mimeType = null): self
     {
-        // Create data URI format for inline image
-        $dataUri = 'data:' . $mimeType . ';base64,' . $base64Blob;
-        $file = new File($dataUri, $mimeType);
+        $file = $file instanceof File ? $file : new File($file, $mimeType);
         $part = new MessagePart($file);
         $this->appendPartToMessages($part);
         return $this;
     }
 
-    /**
-     * Adds a remote image to the current message.
-     *
-     * @since n.e.x.t
-     *
-     * @param string $uri The URI of the remote image.
-     * @param string $mimeType The MIME type of the image.
-     * @return self
-     */
-    public function withRemoteImage(string $uri, string $mimeType): self
-    {
-        $file = new File($uri, $mimeType);
-        $part = new MessagePart($file);
-        $this->appendPartToMessages($part);
-        return $this;
-    }
-
-    /**
-     * Adds an image file to the current message.
-     *
-     * @since n.e.x.t
-     *
-     * @param File $file The image file.
-     * @return self
-     */
-    public function withImageFile(File $file): self
-    {
-        $part = new MessagePart($file);
-        $this->appendPartToMessages($part);
-        return $this;
-    }
-
-    /**
-     * Adds an audio file to the current message.
-     *
-     * @since n.e.x.t
-     *
-     * @param File $file The audio file.
-     * @return self
-     */
-    public function withAudioFile(File $file): self
-    {
-        $part = new MessagePart($file);
-        $this->appendPartToMessages($part);
-        return $this;
-    }
-
-    /**
-     * Adds a video file to the current message.
-     *
-     * @since n.e.x.t
-     *
-     * @param File $file The video file.
-     * @return self
-     */
-    public function withVideoFile(File $file): self
-    {
-        $part = new MessagePart($file);
-        $this->appendPartToMessages($part);
-        return $this;
-    }
 
     /**
      * Adds a function response to the current message.
