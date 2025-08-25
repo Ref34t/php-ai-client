@@ -617,28 +617,6 @@ class PromptBuilderTest extends TestCase
     }
 
     /**
-     * Tests usingRegistry method.
-     *
-     * @return void
-     */
-    public function testUsingRegistry(): void
-    {
-        $newRegistry = $this->createMock(ProviderRegistry::class);
-        $builder = new PromptBuilder($this->registry);
-        $result = $builder->usingRegistry($newRegistry);
-
-        $this->assertSame($builder, $result);
-
-        $reflection = new \ReflectionClass($builder);
-        $registryProperty = $reflection->getProperty('registry');
-        $registryProperty->setAccessible(true);
-
-        /** @var ProviderRegistry $actualRegistry */
-        $actualRegistry = $registryProperty->getValue($builder);
-        $this->assertSame($newRegistry, $actualRegistry);
-    }
-
-    /**
      * Tests usingSystemInstruction method.
      *
      * @return void

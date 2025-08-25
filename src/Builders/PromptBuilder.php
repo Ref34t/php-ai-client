@@ -195,20 +195,6 @@ class PromptBuilder
     }
 
     /**
-     * Sets a different provider registry.
-     *
-     * @since n.e.x.t
-     *
-     * @param ProviderRegistry $registry The provider registry to use.
-     * @return self
-     */
-    public function usingRegistry(ProviderRegistry $registry): self
-    {
-        $this->registry = $registry;
-        return $this;
-    }
-
-    /**
      * Sets the system instruction.
      *
      * System instructions are stored in the model configuration and guide
