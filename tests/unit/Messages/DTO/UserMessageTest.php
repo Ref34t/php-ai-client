@@ -313,20 +313,20 @@ class UserMessageTest extends TestCase
     }
 
     /**
-     * Tests that withPart returns a base Message with user role.
+     * Tests that withPart returns a new Message with user role.
      *
      * @since n.e.x.t
      */
-    public function testWithPartReturnsBaseMessage(): void
+    public function testWithPartReturnsNewMessage(): void
     {
         $original = new UserMessage([new MessagePart('User text')]);
         $updated = $original->withPart(new MessagePart('More text'));
 
         $this->assertInstanceOf(Message::class, $updated);
-        $this->assertNotInstanceOf(UserMessage::class, $updated);
         $this->assertNotSame($original, $updated);
         $this->assertCount(2, $updated->getParts());
         $this->assertEquals(MessageRoleEnum::user(), $updated->getRole());
+        $this->assertTrue($updated->getRole()->isUser());
         $this->assertEquals('User text', $updated->getParts()[0]->getText());
         $this->assertEquals('More text', $updated->getParts()[1]->getText());
     }

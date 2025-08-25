@@ -1087,13 +1087,23 @@ class PromptBuilderTest extends TestCase
      */
     public function testValidateMessagesNonUserLastThrowsException(): void
     {
-        $builder = new PromptBuilder($this->registry, [
-            new UserMessage([new MessagePart('User says hi')]),
-            new ModelMessage([new MessagePart('Model response')])
-        ]);
+        // Start with a user message
+        $builder = new PromptBuilder($this->registry);
+        $builder->withText('Initial user message');
 
-        // Add a user message to make it valid, then add model message
-        $builder->withHistory(new ModelMessage([new MessagePart('Another model message')]));
+        // Add history that will make the last message a model message
+        $builder->withHistory(
+            new UserMessage([new MessagePart('Historical user message')]),
+            new ModelMessage([new MessagePart('Historical model response')])
+        );
+
+        // Now add a model message manually to be the last message
+        $reflection = new \ReflectionClass($builder);
+        $messagesProperty = $reflection->getProperty('messages');
+        $messagesProperty->setAccessible(true);
+        $messages = $messagesProperty->getValue($builder);
+        $messages[] = new ModelMessage([new MessagePart('Final model message')]);
+        $messagesProperty->setValue($builder, $messages);
 
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('The last message must be from a user role');
@@ -2229,26 +2239,67 @@ class PromptBuilderTest extends TestCase
         /** @var list<Message> $messages */
         $messages = $messagesProperty->getValue($builder);
 
-        // Should have 4 messages: 1 initial + 2 from history + 1 final
-        $this->assertCount(4, $messages);
+        // Should have 3 messages: 2 from history + 1 current being built
+        $this->assertCount(3, $messages);
 
-        // Check first message with initial content
-        $firstParts = $messages[0]->getParts();
-        $this->assertCount(5, $firstParts); // text, image, text, audio, function response
-        $this->assertEquals('Analyze this data:', $firstParts[0]->getText());
-        $this->assertSame($file1, $firstParts[1]->getFile());
-        $this->assertEquals(' and this audio:', $firstParts[2]->getText());
-        $this->assertSame($file2, $firstParts[3]->getFile());
-        $this->assertSame($functionResponse, $firstParts[4]->getFunctionResponse());
+        // Check history messages (now at the beginning)
+        $this->assertEquals('Previous question', $messages[0]->getParts()[0]->getText());
+        $this->assertEquals('Previous answer', $messages[1]->getParts()[0]->getText());
 
-        // Check history messages
-        $this->assertEquals('Previous question', $messages[1]->getParts()[0]->getText());
-        $this->assertEquals('Previous answer', $messages[2]->getParts()[0]->getText());
+        // Check current message being built (now at the end)
+        $currentParts = $messages[2]->getParts();
+        $this->assertCount(6, $currentParts); // text, image, text, audio, function response, final text
+        $this->assertEquals('Analyze this data:', $currentParts[0]->getText());
+        $this->assertSame($file1, $currentParts[1]->getFile());
+        $this->assertEquals(' and this audio:', $currentParts[2]->getText());
+        $this->assertSame($file2, $currentParts[3]->getFile());
+        $this->assertSame($functionResponse, $currentParts[4]->getFunctionResponse());
+        $this->assertEquals(' Final instruction', $currentParts[5]->getText());
+    }
 
-        // Check final message
-        $finalParts = $messages[3]->getParts();
-        $this->assertCount(1, $finalParts);
-        $this->assertEquals(' Final instruction', $finalParts[0]->getText());
+    /**
+     * Tests that withHistory prepends messages to the beginning.
+     *
+     * @return void
+     */
+    public function testWithHistoryPrependsMessages(): void
+    {
+        $builder = new PromptBuilder($this->registry);
+
+        // Start building current message
+        $builder->withText('Current message content');
+
+        // Add history
+        $builder->withHistory(
+            new UserMessage([new MessagePart('First history message')]),
+            new ModelMessage([new MessagePart('Second history message')])
+        );
+
+        // Add more to current message
+        $builder->withText(' with additional content');
+
+        $reflection = new \ReflectionClass($builder);
+        $messagesProperty = $reflection->getProperty('messages');
+        $messagesProperty->setAccessible(true);
+        /** @var list<Message> $messages */
+        $messages = $messagesProperty->getValue($builder);
+
+        // Should have 3 messages: 2 history + 1 current
+        $this->assertCount(3, $messages);
+
+        // History should be at the beginning
+        $this->assertTrue($messages[0]->getRole()->isUser());
+        $this->assertEquals('First history message', $messages[0]->getParts()[0]->getText());
+
+        $this->assertTrue($messages[1]->getRole()->isModel());
+        $this->assertEquals('Second history message', $messages[1]->getParts()[0]->getText());
+
+        // Current message should be at the end
+        $this->assertTrue($messages[2]->getRole()->isUser());
+        $currentParts = $messages[2]->getParts();
+        $this->assertCount(2, $currentParts);
+        $this->assertEquals('Current message content', $currentParts[0]->getText());
+        $this->assertEquals(' with additional content', $currentParts[1]->getText());
     }
 
     /**

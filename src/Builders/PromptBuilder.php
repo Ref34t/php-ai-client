@@ -166,6 +166,9 @@ class PromptBuilder
     /**
      * Adds conversation history messages.
      *
+     * Historical messages are prepended to the beginning of the message list,
+     * before the current message being built.
+     *
      * @since n.e.x.t
      *
      * @param Message ...$messages The messages to add to history.
@@ -173,9 +176,8 @@ class PromptBuilder
      */
     public function withHistory(Message ...$messages): self
     {
-        foreach ($messages as $message) {
-            $this->messages[] = $message;
-        }
+        // Prepend the history messages to the beginning of the messages array
+        $this->messages = array_merge($messages, $this->messages);
 
         return $this;
     }
