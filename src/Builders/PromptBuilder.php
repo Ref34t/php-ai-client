@@ -569,45 +569,59 @@ class PromptBuilder
      * Generates a result from the prompt.
      *
      * This is the primary execution method that generates a result (containing
-     * potentially multiple candidates) based on the configured output modality.
+     * potentially multiple candidates) based on the specified capability or
+     * the configured output modality.
      *
      * @since n.e.x.t
      *
+     * @param CapabilityEnum|null $capability Optional capability to use for generation.
+     *                                        If null, capability is inferred from output modality.
      * @return GenerativeAiResult The generated result containing candidates.
      * @throws InvalidArgumentException If the prompt or model validation fails.
-     * @throws RuntimeException If the model doesn't support the configured output modality.
+     * @throws RuntimeException If the model doesn't support the required capability.
      */
-    public function generateResult(): GenerativeAiResult
+    public function generateResult(?CapabilityEnum $capability = null): GenerativeAiResult
     {
         $this->validateMessages();
         $model = $this->getConfiguredModel();
 
-        // Get the configured output modalities
-        $outputModalities = $this->modelConfig->getOutputModalities();
+        // If capability is not provided, infer it from output modalities
+        if ($capability === null) {
+            // Get the configured output modalities
+            $outputModalities = $this->modelConfig->getOutputModalities();
 
-        // Default to text if no output modality is specified
-        if ($outputModalities === null || empty($outputModalities)) {
-            $outputModalities = [ModalityEnum::text()];
-        }
-
-        // Multi-modal output (multiple modalities) uses TextGenerationModelInterface
-        if (count($outputModalities) > 1) {
-            if (!$model instanceof TextGenerationModelInterface) {
-                throw new RuntimeException(
-                    sprintf(
-                        'Model "%s" does not support multi-modal generation.',
-                        $model->metadata()->getId()
-                    )
-                );
+            // Default to text if no output modality is specified
+            if ($outputModalities === null || empty($outputModalities)) {
+                $outputModalities = [ModalityEnum::text()];
             }
-            return $model->generateTextResult($this->messages);
+
+            // Multi-modal output (multiple modalities) defaults to text generation. This is temporary
+            // as a multi-modal interface will be implemented in the future.
+            if (count($outputModalities) > 1) {
+                $capability = CapabilityEnum::textGeneration();
+            } else {
+                // Infer capability from single output modality
+                $outputModality = $outputModalities[0];
+
+                if ($outputModality->isText()) {
+                    $capability = CapabilityEnum::textGeneration();
+                } elseif ($outputModality->isImage()) {
+                    $capability = CapabilityEnum::imageGeneration();
+                } elseif ($outputModality->isAudio()) {
+                    $capability = CapabilityEnum::speechGeneration();
+                } elseif ($outputModality->isVideo()) {
+                    $capability = CapabilityEnum::videoGeneration();
+                } else {
+                    // For unsupported modalities, provide a clear error message
+                    throw new RuntimeException(
+                        sprintf('Output modality "%s" is not yet supported.', $outputModality->value)
+                    );
+                }
+            }
         }
 
-        // Single modality routing
-        $outputModality = $outputModalities[0];
-
-        // Route to the appropriate generation method based on output modality
-        if ($outputModality->isText()) {
+        // Route to the appropriate generation method based on capability
+        if ($capability->isTextGeneration()) {
             if (!$model instanceof TextGenerationModelInterface) {
                 throw new RuntimeException(
                     sprintf(
@@ -619,7 +633,7 @@ class PromptBuilder
             return $model->generateTextResult($this->messages);
         }
 
-        if ($outputModality->isImage()) {
+        if ($capability->isImageGeneration()) {
             if (!$model instanceof ImageGenerationModelInterface) {
                 throw new RuntimeException(
                     sprintf(
@@ -631,11 +645,23 @@ class PromptBuilder
             return $model->generateImageResult($this->messages);
         }
 
-        if ($outputModality->isAudio()) {
+        if ($capability->isTextToSpeechConversion()) {
+            if (!$model instanceof TextToSpeechConversionModelInterface) {
+                throw new RuntimeException(
+                    sprintf(
+                        'Model "%s" does not support text-to-speech conversion.',
+                        $model->metadata()->getId()
+                    )
+                );
+            }
+            return $model->convertTextToSpeechResult($this->messages);
+        }
+
+        if ($capability->isSpeechGeneration()) {
             if (!$model instanceof SpeechGenerationModelInterface) {
                 throw new RuntimeException(
                     sprintf(
-                        'Model "%s" does not support speech/audio generation.',
+                        'Model "%s" does not support speech generation.',
                         $model->metadata()->getId()
                     )
                 );
@@ -643,9 +669,14 @@ class PromptBuilder
             return $model->generateSpeechResult($this->messages);
         }
 
-        // TODO: Add support for video output modality when interface is available
+        if ($capability->isVideoGeneration()) {
+            // Video generation is not yet implemented
+            throw new RuntimeException('Output modality "video" is not yet supported.');
+        }
+
+        // TODO: Add support for other capabilities when interfaces are available
         throw new RuntimeException(
-            sprintf('Output modality "%s" is not yet supported.', $outputModality->value)
+            sprintf('Capability "%s" is not yet supported for generation.', $capability->value)
         );
     }
 
@@ -663,8 +694,8 @@ class PromptBuilder
         // Include text in output modalities
         $this->includeOutputModalities(ModalityEnum::text());
 
-        // Generate and return the result
-        return $this->generateResult();
+        // Generate and return the result with text generation capability
+        return $this->generateResult(CapabilityEnum::textGeneration());
     }
 
     /**
@@ -681,8 +712,8 @@ class PromptBuilder
         // Include image in output modalities
         $this->includeOutputModalities(ModalityEnum::image());
 
-        // Generate and return the result
-        return $this->generateResult();
+        // Generate and return the result with image generation capability
+        return $this->generateResult(CapabilityEnum::imageGeneration());
     }
 
     /**
@@ -699,8 +730,8 @@ class PromptBuilder
         // Include audio in output modalities
         $this->includeOutputModalities(ModalityEnum::audio());
 
-        // Generate and return the result
-        return $this->generateResult();
+        // Generate and return the result with speech generation capability
+        return $this->generateResult(CapabilityEnum::speechGeneration());
     }
 
     /**
@@ -717,22 +748,8 @@ class PromptBuilder
         // Include audio in output modalities
         $this->includeOutputModalities(ModalityEnum::audio());
 
-        // Get the configured model
-        $model = $this->getConfiguredModel();
-
-        // Ensure the model supports text-to-speech conversion
-        if (!$model instanceof TextToSpeechConversionModelInterface) {
-            throw new RuntimeException(
-                sprintf(
-                    'Model "%s" does not support text-to-speech conversion.',
-                    $model->metadata()->getId()
-                )
-            );
-        }
-
-        // Validate messages and convert
-        $this->validateMessages();
-        return $model->convertTextToSpeechResult($this->messages);
+        // Generate and return the result with text-to-speech conversion capability
+        return $this->generateResult(CapabilityEnum::textToSpeechConversion());
     }
 
     /**
