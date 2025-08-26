@@ -6,7 +6,7 @@ namespace WordPress\AiClient\ProviderImplementations\OpenAi;
 
 use WordPress\AiClient\Providers\Http\DTO\Request;
 use WordPress\AiClient\Providers\Http\Enums\HttpMethodEnum;
-use WordPress\AiClient\Providers\Models\AbstractOpenAiCompatibleImageGenerationModel;
+use WordPress\AiClient\Providers\OpenAiCompatibleImplementation\AbstractOpenAiCompatibleImageGenerationModel;
 
 /**
  * Class for an OpenAI image generation model.

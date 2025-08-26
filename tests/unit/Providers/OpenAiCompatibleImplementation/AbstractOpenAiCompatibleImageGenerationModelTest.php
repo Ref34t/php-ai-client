@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace WordPress\AiClient\Tests\unit\Providers\Models;
+namespace WordPress\AiClient\Tests\unit\Providers\OpenAiCompatibleImplementation;
 
 use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
@@ -26,7 +26,7 @@ use WordPress\AiClient\Results\Enums\FinishReasonEnum;
 use WordPress\AiClient\Tests\mocks\MockOpenAiCompatibleImageGenerationModel;
 
 /**
- * @covers \WordPress\AiClient\Providers\Models\AbstractOpenAiCompatibleImageGenerationModel
+ * @covers \WordPress\AiClient\Providers\OpenAiCompatibleImplementation\AbstractOpenAiCompatibleImageGenerationModel
  */
 class AbstractOpenAiCompatibleImageGenerationModelTest extends TestCase
 {
