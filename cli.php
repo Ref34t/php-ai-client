@@ -173,10 +173,6 @@ try {
     logError('Request failed while trying to set up prompt builder: ' . $e->getMessage());
 }
 
-// TODO: Reinstate this once the generative AI result includes model and provider metadata.
-//logInfo("Using provider ID: \"{$modelInstance->providerMetadata()->getId()}\"");
-//logInfo("Using model ID: \"{$modelInstance->metadata()->getId()}\"");
-
 try {
     $result = $promptBuilder->generateTextResult();
 } catch (InvalidArgumentException $e) {
@@ -184,6 +180,9 @@ try {
 } catch (ResponseException $e) {
     logError('Request failed while trying to generate text result: ' . $e->getMessage());
 }
+
+logInfo("Using provider ID: \"{$result->getProviderMetadata()->getId()}\"");
+logInfo("Using model ID: \"{$result->getModelMetadata()->getId()}\"");
 
 switch ($outputFormat) {
     case 'result-json':
