@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace WordPress\AiClient\Tests\unit\Providers\Models;
+namespace WordPress\AiClient\Tests\unit\Providers\OpenAiCompatibleImplementation;
 
 use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;

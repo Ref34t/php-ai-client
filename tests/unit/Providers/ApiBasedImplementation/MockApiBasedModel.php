@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace WordPress\AiClient\Tests\unit\Providers\Models;
+namespace WordPress\AiClient\Tests\unit\Providers\ApiBasedImplementation;
 
+use WordPress\AiClient\Providers\ApiBasedImplementation\AbstractApiBasedModel;
 use WordPress\AiClient\Providers\Http\Contracts\WithHttpTransporterInterface;
 use WordPress\AiClient\Providers\Http\Contracts\WithRequestAuthenticationInterface;
-use WordPress\AiClient\Providers\Models\AbstractApiBasedModel;
 use WordPress\AiClient\Providers\Models\Contracts\ModelInterface;
 
 /**

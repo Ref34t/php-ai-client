@@ -2,8 +2,9 @@
 
 declare(strict_types=1);
 
-namespace WordPress\AiClient\Providers;
+namespace WordPress\AiClient\Providers\OpenAiCompatibleImplementation;
 
+use WordPress\AiClient\Providers\ApiBasedImplementation\AbstractApiBasedModelMetadataDirectory;
 use WordPress\AiClient\Providers\Http\DTO\Request;
 use WordPress\AiClient\Providers\Http\DTO\Response;
 use WordPress\AiClient\Providers\Http\Enums\HttpMethodEnum;

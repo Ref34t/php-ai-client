@@ -6,7 +6,7 @@ namespace WordPress\AiClient\ProviderImplementations\Anthropic;
 
 use WordPress\AiClient\Providers\Http\DTO\Request;
 use WordPress\AiClient\Providers\Http\Enums\HttpMethodEnum;
-use WordPress\AiClient\Providers\Models\AbstractOpenAiCompatibleTextGenerationModel;
+use WordPress\AiClient\Providers\OpenAiCompatibleImplementation\AbstractOpenAiCompatibleTextGenerationModel;
 
 /**
  * Class for an Anthropic text generation model.

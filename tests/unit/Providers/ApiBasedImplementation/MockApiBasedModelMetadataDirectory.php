@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace WordPress\AiClient\Tests\unit\Providers;
+namespace WordPress\AiClient\Tests\unit\Providers\ApiBasedImplementation;
 
-use WordPress\AiClient\Providers\AbstractApiBasedModelMetadataDirectory;
+use WordPress\AiClient\Providers\ApiBasedImplementation\AbstractApiBasedModelMetadataDirectory;
 use WordPress\AiClient\Providers\Models\DTO\ModelMetadata;
 
 /**
