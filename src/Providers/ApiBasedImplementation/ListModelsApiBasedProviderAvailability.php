@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace WordPress\AiClient\Providers;
+namespace WordPress\AiClient\Providers\ApiBasedImplementation;
 
 use Exception;
 use WordPress\AiClient\Providers\Contracts\ModelMetadataDirectoryInterface;

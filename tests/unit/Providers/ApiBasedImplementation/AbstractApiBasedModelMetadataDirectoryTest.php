@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace WordPress\AiClient\Tests\unit\Providers;
+namespace WordPress\AiClient\Tests\unit\Providers\ApiBasedImplementation;
 
 use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;

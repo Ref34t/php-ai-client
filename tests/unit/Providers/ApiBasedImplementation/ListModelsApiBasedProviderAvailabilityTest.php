@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace WordPress\AiClient\Tests\unit\Providers;
+namespace WordPress\AiClient\Tests\unit\Providers\ApiBasedImplementation;
 
 use Exception;
 use PHPUnit\Framework\TestCase;
+use WordPress\AiClient\Providers\ApiBasedImplementation\ListModelsApiBasedProviderAvailability;
 use WordPress\AiClient\Providers\Contracts\ModelMetadataDirectoryInterface;
-use WordPress\AiClient\Providers\ListModelsApiBasedProviderAvailability;
 
 /**
  * @covers \WordPress\AiClient\Providers\ListModelsApiBasedProviderAvailability
