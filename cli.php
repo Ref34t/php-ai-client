@@ -13,6 +13,8 @@
 
 declare(strict_types=1);
 
+use WordPress\AiClient\Files\Enums\FileTypeEnum;
+use WordPress\AiClient\Files\Enums\MediaOrientationEnum;
 use WordPress\AiClient\Messages\Util\MessageUtil;
 use WordPress\AiClient\ProviderImplementations\Anthropic\AnthropicProvider;
 use WordPress\AiClient\ProviderImplementations\Google\GoogleProvider;
@@ -23,6 +25,7 @@ use WordPress\AiClient\Providers\Models\DTO\ModelConfig;
 use WordPress\AiClient\Providers\Models\DTO\ModelRequirements;
 use WordPress\AiClient\Providers\Models\DTO\RequiredOption;
 use WordPress\AiClient\Providers\Models\Enums\CapabilityEnum;
+use WordPress\AiClient\Providers\Models\ImageGeneration\Contracts\ImageGenerationModelInterface;
 use WordPress\AiClient\Providers\Models\TextGeneration\Contracts\TextGenerationModelInterface;
 use WordPress\AiClient\Providers\ProviderRegistry;
 
@@ -160,14 +163,24 @@ $messages = MessageUtil::parseMessagesFromInput($promptInput);
 
 $modelConfig = ModelConfig::fromArray($model_config_data);
 
+if ($outputFormat === 'image-json' || $outputFormat === 'image-base64') {
+    $requiredCapabilities = [CapabilityEnum::imageGeneration()];
+} else {
+    $requiredCapabilities = [CapabilityEnum::textGeneration()];
+}
+
 $requiredOptions = [];
 foreach ($modelConfig->toArray() as $option => $value) {
+    // Manual workarounds for enum config values.
+    if ($option === ModelConfig::KEY_OUTPUT_FILE_TYPE) {
+        $value = FileTypeEnum::from($value);
+    } elseif ($option === ModelConfig::KEY_OUTPUT_MEDIA_ORIENTATION) {
+        $value = MediaOrientationEnum::from($value);
+    }
     $requiredOptions[] = new RequiredOption($option, $value);
 }
 $modelRequirements = new ModelRequirements(
-    [
-        CapabilityEnum::textGeneration(),
-    ],
+    $requiredCapabilities,
     $requiredOptions
 );
 
@@ -200,18 +213,32 @@ try {
 logInfo("Using provider ID: \"{$modelInstance->providerMetadata()->getId()}\"");
 logInfo("Using model ID: \"{$modelInstance->metadata()->getId()}\"");
 
-if (!($modelInstance instanceof TextGenerationModelInterface)) {
-    logError('The model class ' . get_class($modelInstance) . ' does not support text generation.');
-}
-
 $modelInstance->setConfig($modelConfig);
 
-try {
-    $result = $modelInstance->generateTextResult($messages);
-} catch (InvalidArgumentException $e) {
-    logError('Invalid arguments while trying to generate text result: ' . $e->getMessage());
-} catch (ResponseException $e) {
-    logError('Request failed while trying to generate text result: ' . $e->getMessage());
+if ($outputFormat === 'image-json' || $outputFormat === 'image-base64') {
+    if (!($modelInstance instanceof ImageGenerationModelInterface)) {
+        logError('The model class ' . get_class($modelInstance) . ' does not support image generation.');
+    }
+
+    try {
+        $result = $modelInstance->generateImageResult($messages);
+    } catch (InvalidArgumentException $e) {
+        logError('Invalid arguments while trying to generate image result: ' . $e->getMessage());
+    } catch (ResponseException $e) {
+        logError('Request failed while trying to generate image result: ' . $e->getMessage());
+    }
+} else {
+    if (!($modelInstance instanceof TextGenerationModelInterface)) {
+        logError('The model class ' . get_class($modelInstance) . ' does not support text generation.');
+    }
+
+    try {
+        $result = $modelInstance->generateTextResult($messages);
+    } catch (InvalidArgumentException $e) {
+        logError('Invalid arguments while trying to generate text result: ' . $e->getMessage());
+    } catch (ResponseException $e) {
+        logError('Request failed while trying to generate text result: ' . $e->getMessage());
+    }
 }
 
 switch ($outputFormat) {
@@ -220,6 +247,12 @@ switch ($outputFormat) {
         break;
     case 'candidates-json':
         $output = json_encode($result->getCandidates(), JSON_PRETTY_PRINT);
+        break;
+    case 'image-json':
+        $output = json_encode($result->toFile(), JSON_PRETTY_PRINT);
+        break;
+    case 'image-base64':
+        $output = $result->toFile()->getBase64Data();
         break;
     case 'message-text':
     default:
