@@ -147,7 +147,11 @@ class SupportedOptionTest extends TestCase
      */
     public function testIsSupportedValueWithUnorderedArray(): void
     {
-        $option = new SupportedOption('colors', [['red', 'green', 'blue'], ['yellow', 'orange']]);
+        // Just use any option enum value for the name.
+        $option = new SupportedOption(
+            OptionEnum::outputSpeechVoice(),
+            [['red', 'green', 'blue'], ['yellow', 'orange']]
+        );
 
         // Test with an array that has the same elements but in a different order
         $this->assertTrue($option->isSupportedValue(['blue', 'red', 'green']));
