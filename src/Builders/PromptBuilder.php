@@ -380,21 +380,24 @@ class PromptBuilder
         foreach ($this->messages as $message) {
             foreach ($message->getParts() as $part) {
                 // Check for text input
-                if ($part->getText() !== null) {
-                    $inputModalities[ModalityEnum::text()->value] = ModalityEnum::text();
+                if ($part->getType()->isText()) {
+                    $inputModalities[] = ModalityEnum::text();
                 }
 
                 // Check for file inputs
-                $file = $part->getFile();
-                if ($file !== null) {
-                    if ($file->isImage()) {
-                        $inputModalities[ModalityEnum::image()->value] = ModalityEnum::image();
-                    } elseif ($file->isAudio()) {
-                        $inputModalities[ModalityEnum::audio()->value] = ModalityEnum::audio();
-                    } elseif ($file->isVideo()) {
-                        $inputModalities[ModalityEnum::video()->value] = ModalityEnum::video();
-                    } elseif ($file->isDocument() || $file->isText()) {
-                        $inputModalities[ModalityEnum::document()->value] = ModalityEnum::document();
+                if ($part->getType()->isFile()) {
+                    $file = $part->getFile();
+
+                    if ($file !== null) {
+                        if ($file->isImage()) {
+                            $inputModalities[] = ModalityEnum::image();
+                        } elseif ($file->isAudio()) {
+                            $inputModalities[] = ModalityEnum::audio();
+                        } elseif ($file->isVideo()) {
+                            $inputModalities[] = ModalityEnum::video();
+                        } elseif ($file->isDocument() || $file->isText()) {
+                            $inputModalities[] = ModalityEnum::document();
+                        }
                     }
                 }
 
@@ -410,12 +413,7 @@ class PromptBuilder
         $requiredOptions = $this->modelConfig->toRequiredOptions();
 
         // Add input modalities if we have non-text inputs
-        if (count($inputModalities) > 0) {
-            $requiredOptions[] = new RequiredOption(
-                OptionEnum::inputModalities(),
-                array_values($inputModalities)
-            );
-        }
+        $requiredOptions[] = new RequiredOption(OptionEnum::inputModalities(), $inputModalities);
 
         return new ModelRequirements(
             $capabilities,
