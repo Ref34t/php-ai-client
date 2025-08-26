@@ -54,7 +54,7 @@ class OpenAiModelMetadataDirectory extends AbstractOpenAiCompatibleModelMetadata
             CapabilityEnum::textGeneration(),
             CapabilityEnum::chatHistory(),
         ];
-        $gptOptions = [
+        $gptBaseOptions = [
             new SupportedOption(OptionEnum::systemInstruction()),
             new SupportedOption(OptionEnum::candidateCount()),
             new SupportedOption(OptionEnum::maxTokens()),
@@ -70,7 +70,11 @@ class OpenAiModelMetadataDirectory extends AbstractOpenAiCompatibleModelMetadata
             new SupportedOption(OptionEnum::functionDeclarations()),
             new SupportedOption(OptionEnum::customOptions()),
         ];
-        $gptMultimodalInputOptions = $gptOptions + [
+        $gptOptions = array_merge($gptBaseOptions, [
+            new SupportedOption(OptionEnum::inputModalities(), [[ModalityEnum::text()]]),
+            new SupportedOption(OptionEnum::outputModalities(), [[ModalityEnum::text()]]),
+        ]);
+        $gptMultimodalInputOptions = array_merge($gptBaseOptions, [
             new SupportedOption(
                 OptionEnum::inputModalities(),
                 [
@@ -79,8 +83,17 @@ class OpenAiModelMetadataDirectory extends AbstractOpenAiCompatibleModelMetadata
                     [ModalityEnum::text(), ModalityEnum::image(), ModalityEnum::audio()],
                 ]
             ),
-        ];
-        $gptMultimodalSpeechOutputOptions = $gptMultimodalInputOptions + [
+            new SupportedOption(OptionEnum::outputModalities(), [[ModalityEnum::text()]]),
+        ]);
+        $gptMultimodalSpeechOutputOptions = array_merge($gptBaseOptions, [
+            new SupportedOption(
+                OptionEnum::inputModalities(),
+                [
+                    [ModalityEnum::text()],
+                    [ModalityEnum::text(), ModalityEnum::image()],
+                    [ModalityEnum::text(), ModalityEnum::image(), ModalityEnum::audio()],
+                ]
+            ),
             new SupportedOption(
                 OptionEnum::outputModalities(),
                 [
@@ -88,11 +101,13 @@ class OpenAiModelMetadataDirectory extends AbstractOpenAiCompatibleModelMetadata
                     [ModalityEnum::text(), ModalityEnum::audio()],
                 ]
             ),
-        ];
+        ]);
         $imageCapabilities = [
             CapabilityEnum::imageGeneration(),
         ];
         $dalleImageOptions = [
+            new SupportedOption(OptionEnum::inputModalities(), [[ModalityEnum::text()]]),
+            new SupportedOption(OptionEnum::outputModalities(), [[ModalityEnum::image()]]),
             new SupportedOption(OptionEnum::candidateCount()),
             new SupportedOption(OptionEnum::outputMimeType(), ['image/png']),
             new SupportedOption(OptionEnum::outputFileType(), [FileTypeEnum::inline(), FileTypeEnum::remote()]),
@@ -104,6 +119,8 @@ class OpenAiModelMetadataDirectory extends AbstractOpenAiCompatibleModelMetadata
             new SupportedOption(OptionEnum::outputMediaAspectRatio(), ['1:1', '7:4', '4:7']),
         ];
         $gptImageOptions = [
+            new SupportedOption(OptionEnum::inputModalities(), [[ModalityEnum::text()]]),
+            new SupportedOption(OptionEnum::outputModalities(), [[ModalityEnum::image()]]),
             new SupportedOption(OptionEnum::candidateCount()),
             new SupportedOption(OptionEnum::outputMimeType(), ['image/png', 'image/jpeg', 'image/webp']),
             new SupportedOption(OptionEnum::outputFileType(), [FileTypeEnum::inline()]),
@@ -118,6 +135,8 @@ class OpenAiModelMetadataDirectory extends AbstractOpenAiCompatibleModelMetadata
             CapabilityEnum::textToSpeechConversion(),
         ];
         $ttsOptions = [
+            new SupportedOption(OptionEnum::inputModalities(), [[ModalityEnum::text()]]),
+            new SupportedOption(OptionEnum::outputModalities(), [[ModalityEnum::audio()]]),
             new SupportedOption(OptionEnum::outputMimeType(), ['audio/mpeg', 'audio/ogg', 'audio/wav']),
             new SupportedOption(OptionEnum::outputSpeechVoice()),
         ];

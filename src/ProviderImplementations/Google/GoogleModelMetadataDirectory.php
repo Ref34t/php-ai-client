@@ -80,7 +80,7 @@ class GoogleModelMetadataDirectory extends AbstractOpenAiCompatibleModelMetadata
             CapabilityEnum::textGeneration(),
             CapabilityEnum::chatHistory(),
         ];
-        $geminiLegacyOptions = [
+        $geminiBaseOptions = [
             new SupportedOption(OptionEnum::systemInstruction()),
             new SupportedOption(OptionEnum::candidateCount()),
             new SupportedOption(OptionEnum::maxTokens()),
@@ -96,7 +96,11 @@ class GoogleModelMetadataDirectory extends AbstractOpenAiCompatibleModelMetadata
             new SupportedOption(OptionEnum::functionDeclarations()),
             new SupportedOption(OptionEnum::customOptions()),
         ];
-        $geminiOptions = $geminiLegacyOptions + [
+        $geminiLegacyOptions = array_merge($geminiBaseOptions, [
+            new SupportedOption(OptionEnum::inputModalities(), [[ModalityEnum::text()]]),
+            new SupportedOption(OptionEnum::outputModalities(), [[ModalityEnum::text()]]),
+        ]);
+        $geminiOptions = array_merge($geminiBaseOptions, [
             new SupportedOption(
                 OptionEnum::inputModalities(),
                 [
@@ -105,11 +109,20 @@ class GoogleModelMetadataDirectory extends AbstractOpenAiCompatibleModelMetadata
                     [ModalityEnum::text(), ModalityEnum::image(), ModalityEnum::audio()],
                 ]
             ),
-        ];
-        $geminiWebSearchOptions = $geminiOptions + [
+            new SupportedOption(OptionEnum::outputModalities(), [[ModalityEnum::text()]]),
+        ]);
+        $geminiWebSearchOptions = array_merge($geminiOptions, [
             new SupportedOption(OptionEnum::webSearch()),
-        ];
-        $geminiMultimodalImageOutputOptions = $geminiOptions + [
+        ]);
+        $geminiMultimodalImageOutputOptions = array_merge($geminiBaseOptions, [
+            new SupportedOption(
+                OptionEnum::inputModalities(),
+                [
+                    [ModalityEnum::text()],
+                    [ModalityEnum::text(), ModalityEnum::image()],
+                    [ModalityEnum::text(), ModalityEnum::image(), ModalityEnum::audio()],
+                ]
+            ),
             new SupportedOption(
                 OptionEnum::outputModalities(),
                 [
@@ -117,11 +130,13 @@ class GoogleModelMetadataDirectory extends AbstractOpenAiCompatibleModelMetadata
                     [ModalityEnum::text(), ModalityEnum::image()],
                 ]
             ),
-        ];
+        ]);
         $imagenCapabilities = [
             CapabilityEnum::imageGeneration(),
         ];
         $imagenOptions = [
+            new SupportedOption(OptionEnum::inputModalities(), [[ModalityEnum::text()]]),
+            new SupportedOption(OptionEnum::outputModalities(), [[ModalityEnum::image()]]),
             new SupportedOption(OptionEnum::candidateCount()),
             new SupportedOption(OptionEnum::outputMimeType(), ['image/png', 'image/jpeg', 'image/webp']),
             new SupportedOption(OptionEnum::outputFileType(), [FileTypeEnum::inline()]),

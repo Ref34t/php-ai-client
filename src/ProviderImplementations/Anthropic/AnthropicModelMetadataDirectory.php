@@ -92,10 +92,11 @@ class AnthropicModelMetadataDirectory extends AbstractOpenAiCompatibleModelMetad
                     [ModalityEnum::text(), ModalityEnum::image()],
                 ]
             ),
+            new SupportedOption(OptionEnum::outputModalities(), [[ModalityEnum::text()]]),
         ];
-        $anthropicWebSearchOptions = $anthropicOptions + [
+        $anthropicWebSearchOptions = array_merge($anthropicOptions, [
             new SupportedOption(OptionEnum::webSearch()),
-        ];
+        ]);
 
         /** @var array<string, array<string, mixed>> $modelsData */
         $modelsData = (array) $responseData['data'];
