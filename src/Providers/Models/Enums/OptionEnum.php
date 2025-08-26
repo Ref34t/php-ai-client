@@ -31,6 +31,7 @@ use WordPress\AiClient\Providers\Models\DTO\ModelConfig;
  * @method static self outputMimeType() Creates an instance for OUTPUT_MIME_TYPE option.
  * @method static self outputModalities() Creates an instance for OUTPUT_MODALITIES option.
  * @method static self outputSchema() Creates an instance for OUTPUT_SCHEMA option.
+ * @method static self outputSpeechVoice() Creates an instance for OUTPUT_SPEECH_VOICE option.
  * @method static self presencePenalty() Creates an instance for PRESENCE_PENALTY option.
  * @method static self stopSequences() Creates an instance for STOP_SEQUENCES option.
  * @method static self systemInstruction() Creates an instance for SYSTEM_INSTRUCTION option.
@@ -51,6 +52,7 @@ use WordPress\AiClient\Providers\Models\DTO\ModelConfig;
  * @method bool isOutputMimeType() Checks if the option is OUTPUT_MIME_TYPE.
  * @method bool isOutputModalities() Checks if the option is OUTPUT_MODALITIES.
  * @method bool isOutputSchema() Checks if the option is OUTPUT_SCHEMA.
+ * @method bool isOutputSpeechVoice() Checks if the option is OUTPUT_SPEECH_VOICE.
  * @method bool isPresencePenalty() Checks if the option is PRESENCE_PENALTY.
  * @method bool isStopSequences() Checks if the option is STOP_SEQUENCES.
  * @method bool isSystemInstruction() Checks if the option is SYSTEM_INSTRUCTION.
