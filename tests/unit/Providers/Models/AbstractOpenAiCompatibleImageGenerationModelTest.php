@@ -8,8 +8,8 @@ use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
 use WordPress\AiClient\Files\DTO\File;
-use WordPress\AiClient\Files\Enums\MediaOrientationEnum;
 use WordPress\AiClient\Files\Enums\FileTypeEnum;
+use WordPress\AiClient\Files\Enums\MediaOrientationEnum;
 use WordPress\AiClient\Messages\DTO\Message;
 use WordPress\AiClient\Messages\DTO\MessagePart;
 use WordPress\AiClient\Messages\Enums\MessageRoleEnum;
@@ -22,7 +22,6 @@ use WordPress\AiClient\Providers\Models\DTO\ModelConfig;
 use WordPress\AiClient\Providers\Models\DTO\ModelMetadata;
 use WordPress\AiClient\Results\DTO\Candidate;
 use WordPress\AiClient\Results\DTO\GenerativeAiResult;
-use WordPress\AiClient\Results\DTO\TokenUsage;
 use WordPress\AiClient\Results\Enums\FinishReasonEnum;
 use WordPress\AiClient\Tests\mocks\MockOpenAiCompatibleImageGenerationModel;
 
@@ -130,7 +129,10 @@ class AbstractOpenAiCompatibleImageGenerationModelTest extends TestCase
             'https://example.com/cat.png',
             $result->getCandidates()[0]->getMessage()->getParts()[0]->getFile()->getUrl()
         );
-        $this->assertEquals('image/png', $result->getCandidates()[0]->getMessage()->getParts()[0]->getFile()->getMimeType());
+        $this->assertEquals(
+            'image/png',
+            $result->getCandidates()[0]->getMessage()->getParts()[0]->getFile()->getMimeType()
+        );
         $this->assertEquals(FinishReasonEnum::stop(), $result->getCandidates()[0]->getFinishReason());
         $this->assertEquals(10, $result->getTokenUsage()->getPromptTokens());
         $this->assertEquals(0, $result->getTokenUsage()->getCompletionTokens());
@@ -185,7 +187,10 @@ class AbstractOpenAiCompatibleImageGenerationModelTest extends TestCase
             $base64Image,
             $result->getCandidates()[0]->getMessage()->getParts()[0]->getFile()->getBase64Data()
         );
-        $this->assertEquals('image/png', $result->getCandidates()[0]->getMessage()->getParts()[0]->getFile()->getMimeType());
+        $this->assertEquals(
+            'image/png',
+            $result->getCandidates()[0]->getMessage()->getParts()[0]->getFile()->getMimeType()
+        );
         $this->assertEquals(FinishReasonEnum::stop(), $result->getCandidates()[0]->getFinishReason());
         $this->assertEquals(12, $result->getTokenUsage()->getPromptTokens());
         $this->assertEquals(0, $result->getTokenUsage()->getCompletionTokens());
@@ -334,8 +339,10 @@ class AbstractOpenAiCompatibleImageGenerationModelTest extends TestCase
      * @return void
      * @dataProvider aspectRatioProvider
      */
-    public function testPrepareGenerateImageParamsWithOutputMediaAspectRatio(string $aspectRatio, string $expectedSize): void
-    {
+    public function testPrepareGenerateImageParamsWithOutputMediaAspectRatio(
+        string $aspectRatio,
+        string $expectedSize
+    ): void {
         $prompt = [new Message(MessageRoleEnum::user(), [new MessagePart('Test')])];
         $modelConfig = ModelConfig::fromArray(['outputMediaAspectRatio' => $aspectRatio]);
         $model = $this->createModel($modelConfig);
@@ -453,7 +460,10 @@ class AbstractOpenAiCompatibleImageGenerationModelTest extends TestCase
      */
     public function testPreparePromptParamMessageWithoutTextPart(): void
     {
-        $message = new Message(MessageRoleEnum::user(), [new MessagePart(new File('https://example.com/image.png', 'image/png'))]);
+        $message = new Message(
+            MessageRoleEnum::user(),
+            [new MessagePart(new File('https://example.com/image.png', 'image/png'))]
+        );
         $model = $this->createModel();
 
         $this->expectException(InvalidArgumentException::class);
@@ -639,8 +649,14 @@ class AbstractOpenAiCompatibleImageGenerationModelTest extends TestCase
         $this->assertInstanceOf(GenerativeAiResult::class, $result);
         $this->assertEquals('test-id-url', $result->getId());
         $this->assertCount(1, $result->getCandidates());
-        $this->assertEquals('https://example.com/img.jpg', $result->getCandidates()[0]->getMessage()->getParts()[0]->getFile()->getUrl());
-        $this->assertEquals('image/jpeg', $result->getCandidates()[0]->getMessage()->getParts()[0]->getFile()->getMimeType());
+        $this->assertEquals(
+            'https://example.com/img.jpg',
+            $result->getCandidates()[0]->getMessage()->getParts()[0]->getFile()->getUrl()
+        );
+        $this->assertEquals(
+            'image/jpeg',
+            $result->getCandidates()[0]->getMessage()->getParts()[0]->getFile()->getMimeType()
+        );
         $this->assertEquals(FinishReasonEnum::stop(), $result->getCandidates()[0]->getFinishReason());
         $this->assertEquals(5, $result->getTokenUsage()->getPromptTokens());
         $this->assertEquals(0, $result->getTokenUsage()->getCompletionTokens());
@@ -679,8 +695,14 @@ class AbstractOpenAiCompatibleImageGenerationModelTest extends TestCase
         $this->assertInstanceOf(GenerativeAiResult::class, $result);
         $this->assertEquals('test-id-b64', $result->getId());
         $this->assertCount(1, $result->getCandidates());
-        $this->assertEquals($base64Image, $result->getCandidates()[0]->getMessage()->getParts()[0]->getFile()->getBase64Data());
-        $this->assertEquals('image/png', $result->getCandidates()[0]->getMessage()->getParts()[0]->getFile()->getMimeType());
+        $this->assertEquals(
+            $base64Image,
+            $result->getCandidates()[0]->getMessage()->getParts()[0]->getFile()->getBase64Data()
+        );
+        $this->assertEquals(
+            'image/png',
+            $result->getCandidates()[0]->getMessage()->getParts()[0]->getFile()->getMimeType()
+        );
         $this->assertEquals(FinishReasonEnum::stop(), $result->getCandidates()[0]->getFinishReason());
         $this->assertEquals(7, $result->getTokenUsage()->getPromptTokens());
         $this->assertEquals(0, $result->getTokenUsage()->getCompletionTokens());
@@ -755,7 +777,10 @@ class AbstractOpenAiCompatibleImageGenerationModelTest extends TestCase
         $candidate = $model->exposeParseResponseChoiceToCandidate($choiceData, 'image/png');
 
         $this->assertInstanceOf(Candidate::class, $candidate);
-        $this->assertEquals('https://example.com/image.png', $candidate->getMessage()->getParts()[0]->getFile()->getUrl());
+        $this->assertEquals(
+            'https://example.com/image.png',
+            $candidate->getMessage()->getParts()[0]->getFile()->getUrl()
+        );
         $this->assertEquals('image/png', $candidate->getMessage()->getParts()[0]->getFile()->getMimeType());
         $this->assertEquals(MessageRoleEnum::model(), $candidate->getMessage()->getRole());
         $this->assertEquals(FinishReasonEnum::stop(), $candidate->getFinishReason());
