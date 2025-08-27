@@ -24,7 +24,9 @@ class OpenAiProvider extends AbstractProvider
     public const BASE_URI = 'https://api.openai.com/v1';
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
+     *
+     * @since n.e.x.t
      */
     protected static function createModel(
         ModelMetadata $modelMetadata,
@@ -55,7 +57,9 @@ class OpenAiProvider extends AbstractProvider
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
+     *
+     * @since n.e.x.t
      */
     protected static function createProviderMetadata(): ProviderMetadata
     {
@@ -67,7 +71,9 @@ class OpenAiProvider extends AbstractProvider
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
+     *
+     * @since n.e.x.t
      */
     protected static function createProviderAvailability(): ProviderAvailabilityInterface
     {
@@ -78,7 +84,9 @@ class OpenAiProvider extends AbstractProvider
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
+     *
+     * @since n.e.x.t
      */
     protected static function createModelMetadataDirectory(): ModelMetadataDirectoryInterface
     {

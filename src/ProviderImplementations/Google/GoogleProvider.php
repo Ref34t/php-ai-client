@@ -24,7 +24,9 @@ class GoogleProvider extends AbstractProvider
     public const BASE_URI = 'https://generativelanguage.googleapis.com/v1beta';
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
+     *
+     * @since n.e.x.t
      */
     protected static function createModel(
         ModelMetadata $modelMetadata,
@@ -49,7 +51,9 @@ class GoogleProvider extends AbstractProvider
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
+     *
+     * @since n.e.x.t
      */
     protected static function createProviderMetadata(): ProviderMetadata
     {
@@ -61,7 +65,9 @@ class GoogleProvider extends AbstractProvider
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
+     *
+     * @since n.e.x.t
      */
     protected static function createProviderAvailability(): ProviderAvailabilityInterface
     {
@@ -72,7 +78,9 @@ class GoogleProvider extends AbstractProvider
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
+     *
+     * @since n.e.x.t
      */
     protected static function createModelMetadataDirectory(): ModelMetadataDirectoryInterface
     {

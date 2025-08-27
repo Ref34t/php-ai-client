@@ -25,7 +25,9 @@ use WordPress\AiClient\Providers\OpenAiCompatibleImplementation\AbstractOpenAiCo
 class OpenAiModelMetadataDirectory extends AbstractOpenAiCompatibleModelMetadataDirectory
 {
     /**
-     * @inheritDoc
+     * {@inheritDoc}
+     *
+     * @since n.e.x.t
      */
     protected function createRequest(HttpMethodEnum $method, string $path, array $headers = [], $data = null): Request
     {
@@ -38,7 +40,9 @@ class OpenAiModelMetadataDirectory extends AbstractOpenAiCompatibleModelMetadata
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
+     *
+     * @since n.e.x.t
      */
     protected function parseResponseToModelMetadataList(Response $response): array
     {

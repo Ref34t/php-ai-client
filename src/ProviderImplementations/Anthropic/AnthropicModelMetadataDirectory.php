@@ -25,7 +25,9 @@ use WordPress\AiClient\Providers\OpenAiCompatibleImplementation\AbstractOpenAiCo
 class AnthropicModelMetadataDirectory extends AbstractOpenAiCompatibleModelMetadataDirectory
 {
     /**
-     * @inheritDoc
+     * {@inheritDoc}
+     *
+     * @since n.e.x.t
      */
     public function getRequestAuthentication(): RequestAuthenticationInterface
     {
@@ -41,7 +43,9 @@ class AnthropicModelMetadataDirectory extends AbstractOpenAiCompatibleModelMetad
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
+     *
+     * @since n.e.x.t
      */
     protected function createRequest(HttpMethodEnum $method, string $path, array $headers = [], $data = null): Request
     {
@@ -54,7 +58,9 @@ class AnthropicModelMetadataDirectory extends AbstractOpenAiCompatibleModelMetad
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
+     *
+     * @since n.e.x.t
      */
     protected function parseResponseToModelMetadataList(Response $response): array
     {

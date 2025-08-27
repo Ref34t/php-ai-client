@@ -286,7 +286,9 @@ class ProviderRegistry implements WithHttpTransporterInterface
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
+     *
+     * @since n.e.x.t
      */
     public function setHttpTransporter(HttpTransporterInterface $httpTransporter): void
     {

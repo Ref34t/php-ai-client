@@ -35,7 +35,9 @@ abstract class AbstractOpenAiCompatibleTextGenerationModel extends AbstractApiBa
     TextGenerationModelInterface
 {
     /**
-     * @inheritDoc
+     * {@inheritDoc}
+     *
+     * @since n.e.x.t
      */
     final public function generateTextResult(array $prompt): GenerativeAiResult
     {
@@ -60,7 +62,9 @@ abstract class AbstractOpenAiCompatibleTextGenerationModel extends AbstractApiBa
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
+     *
+     * @since n.e.x.t
      */
     final public function streamGenerateTextResult(array $prompt): Generator
     {
