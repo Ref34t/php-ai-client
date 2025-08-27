@@ -198,7 +198,16 @@ class AiClient
         }
 
         // Validate that the model supports the requested capability
-        if (!$model->metadata()->supportsCapability($capability)) {
+        $supportedCapabilities = $model->metadata()->getSupportedCapabilities();
+        $supportsCapability = false;
+        foreach ($supportedCapabilities as $supportedCapability) {
+            if ($supportedCapability->equals($capability)) {
+                $supportsCapability = true;
+                break;
+            }
+        }
+        
+        if (!$supportsCapability) {
             throw new \InvalidArgumentException(
                 sprintf(
                     'Model "%s" does not support the "%s" capability',

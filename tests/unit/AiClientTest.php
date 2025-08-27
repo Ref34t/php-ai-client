@@ -382,9 +382,19 @@ class AiClientTest extends TestCase
         $prompt = 'Test prompt';
         $unsupportedModel = $this->createMock(ModelInterface::class);
 
+        // Mock the metadata to return an ID
+        $mockMetadata = $this->createMock(\WordPress\AiClient\Providers\Models\DTO\ModelMetadata::class);
+        $mockMetadata->expects($this->once())
+            ->method('getId')
+            ->willReturn('unsupported-model');
+            
+        $unsupportedModel->expects($this->once())
+            ->method('metadata')
+            ->willReturn($mockMetadata);
+
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage(
-            'Model must implement at least one supported generation interface ' .
+            'Model "unsupported-model" must implement at least one supported generation interface ' .
             '(TextGeneration, ImageGeneration, TextToSpeechConversion, SpeechGeneration)'
         );
 
@@ -507,14 +517,17 @@ class AiClientTest extends TestCase
     {
         $prompt = 'Test prompt for auto-discovery';
         
-        // Mock the registry to return a working text model
-        $this->registry
+        // Create a mock registry that returns empty results
+        $mockRegistry = $this->createMock(ProviderRegistry::class);
+        $mockRegistry
             ->expects($this->once())
             ->method('findModelsMetadataForSupport')
             ->willReturn([]);
 
-        // This should not throw an exception due to null model
-        // Instead it should delegate to PromptBuilder's intelligent discovery
+        // Set the mock registry as default
+        AiClient::setDefaultRegistry($mockRegistry);
+
+        // This should delegate to PromptBuilder's intelligent discovery
         $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('No models found that support the required capabilities');
         
@@ -590,11 +603,15 @@ class AiClientTest extends TestCase
         $prompt = 'Test prompt';
         $capability = CapabilityEnum::textGeneration();
         
-        // Mock the registry to return empty results
-        $this->registry
+        // Create a mock registry that returns empty results
+        $mockRegistry = $this->createMock(ProviderRegistry::class);
+        $mockRegistry
             ->expects($this->once())
             ->method('findModelsMetadataForSupport')
             ->willReturn([]);
+
+        // Set the mock registry as default
+        AiClient::setDefaultRegistry($mockRegistry);
 
         $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('No models found that support the required capabilities');
@@ -613,9 +630,8 @@ class AiClientTest extends TestCase
 
         $mockMetadata = $this->createMock(\WordPress\AiClient\Providers\Models\DTO\ModelMetadata::class);
         $mockMetadata->expects($this->once())
-            ->method('supportsCapability')
-            ->with($capability)
-            ->willReturn(true);
+            ->method('getSupportedCapabilities')
+            ->willReturn([$capability]);
             
         $this->mockTextModel
             ->expects($this->once())
@@ -642,9 +658,8 @@ class AiClientTest extends TestCase
 
         $mockMetadata = $this->createMock(\WordPress\AiClient\Providers\Models\DTO\ModelMetadata::class);
         $mockMetadata->expects($this->once())
-            ->method('supportsCapability')
-            ->with($capability)
-            ->willReturn(false);
+            ->method('getSupportedCapabilities')
+            ->willReturn([CapabilityEnum::textGeneration()]); // Only supports text, not image
         $mockMetadata->expects($this->once())
             ->method('getId')
             ->willReturn('text-only-model');
