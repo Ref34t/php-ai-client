@@ -15,6 +15,7 @@ use WordPress\AiClient\Providers\Models\TextGeneration\Contracts\TextGenerationM
 use WordPress\AiClient\Providers\Models\TextToSpeechConversion\Contracts\TextToSpeechConversionModelInterface;
 use WordPress\AiClient\Providers\ProviderRegistry;
 use WordPress\AiClient\Results\DTO\GenerativeAiResult;
+use WordPress\AiClient\Providers\Models\Enums\CapabilityEnum;
 
 /**
  * Main AI Client class providing both fluent and traditional APIs for AI operations.
@@ -24,21 +25,19 @@ use WordPress\AiClient\Results\DTO\GenerativeAiResult;
  * - Traditional API for array-based configuration (WordPress style)
  * - Integration with provider registry for model discovery
  *
- * For advanced capability-based operations and model requirements analysis,
- * see the utility classes (implemented in PR #64):
- * - RequirementsUtil: Analyzes messages and configurations to infer model requirements
- * - CapabilityUtil: Provides capability mappings, modality handling, and compatibility checks
+ * All model requirements analysis and capability matching is handled
+ * automatically by the PromptBuilder, which provides intelligent model
+ * discovery based on prompt content and configuration.
  *
- * Example usage with utilities:
+ * Example usage:
  * ```php
- * // Find capability for a generation type
- * $capability = CapabilityUtil::getCapabilityForGenerationType('image');
+ * // Fluent API with automatic model discovery
+ * $result = AiClient::prompt('Generate an image of a sunset')
+ *     ->usingTemperature(0.7)
+ *     ->generateImageResult();
  *
- * // Build requirements from messages
- * $requirements = RequirementsUtil::fromMessages($messages, $capability);
- *
- * // Find suitable providers
- * $providers = AiClient::defaultRegistry()->findModelsMetadataForSupport($requirements);
+ * // Traditional API
+ * $result = AiClient::generateTextResult('What is PHP?');
  * ```
  *
  * @since n.e.x.t
@@ -123,8 +122,9 @@ class AiClient
     /**
      * Generates content using a unified API that automatically detects model capabilities.
      *
-     * This method uses simple type checking to route to the appropriate generation method.
-     * Traditional API methods now properly delegate to PromptBuilder for consistent behavior.
+     * When no model is provided, this method delegates to PromptBuilder for intelligent
+     * model discovery based on prompt content and configuration. When a model is provided,
+     * it routes to the appropriate generation method based on the model's interfaces.
      *
      * @since n.e.x.t
      *
@@ -132,11 +132,18 @@ class AiClient
      * @param ModelInterface|null $model Optional specific model to use.
      * @return GenerativeAiResult The generation result.
      *
-     * @throws \InvalidArgumentException If the model doesn't support any known generation type.
+     * @throws \InvalidArgumentException If the provided model doesn't support any known generation type.
+     * @throws \RuntimeException If no suitable model can be found for the prompt.
      */
     public static function generateResult($prompt, ?ModelInterface $model = null): GenerativeAiResult
     {
-        // Simple type checking instead of over-engineered resolver
+        // If no model provided, use PromptBuilder's intelligent model discovery
+        if ($model === null) {
+            return self::prompt($prompt)->generateResult();
+        }
+
+        // Route based on model interface capabilities
+        // Note: Order matters for models that implement multiple interfaces
         if ($model instanceof TextGenerationModelInterface) {
             return self::generateTextResult($prompt, $model);
         }
@@ -154,8 +161,72 @@ class AiClient
         }
 
         throw new \InvalidArgumentException(
-            'Model must implement at least one supported generation interface ' .
-            '(TextGeneration, ImageGeneration, TextToSpeechConversion, SpeechGeneration)'
+            sprintf(
+                'Model "%s" must implement at least one supported generation interface ' .
+                '(TextGeneration, ImageGeneration, TextToSpeechConversion, SpeechGeneration)',
+                $model->metadata()->getId()
+            )
+        );
+    }
+
+    /**
+     * Generates content using a unified API with explicit capability selection.
+     *
+     * This method allows explicit capability selection for models that implement
+     * multiple generation interfaces. If the model doesn't support the specified
+     * capability, an exception is thrown.
+     *
+     * @since n.e.x.t
+     *
+     * @param Prompt $prompt The prompt content.
+     * @param CapabilityEnum $capability The desired generation capability.
+     * @param ModelInterface|null $model Optional specific model to use.
+     * @return GenerativeAiResult The generation result.
+     *
+     * @throws \InvalidArgumentException If the model doesn't support the specified capability.
+     * @throws \RuntimeException If no suitable model can be found for the prompt and capability.
+     */
+    public static function generateResultWithCapability(
+        $prompt,
+        CapabilityEnum $capability,
+        ?ModelInterface $model = null
+    ): GenerativeAiResult
+    {
+        // If no model provided, use PromptBuilder with explicit capability
+        if ($model === null) {
+            return self::prompt($prompt)->generateResult($capability);
+        }
+
+        // Validate that the model supports the requested capability
+        if (!$model->metadata()->supportsCapability($capability)) {
+            throw new \InvalidArgumentException(
+                sprintf(
+                    'Model "%s" does not support the "%s" capability',
+                    $model->metadata()->getId(),
+                    $capability->value
+                )
+            );
+        }
+
+        // Route to the appropriate method based on capability
+        if ($capability->isTextGeneration()) {
+            return self::generateTextResult($prompt, $model);
+        }
+
+        if ($capability->isImageGeneration()) {
+            return self::generateImageResult($prompt, $model);
+        }
+
+        if ($capability->isTextToSpeechConversion()) {
+            return self::convertTextToSpeechResult($prompt, $model);
+        }
+
+        if ($capability->isSpeechGeneration()) {
+            return self::generateSpeechResult($prompt, $model);
+        }
+
+        throw new \InvalidArgumentException(
+            sprintf('Capability "%s" is not yet supported for generation', $capability->value)
         );
     }
 
@@ -372,5 +443,33 @@ class AiClient
         throw new \RuntimeException(
             'Speech generation operations are not implemented yet. This functionality is planned for a future release.'
         );
+    }
+
+    /**
+     * Convenience method for text generation.
+     *
+     * @since n.e.x.t
+     *
+     * @param Prompt $prompt The prompt content.
+     * @param ModelInterface|null $model Optional specific model to use.
+     * @return string The generated text.
+     */
+    public static function generateText($prompt, ?ModelInterface $model = null): string
+    {
+        return self::generateTextResult($prompt, $model)->toText();
+    }
+
+    /**
+     * Convenience method for image generation.
+     *
+     * @since n.e.x.t
+     *
+     * @param Prompt $prompt The prompt content.
+     * @param ModelInterface|null $model Optional specific model to use.
+     * @return \WordPress\AiClient\Files\DTO\File The generated image file.
+     */
+    public static function generateImage($prompt, ?ModelInterface $model = null)
+    {
+        return self::generateImageResult($prompt, $model)->toFile();
     }
 }

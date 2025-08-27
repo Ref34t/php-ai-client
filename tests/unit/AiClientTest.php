@@ -24,6 +24,7 @@ use WordPress\AiClient\Results\DTO\TokenUsage;
 use WordPress\AiClient\Results\Enums\FinishReasonEnum;
 use WordPress\AiClient\Tests\mocks\MockImageGenerationModel;
 use WordPress\AiClient\Tests\mocks\MockTextGenerationModel;
+use WordPress\AiClient\Providers\Models\Enums\CapabilityEnum;
 
 /**
  * @covers \WordPress\AiClient\AiClient
@@ -497,5 +498,167 @@ class AiClientTest extends TestCase
         );
 
         AiClient::generateSpeechOperation($prompt, $mockModel);
+    }
+
+    /**
+     * Tests generateResult with null model delegates to PromptBuilder.
+     */
+    public function testGenerateResultWithNullModelDelegatesToPromptBuilder(): void
+    {
+        $prompt = 'Test prompt for auto-discovery';
+        
+        // Mock the registry to return a working text model
+        $this->registry
+            ->expects($this->once())
+            ->method('findModelsMetadataForSupport')
+            ->willReturn([]);
+
+        // This should not throw an exception due to null model
+        // Instead it should delegate to PromptBuilder's intelligent discovery
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('No models found that support the required capabilities');
+        
+        AiClient::generateResult($prompt);
+    }
+
+    /**
+     * Tests generateResult with text generation model.
+     */
+    public function testGenerateResultWithTextGenerationModel(): void
+    {
+        $prompt = 'Generate text content';
+        $mockResult = $this->createMock(GenerativeAiResult::class);
+
+        $this->mockTextModel
+            ->expects($this->once())
+            ->method('generateTextResult')
+            ->willReturn($mockResult);
+
+        $result = AiClient::generateResult($prompt, $this->mockTextModel);
+
+        $this->assertSame($mockResult, $result);
+    }
+
+    /**
+     * Tests generateResult with image generation model.
+     */
+    public function testGenerateResultWithImageGenerationModel(): void
+    {
+        $prompt = 'Generate an image';
+        $mockResult = $this->createMock(GenerativeAiResult::class);
+
+        $this->mockImageModel
+            ->expects($this->once())
+            ->method('generateImageResult')
+            ->willReturn($mockResult);
+
+        $result = AiClient::generateResult($prompt, $this->mockImageModel);
+
+        $this->assertSame($mockResult, $result);
+    }
+
+    /**
+     * Tests generateResult with invalid model throws exception with model ID.
+     */
+    public function testGenerateResultWithInvalidModelThrowsExceptionWithModelId(): void
+    {
+        $prompt = 'Test prompt';
+        $invalidModel = $this->createMock(ModelInterface::class);
+        
+        $mockMetadata = $this->createMock(\WordPress\AiClient\Providers\Models\DTO\ModelMetadata::class);
+        $mockMetadata->expects($this->once())
+            ->method('getId')
+            ->willReturn('invalid-model-id');
+            
+        $invalidModel->expects($this->once())
+            ->method('metadata')
+            ->willReturn($mockMetadata);
+
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage(
+            'Model "invalid-model-id" must implement at least one supported generation interface'
+        );
+
+        AiClient::generateResult($prompt, $invalidModel);
+    }
+
+    /**
+     * Tests generateResultWithCapability with null model delegates to PromptBuilder.
+     */
+    public function testGenerateResultWithCapabilityNullModelDelegatesToPromptBuilder(): void
+    {
+        $prompt = 'Test prompt';
+        $capability = CapabilityEnum::textGeneration();
+        
+        // Mock the registry to return empty results
+        $this->registry
+            ->expects($this->once())
+            ->method('findModelsMetadataForSupport')
+            ->willReturn([]);
+
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('No models found that support the required capabilities');
+        
+        AiClient::generateResultWithCapability($prompt, $capability);
+    }
+
+    /**
+     * Tests generateResultWithCapability with valid model and capability.
+     */
+    public function testGenerateResultWithCapabilityValidModelAndCapability(): void
+    {
+        $prompt = 'Generate text';
+        $capability = CapabilityEnum::textGeneration();
+        $mockResult = $this->createMock(GenerativeAiResult::class);
+
+        $mockMetadata = $this->createMock(\WordPress\AiClient\Providers\Models\DTO\ModelMetadata::class);
+        $mockMetadata->expects($this->once())
+            ->method('supportsCapability')
+            ->with($capability)
+            ->willReturn(true);
+            
+        $this->mockTextModel
+            ->expects($this->once())
+            ->method('metadata')
+            ->willReturn($mockMetadata);
+
+        $this->mockTextModel
+            ->expects($this->once())
+            ->method('generateTextResult')
+            ->willReturn($mockResult);
+
+        $result = AiClient::generateResultWithCapability($prompt, $capability, $this->mockTextModel);
+
+        $this->assertSame($mockResult, $result);
+    }
+
+    /**
+     * Tests generateResultWithCapability with model that doesn't support capability.
+     */
+    public function testGenerateResultWithCapabilityUnsupportedCapability(): void
+    {
+        $prompt = 'Generate content';
+        $capability = CapabilityEnum::imageGeneration();
+
+        $mockMetadata = $this->createMock(\WordPress\AiClient\Providers\Models\DTO\ModelMetadata::class);
+        $mockMetadata->expects($this->once())
+            ->method('supportsCapability')
+            ->with($capability)
+            ->willReturn(false);
+        $mockMetadata->expects($this->once())
+            ->method('getId')
+            ->willReturn('text-only-model');
+            
+        $this->mockTextModel
+            ->expects($this->once())
+            ->method('metadata')
+            ->willReturn($mockMetadata);
+
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage(
+            'Model "text-only-model" does not support the "image-generation" capability'
+        );
+
+        AiClient::generateResultWithCapability($prompt, $capability, $this->mockTextModel);
     }
 }
