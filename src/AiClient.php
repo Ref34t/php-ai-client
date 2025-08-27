@@ -121,12 +121,12 @@ class AiClient
      * @since n.e.x.t
      *
      * @param Prompt $prompt The prompt content.
-     * @param ModelInterface $model The model to use for generation.
+     * @param ModelInterface|null $model Optional specific model to use.
      * @return GenerativeAiResult The generation result.
      *
      * @throws \InvalidArgumentException If the model doesn't support any known generation type.
      */
-    public static function generateResult($prompt, ModelInterface $model): GenerativeAiResult
+    public static function generateResult($prompt, ?ModelInterface $model = null): GenerativeAiResult
     {
         // Simple type checking instead of over-engineered resolver
         if ($model instanceof TextGenerationModelInterface) {
@@ -342,12 +342,12 @@ class AiClient
      * @since n.e.x.t
      *
      * @param Prompt $prompt The prompt content.
-     * @param ModelInterface $model The model to use for generation.
+     * @param ModelInterface|null $model Optional specific model to use.
      * @return GenerativeAiOperation The operation for async processing.
      *
      * @throws \RuntimeException Operations are not implemented yet.
      */
-    public static function generateOperation($prompt, ModelInterface $model): GenerativeAiOperation
+    public static function generateOperation($prompt, ?ModelInterface $model = null): GenerativeAiOperation
     {
         throw new \RuntimeException(
             'Operations are not implemented yet. This functionality is planned for a future release.'
@@ -360,12 +360,12 @@ class AiClient
      * @since n.e.x.t
      *
      * @param Prompt $prompt The prompt content.
-     * @param ModelInterface $model The model to use for text generation.
+     * @param ModelInterface|null $model Optional specific model to use.
      * @return GenerativeAiOperation The operation for async text processing.
      *
      * @throws \RuntimeException Operations are not implemented yet.
      */
-    public static function generateTextOperation($prompt, ModelInterface $model): GenerativeAiOperation
+    public static function generateTextOperation($prompt, ?ModelInterface $model = null): GenerativeAiOperation
     {
         throw new \RuntimeException(
             'Text generation operations are not implemented yet. This functionality is planned for a future release.'
@@ -378,12 +378,12 @@ class AiClient
      * @since n.e.x.t
      *
      * @param Prompt $prompt The prompt content.
-     * @param ModelInterface $model The model to use for image generation.
+     * @param ModelInterface|null $model Optional specific model to use.
      * @return GenerativeAiOperation The operation for async image processing.
      *
      * @throws \RuntimeException Operations are not implemented yet.
      */
-    public static function generateImageOperation($prompt, ModelInterface $model): GenerativeAiOperation
+    public static function generateImageOperation($prompt, ?ModelInterface $model = null): GenerativeAiOperation
     {
         throw new \RuntimeException(
             'Image generation operations are not implemented yet. This functionality is planned for a future release.'
@@ -396,12 +396,12 @@ class AiClient
      * @since n.e.x.t
      *
      * @param Prompt $prompt The prompt content.
-     * @param ModelInterface $model The model to use for text-to-speech conversion.
+     * @param ModelInterface|null $model Optional specific model to use.
      * @return GenerativeAiOperation The operation for async text-to-speech processing.
      *
      * @throws \RuntimeException Operations are not implemented yet.
      */
-    public static function convertTextToSpeechOperation($prompt, ModelInterface $model): GenerativeAiOperation
+    public static function convertTextToSpeechOperation($prompt, ?ModelInterface $model = null): GenerativeAiOperation
     {
         throw new \RuntimeException(
             'Text-to-speech conversion operations are not implemented yet. ' .
@@ -415,12 +415,12 @@ class AiClient
      * @since n.e.x.t
      *
      * @param Prompt $prompt The prompt content.
-     * @param ModelInterface $model The model to use for speech generation.
+     * @param ModelInterface|null $model Optional specific model to use.
      * @return GenerativeAiOperation The operation for async speech processing.
      *
      * @throws \RuntimeException Operations are not implemented yet.
      */
-    public static function generateSpeechOperation($prompt, ModelInterface $model): GenerativeAiOperation
+    public static function generateSpeechOperation($prompt, ?ModelInterface $model = null): GenerativeAiOperation
     {
         throw new \RuntimeException(
             'Speech generation operations are not implemented yet. This functionality is planned for a future release.'
