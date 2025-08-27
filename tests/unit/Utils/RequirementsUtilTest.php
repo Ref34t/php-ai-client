@@ -11,6 +11,7 @@ use WordPress\AiClient\Messages\DTO\UserMessage;
 use WordPress\AiClient\Messages\Enums\MessageRoleEnum;
 use WordPress\AiClient\Messages\Enums\ModalityEnum;
 use WordPress\AiClient\Providers\Models\DTO\ModelConfig;
+use WordPress\AiClient\Providers\Models\DTO\ModelRequirements;
 use WordPress\AiClient\Providers\Models\DTO\RequiredOption;
 use WordPress\AiClient\Providers\Models\Enums\CapabilityEnum;
 use WordPress\AiClient\Providers\Models\Enums\OptionEnum;
@@ -76,7 +77,9 @@ class RequirementsUtilTest extends TestCase
         // Should include text input modality
         $inputModalitiesOption = $this->findRequiredOption($requirements, OptionEnum::inputModalities());
         $this->assertNotNull($inputModalitiesOption);
-        $this->assertContains(ModalityEnum::text(), $inputModalitiesOption->getValue());
+        $inputModalities = $inputModalitiesOption->getValue();
+        $this->assertIsArray($inputModalities);
+        $this->assertContains(ModalityEnum::text(), $inputModalities);
     }
 
     /**
@@ -248,7 +251,7 @@ class RequirementsUtilTest extends TestCase
      * @param OptionEnum $targetOption The option to find.
      * @return RequiredOption|null The found option or null.
      */
-    private function findRequiredOption($requirements, OptionEnum $targetOption): ?RequiredOption
+    private function findRequiredOption(ModelRequirements $requirements, OptionEnum $targetOption): ?RequiredOption
     {
         return $this->findRequiredOptionInArray($requirements->getRequiredOptions(), $targetOption);
     }
