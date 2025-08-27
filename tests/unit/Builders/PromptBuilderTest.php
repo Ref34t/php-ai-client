@@ -709,7 +709,11 @@ class PromptBuilderTest extends TestCase
      */
     public function testUsingModel(): void
     {
+        // Create a model with empty config
+        $modelConfig = new ModelConfig();
         $model = $this->createMock(ModelInterface::class);
+        $model->method('getConfig')->willReturn($modelConfig);
+
         $builder = new PromptBuilder($this->registry);
         $result = $builder->usingModel($model);
 
@@ -722,6 +726,118 @@ class PromptBuilderTest extends TestCase
         /** @var ModelInterface $actualModel */
         $actualModel = $modelProperty->getValue($builder);
         $this->assertSame($model, $actualModel);
+    }
+
+    /**
+     * Tests usingModel merges model config with builder config.
+     *
+     * @return void
+     */
+    public function testUsingModelMergesConfigs(): void
+    {
+        // Create model config with some settings
+        $modelConfig = ModelConfig::fromArray([
+            ModelConfig::KEY_TEMPERATURE => 0.5,
+            ModelConfig::KEY_MAX_TOKENS => 100,
+            ModelConfig::KEY_TOP_P => 0.8,
+        ]);
+
+        // Create builder config with overlapping and different settings
+        $builderConfig = ModelConfig::fromArray([
+            ModelConfig::KEY_TEMPERATURE => 0.7, // Should override model's value
+            ModelConfig::KEY_TOP_K => 40, // New setting
+        ]);
+
+        $model = $this->createMock(ModelInterface::class);
+        $model->method('getConfig')->willReturn($modelConfig);
+
+        $builder = new PromptBuilder($this->registry, null, $builderConfig);
+        $builder->usingModel($model);
+
+        // Get the merged config
+        $reflection = new \ReflectionClass($builder);
+        $configProperty = $reflection->getProperty('modelConfig');
+        $configProperty->setAccessible(true);
+
+        /** @var ModelConfig $mergedConfig */
+        $mergedConfig = $configProperty->getValue($builder);
+
+        // Check that builder's config took precedence
+        $this->assertEquals(0.7, $mergedConfig->getTemperature());
+
+        // Check that model's config was preserved where not overridden
+        $this->assertEquals(100, $mergedConfig->getMaxTokens());
+        $this->assertEquals(0.8, $mergedConfig->getTopP());
+
+        // Check that builder's additional config was included
+        $this->assertEquals(40, $mergedConfig->getTopK());
+    }
+
+    /**
+     * Tests usingModel with model having empty config.
+     *
+     * @return void
+     */
+    public function testUsingModelWithEmptyModelConfig(): void
+    {
+        // Create builder config with settings
+        $builderConfig = ModelConfig::fromArray([
+            ModelConfig::KEY_TEMPERATURE => 0.9,
+            ModelConfig::KEY_MAX_TOKENS => 200,
+        ]);
+
+        // Model with empty config
+        $modelConfig = new ModelConfig();
+        $model = $this->createMock(ModelInterface::class);
+        $model->method('getConfig')->willReturn($modelConfig);
+
+        $builder = new PromptBuilder($this->registry, null, $builderConfig);
+        $builder->usingModel($model);
+
+        // Get the config
+        $reflection = new \ReflectionClass($builder);
+        $configProperty = $reflection->getProperty('modelConfig');
+        $configProperty->setAccessible(true);
+
+        /** @var ModelConfig $mergedConfig */
+        $mergedConfig = $configProperty->getValue($builder);
+
+        // Check that builder's config is preserved
+        $this->assertEquals(0.9, $mergedConfig->getTemperature());
+        $this->assertEquals(200, $mergedConfig->getMaxTokens());
+    }
+
+    /**
+     * Tests usingModel with builder having empty config.
+     *
+     * @return void
+     */
+    public function testUsingModelWithEmptyBuilderConfig(): void
+    {
+        // Model config with settings
+        $modelConfig = ModelConfig::fromArray([
+            ModelConfig::KEY_TEMPERATURE => 0.6,
+            ModelConfig::KEY_MAX_TOKENS => 150,
+        ]);
+
+        $model = $this->createMock(ModelInterface::class);
+        $model->method('getConfig')->willReturn($modelConfig);
+
+        // Builder with empty/default config
+        $builder = new PromptBuilder($this->registry);
+        $builder->usingModel($model);
+
+        // Get the config
+        $reflection = new \ReflectionClass($builder);
+        $configProperty = $reflection->getProperty('modelConfig');
+        $configProperty->setAccessible(true);
+
+        /** @var ModelConfig $mergedConfig */
+        $mergedConfig = $configProperty->getValue($builder);
+
+        // Check that model's config is adopted
+        $this->assertEquals(0.6, $mergedConfig->getTemperature());
+        $this->assertEquals(150, $mergedConfig->getMaxTokens());
     }
 
     /**
