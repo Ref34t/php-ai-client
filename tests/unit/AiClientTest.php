@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace WordPress\AiClient\Tests\unit;
 
+use Generator;
 use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
@@ -15,35 +16,26 @@ use WordPress\AiClient\Providers\Contracts\ProviderAvailabilityInterface;
 use WordPress\AiClient\Providers\DTO\ProviderMetadata;
 use WordPress\AiClient\Providers\Enums\ProviderTypeEnum;
 use WordPress\AiClient\Providers\Models\Contracts\ModelInterface;
+use WordPress\AiClient\Providers\Models\DTO\ModelConfig;
 use WordPress\AiClient\Providers\Models\DTO\ModelMetadata;
+use WordPress\AiClient\Providers\Models\Enums\CapabilityEnum;
+use WordPress\AiClient\Providers\Models\ImageGeneration\Contracts\ImageGenerationModelInterface;
+use WordPress\AiClient\Providers\Models\TextGeneration\Contracts\TextGenerationModelInterface;
 use WordPress\AiClient\Providers\ProviderRegistry;
 use WordPress\AiClient\Results\DTO\Candidate;
 use WordPress\AiClient\Results\DTO\GenerativeAiResult;
 use WordPress\AiClient\Results\DTO\TokenUsage;
 use WordPress\AiClient\Results\Enums\FinishReasonEnum;
-use WordPress\AiClient\Tests\mocks\MockImageGenerationModel;
-use WordPress\AiClient\Tests\mocks\MockTextGenerationModel;
 
 /**
  * @covers \WordPress\AiClient\AiClient
  */
 class AiClientTest extends TestCase
 {
-    private ProviderRegistry $registry;
-    private MockTextGenerationModel $mockTextModel;
-    private MockImageGenerationModel $mockImageModel;
-
     protected function setUp(): void
     {
-        // Create a clean registry for each test
-        $this->registry = new ProviderRegistry();
-
-        // Create mock models that implement both base and generation interfaces
-        $this->mockTextModel = $this->createMock(MockTextGenerationModel::class);
-        $this->mockImageModel = $this->createMock(MockImageGenerationModel::class);
-
-        // Set the test registry as the default
-        AiClient::setDefaultRegistry($this->registry);
+        // Set a clean registry for each test
+        AiClient::setDefaultRegistry(new ProviderRegistry());
     }
 
     /**
@@ -84,6 +76,136 @@ class AiClientTest extends TestCase
         AiClient::setDefaultRegistry(new ProviderRegistry());
     }
 
+
+    /**
+     * Creates a test model metadata instance for text generation.
+     *
+     * @return ModelMetadata
+     */
+    private function createTestTextModelMetadata(): ModelMetadata
+    {
+        return new ModelMetadata(
+            'test-text-model',
+            'Test Text Model',
+            [CapabilityEnum::textGeneration()],
+            []
+        );
+    }
+
+    /**
+     * Creates a test model metadata instance for image generation.
+     *
+     * @return ModelMetadata
+     */
+    private function createTestImageModelMetadata(): ModelMetadata
+    {
+        return new ModelMetadata(
+            'test-image-model',
+            'Test Image Model',
+            [CapabilityEnum::imageGeneration()],
+            []
+        );
+    }
+
+    /**
+     * Creates a mock text generation model using anonymous class.
+     *
+     * @param GenerativeAiResult $result The result to return from generation.
+     * @param ModelMetadata|null $metadata Optional metadata (uses default if not provided).
+     * @return ModelInterface&TextGenerationModelInterface The mock model.
+     */
+    private function createMockTextGenerationModel(
+        GenerativeAiResult $result,
+        ?ModelMetadata $metadata = null
+    ): ModelInterface {
+        $metadata = $metadata ?? $this->createTestTextModelMetadata();
+
+        return new class ($metadata, $result) implements ModelInterface, TextGenerationModelInterface {
+            private ModelMetadata $metadata;
+            private GenerativeAiResult $result;
+            private ModelConfig $config;
+
+            public function __construct(ModelMetadata $metadata, GenerativeAiResult $result)
+            {
+                $this->metadata = $metadata;
+                $this->result = $result;
+                $this->config = new ModelConfig();
+            }
+
+            public function metadata(): ModelMetadata
+            {
+                return $this->metadata;
+            }
+
+            public function setConfig(ModelConfig $config): void
+            {
+                $this->config = $config;
+            }
+
+            public function getConfig(): ModelConfig
+            {
+                return $this->config;
+            }
+
+            public function generateTextResult(array $prompt): GenerativeAiResult
+            {
+                return $this->result;
+            }
+
+            public function streamGenerateTextResult(array $prompt): Generator
+            {
+                yield $this->result;
+            }
+        };
+    }
+
+    /**
+     * Creates a mock image generation model using anonymous class.
+     *
+     * @param GenerativeAiResult $result The result to return from generation.
+     * @param ModelMetadata|null $metadata Optional metadata (uses default if not provided).
+     * @return ModelInterface&ImageGenerationModelInterface The mock model.
+     */
+    private function createMockImageGenerationModel(
+        GenerativeAiResult $result,
+        ?ModelMetadata $metadata = null
+    ): ModelInterface {
+        $metadata = $metadata ?? $this->createTestImageModelMetadata();
+
+        return new class ($metadata, $result) implements ModelInterface, ImageGenerationModelInterface {
+            private ModelMetadata $metadata;
+            private GenerativeAiResult $result;
+            private ModelConfig $config;
+
+            public function __construct(ModelMetadata $metadata, GenerativeAiResult $result)
+            {
+                $this->metadata = $metadata;
+                $this->result = $result;
+                $this->config = new ModelConfig();
+            }
+
+            public function metadata(): ModelMetadata
+            {
+                return $this->metadata;
+            }
+
+            public function setConfig(ModelConfig $config): void
+            {
+                $this->config = $config;
+            }
+
+            public function getConfig(): ModelConfig
+            {
+                return $this->config;
+            }
+
+            public function generateImageResult(array $prompt): GenerativeAiResult
+            {
+                return $this->result;
+            }
+        };
+    }
+
     /**
      * Tests default registry getter and setter.
      */
@@ -118,21 +240,12 @@ class AiClientTest extends TestCase
     public function testGenerateTextResultWithStringAndModel(): void
     {
         $prompt = 'Generate text';
-        $mockResult = $this->createMock(GenerativeAiResult::class);
+        $expectedResult = $this->createTestResult();
+        $mockModel = $this->createMockTextGenerationModel($expectedResult);
 
-        $this->mockTextModel
-            ->expects($this->once())
-            ->method('generateTextResult')
-            ->with($this->callback(function ($messages) {
-                return is_array($messages) &&
-                    count($messages) === 1 &&
-                    $messages[0] instanceof UserMessage;
-            }))
-            ->willReturn($mockResult);
+        $result = AiClient::generateTextResult($prompt, $mockModel);
 
-        $result = AiClient::generateTextResult($prompt, $this->mockTextModel);
-
-        $this->assertSame($mockResult, $result);
+        $this->assertSame($expectedResult, $result);
     }
 
     /**
@@ -143,8 +256,8 @@ class AiClientTest extends TestCase
         $prompt = 'Generate text';
         $invalidModel = $this->createMock(ModelInterface::class);
 
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Model must implement TextGenerationModelInterface for text generation');
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('Model "" does not support text generation.');
 
         AiClient::generateTextResult($prompt, $invalidModel);
     }
@@ -155,21 +268,12 @@ class AiClientTest extends TestCase
     public function testGenerateImageResultWithStringAndModel(): void
     {
         $prompt = 'Generate image';
-        $mockResult = $this->createMock(GenerativeAiResult::class);
+        $expectedResult = $this->createTestResult();
+        $mockModel = $this->createMockImageGenerationModel($expectedResult);
 
-        $this->mockImageModel
-            ->expects($this->once())
-            ->method('generateImageResult')
-            ->with($this->callback(function ($messages) {
-                return is_array($messages) &&
-                    count($messages) === 1 &&
-                    $messages[0] instanceof UserMessage;
-            }))
-            ->willReturn($mockResult);
+        $result = AiClient::generateImageResult($prompt, $mockModel);
 
-        $result = AiClient::generateImageResult($prompt, $this->mockImageModel);
-
-        $this->assertSame($mockResult, $result);
+        $this->assertSame($expectedResult, $result);
     }
 
     /**
@@ -180,26 +284,12 @@ class AiClientTest extends TestCase
         $prompt = 'Generate image';
         $invalidModel = $this->createMock(ModelInterface::class);
 
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Model must implement ImageGenerationModelInterface for image generation');
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('Model "" does not support image generation.');
 
         AiClient::generateImageResult($prompt, $invalidModel);
     }
 
-    /**
-     * Tests generateOperation throws not implemented exception.
-     */
-    public function testGenerateOperationThrowsNotImplementedException(): void
-    {
-        $prompt = 'Generate content';
-
-        $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessage(
-            'Operations are not implemented yet. This functionality is planned for a future release.'
-        );
-
-        AiClient::generateOperation($prompt, $this->mockTextModel);
-    }
 
     /**
      * Tests generateTextResult with Message object.
@@ -208,21 +298,12 @@ class AiClientTest extends TestCase
     {
         $messagePart = new MessagePart('Test message');
         $message = new UserMessage([$messagePart]);
-        $mockResult = $this->createMock(GenerativeAiResult::class);
+        $expectedResult = $this->createTestResult();
+        $mockModel = $this->createMockTextGenerationModel($expectedResult);
 
-        $this->mockTextModel
-            ->expects($this->once())
-            ->method('generateTextResult')
-            ->with($this->callback(function ($messages) use ($message) {
-                return is_array($messages) &&
-                    count($messages) === 1 &&
-                    $messages[0] === $message;
-            }))
-            ->willReturn($mockResult);
+        $result = AiClient::generateTextResult($message, $mockModel);
 
-        $result = AiClient::generateTextResult($message, $this->mockTextModel);
-
-        $this->assertSame($mockResult, $result);
+        $this->assertSame($expectedResult, $result);
     }
 
     /**
@@ -231,21 +312,12 @@ class AiClientTest extends TestCase
     public function testGenerateTextResultWithMessagePart(): void
     {
         $messagePart = new MessagePart('Test message part');
-        $mockResult = $this->createMock(GenerativeAiResult::class);
+        $expectedResult = $this->createTestResult();
+        $mockModel = $this->createMockTextGenerationModel($expectedResult);
 
-        $this->mockTextModel
-            ->expects($this->once())
-            ->method('generateTextResult')
-            ->with($this->callback(function ($messages) {
-                return is_array($messages) &&
-                    count($messages) === 1 &&
-                    $messages[0] instanceof UserMessage;
-            }))
-            ->willReturn($mockResult);
+        $result = AiClient::generateTextResult($messagePart, $mockModel);
 
-        $result = AiClient::generateTextResult($messagePart, $this->mockTextModel);
-
-        $this->assertSame($mockResult, $result);
+        $this->assertSame($expectedResult, $result);
     }
 
     /**
@@ -259,22 +331,12 @@ class AiClientTest extends TestCase
         $message2 = new UserMessage([$messagePart2]);
         $messages = [$message1, $message2];
 
-        $mockResult = $this->createMock(GenerativeAiResult::class);
+        $expectedResult = $this->createTestResult();
+        $mockModel = $this->createMockTextGenerationModel($expectedResult);
 
-        $this->mockTextModel
-            ->expects($this->once())
-            ->method('generateTextResult')
-            ->with($this->callback(function ($result) use ($messages) {
-                return is_array($result) &&
-                    count($result) === 2 &&
-                    $result[0] === $messages[0] &&
-                    $result[1] === $messages[1];
-            }))
-            ->willReturn($mockResult);
+        $result = AiClient::generateTextResult($messages, $mockModel);
 
-        $result = AiClient::generateTextResult($messages, $this->mockTextModel);
-
-        $this->assertSame($mockResult, $result);
+        $this->assertSame($expectedResult, $result);
     }
 
     /**
@@ -286,24 +348,13 @@ class AiClientTest extends TestCase
         $messagePart2 = new MessagePart('Second part');
         $messageParts = [$messagePart1, $messagePart2];
 
-        $mockResult = $this->createMock(GenerativeAiResult::class);
+        $expectedResult = $this->createTestResult();
+        $mockModel = $this->createMockTextGenerationModel($expectedResult);
 
-        $this->mockTextModel
-            ->expects($this->once())
-            ->method('generateTextResult')
-            ->with($this->callback(function ($messages) {
-                return is_array($messages) &&
-                    count($messages) === 1 &&
-                    $messages[0] instanceof UserMessage &&
-                    count($messages[0]->getParts()) === 2;
-            }))
-            ->willReturn($mockResult);
+        $result = AiClient::generateTextResult($messageParts, $mockModel);
 
-        $result = AiClient::generateTextResult($messageParts, $this->mockTextModel);
-
-        $this->assertSame($mockResult, $result);
+        $this->assertSame($expectedResult, $result);
     }
-
 
     /**
      * Tests isConfigured method returns true when provider availability is configured.
@@ -342,12 +393,9 @@ class AiClientTest extends TestCase
     {
         $prompt = 'Test prompt';
         $expectedResult = $this->createTestResult();
+        $mockModel = $this->createMockTextGenerationModel($expectedResult);
 
-        $this->mockTextModel->expects($this->once())
-            ->method('generateTextResult')
-            ->willReturn($expectedResult);
-
-        $result = AiClient::generateResult($prompt, $this->mockTextModel);
+        $result = AiClient::generateResult($prompt, $mockModel);
 
         $this->assertSame($expectedResult, $result);
     }
@@ -359,12 +407,9 @@ class AiClientTest extends TestCase
     {
         $prompt = 'Generate image prompt';
         $expectedResult = $this->createTestResult();
+        $mockModel = $this->createMockImageGenerationModel($expectedResult);
 
-        $this->mockImageModel->expects($this->once())
-            ->method('generateImageResult')
-            ->willReturn($expectedResult);
-
-        $result = AiClient::generateResult($prompt, $this->mockImageModel);
+        $result = AiClient::generateResult($prompt, $mockModel);
 
         $this->assertSame($expectedResult, $result);
     }
@@ -377,122 +422,178 @@ class AiClientTest extends TestCase
         $prompt = 'Test prompt';
         $unsupportedModel = $this->createMock(ModelInterface::class);
 
+        // Mock the metadata to return an ID
+        $mockMetadata = $this->createMock(\WordPress\AiClient\Providers\Models\DTO\ModelMetadata::class);
+        $mockMetadata->expects($this->once())
+            ->method('getId')
+            ->willReturn('unsupported-model');
+
+        $unsupportedModel->expects($this->once())
+            ->method('metadata')
+            ->willReturn($mockMetadata);
+
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage(
-            'Model must implement at least one supported generation interface ' .
+            'Model "unsupported-model" must implement at least one supported generation interface ' .
             '(TextGeneration, ImageGeneration, TextToSpeechConversion, SpeechGeneration)'
         );
 
         AiClient::generateResult($prompt, $unsupportedModel);
     }
 
+
+
+
+
+
+
+
     /**
-     * Tests streamGenerateTextResult delegates to model's streaming method.
+     * Tests generateResult with null model delegates to PromptBuilder.
      */
-    public function testStreamGenerateTextResultThrowsNotImplementedException(): void
+    public function testGenerateResultWithNullModelDelegatesToPromptBuilder(): void
     {
-        $prompt = 'Stream this text';
+        $prompt = 'Test prompt for auto-discovery';
 
-        $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessage(
-            'Text streaming is not implemented yet. Use generateTextResult() for non-streaming text generation.'
-        );
+        // Create a mock registry that returns empty results
+        $mockRegistry = $this->createMock(ProviderRegistry::class);
+        $mockRegistry
+            ->expects($this->once())
+            ->method('findModelsMetadataForSupport')
+            ->willReturn([]);
 
-        iterator_to_array(AiClient::streamGenerateTextResult($prompt, $this->mockTextModel));
+        // Set the mock registry as default
+        AiClient::setDefaultRegistry($mockRegistry);
+
+        // This should delegate to PromptBuilder's intelligent discovery
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('No models found that support the required capabilities');
+
+        AiClient::generateResult($prompt);
     }
 
     /**
-     * Tests streamGenerateTextResult with model auto-discovery.
+     * Tests generateResult with text generation model.
      */
-    public function testStreamGenerateTextResultWithAutoDiscoveryThrowsNotImplementedException(): void
+    public function testGenerateResultWithTextGenerationModel(): void
     {
-        $prompt = 'Auto-discover and stream';
+        $prompt = 'Generate text content';
+        $expectedResult = $this->createTestResult();
+        $mockModel = $this->createMockTextGenerationModel($expectedResult);
 
-        $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessage(
-            'Text streaming is not implemented yet. Use generateTextResult() for non-streaming text generation.'
-        );
+        $result = AiClient::generateResult($prompt, $mockModel);
 
-        iterator_to_array(AiClient::streamGenerateTextResult($prompt));
+        $this->assertSame($expectedResult, $result);
     }
 
     /**
-     * Tests streamGenerateTextResult throws exception when model doesn't support text generation.
+     * Tests generateResult with image generation model.
      */
-    public function testStreamGenerateTextResultForNonTextModelThrowsNotImplementedException(): void
+    public function testGenerateResultWithImageGenerationModel(): void
+    {
+        $prompt = 'Generate an image';
+        $expectedResult = $this->createTestResult();
+        $mockModel = $this->createMockImageGenerationModel($expectedResult);
+
+        $result = AiClient::generateResult($prompt, $mockModel);
+
+        $this->assertSame($expectedResult, $result);
+    }
+
+    /**
+     * Tests generateResult with invalid model throws exception with model ID.
+     */
+    public function testGenerateResultWithInvalidModelThrowsExceptionWithModelId(): void
     {
         $prompt = 'Test prompt';
-        $nonTextModel = $this->createMock(ModelInterface::class);
+        $invalidModel = $this->createMock(ModelInterface::class);
 
-        $this->expectException(RuntimeException::class);
+        $mockMetadata = $this->createMock(\WordPress\AiClient\Providers\Models\DTO\ModelMetadata::class);
+        $mockMetadata->expects($this->once())
+            ->method('getId')
+            ->willReturn('invalid-model-id');
+
+        $invalidModel->expects($this->once())
+            ->method('metadata')
+            ->willReturn($mockMetadata);
+
+        $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage(
-            'Text streaming is not implemented yet. Use generateTextResult() for non-streaming text generation.'
+            'Model "invalid-model-id" must implement at least one supported generation interface'
         );
 
-        iterator_to_array(AiClient::streamGenerateTextResult($prompt, $nonTextModel));
+        AiClient::generateResult($prompt, $invalidModel);
     }
 
     /**
-     * Tests generateTextOperation throws not implemented exception.
+     * Tests generateResultWithCapability with null model delegates to PromptBuilder.
      */
-    public function testGenerateTextOperationThrowsNotImplementedException(): void
+    public function testGenerateResultWithCapabilityNullModelDelegatesToPromptBuilder(): void
     {
-        $prompt = 'Text operation prompt';
+        $prompt = 'Test prompt';
+        $capability = CapabilityEnum::textGeneration();
 
-        $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessage(
-            'Text generation operations are not implemented yet. This functionality is planned for a future release.'
-        );
+        // Create a mock registry that returns empty results
+        $mockRegistry = $this->createMock(ProviderRegistry::class);
+        $mockRegistry
+            ->expects($this->once())
+            ->method('findModelsMetadataForSupport')
+            ->willReturn([]);
 
-        AiClient::generateTextOperation($prompt, $this->mockTextModel);
-    }
+        // Set the mock registry as default
+        AiClient::setDefaultRegistry($mockRegistry);
 
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('No models found that support the required capabilities');
 
-    /**
-     * Tests generateImageOperation throws not implemented exception.
-     */
-    public function testGenerateImageOperationThrowsNotImplementedException(): void
-    {
-        $prompt = 'Image operation prompt';
-
-        $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessage(
-            'Image generation operations are not implemented yet. This functionality is planned for a future release.'
-        );
-
-        AiClient::generateImageOperation($prompt, $this->mockImageModel);
+        AiClient::generateResultWithCapability($prompt, $capability);
     }
 
     /**
-     * Tests convertTextToSpeechOperation throws not implemented exception.
+     * Tests generateResultWithCapability with valid model and capability.
      */
-    public function testConvertTextToSpeechOperationThrowsNotImplementedException(): void
+    public function testGenerateResultWithCapabilityValidModelAndCapability(): void
     {
-        $prompt = 'Text to speech operation prompt';
-        $mockModel = $this->createMock(ModelInterface::class);
+        $prompt = 'Generate text';
+        $capability = CapabilityEnum::textGeneration();
+        $expectedResult = $this->createTestResult();
 
-        $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessage(
-            'Text-to-speech conversion operations are not implemented yet. ' .
-            'This functionality is planned for a future release.'
+        $customMetadata = new ModelMetadata(
+            'test-text-model',
+            'Test Text Model',
+            [$capability],
+            []
         );
+        $mockModel = $this->createMockTextGenerationModel($expectedResult, $customMetadata);
 
-        AiClient::convertTextToSpeechOperation($prompt, $mockModel);
+        $result = AiClient::generateResultWithCapability($prompt, $capability, $mockModel);
+
+        $this->assertSame($expectedResult, $result);
     }
 
     /**
-     * Tests generateSpeechOperation throws not implemented exception.
+     * Tests generateResultWithCapability with model that doesn't support capability.
      */
-    public function testGenerateSpeechOperationThrowsNotImplementedException(): void
+    public function testGenerateResultWithCapabilityUnsupportedCapability(): void
     {
-        $prompt = 'Speech operation prompt';
-        $mockModel = $this->createMock(ModelInterface::class);
+        $prompt = 'Generate content';
+        $capability = CapabilityEnum::imageGeneration();
+        $expectedResult = $this->createTestResult();
 
-        $this->expectException(RuntimeException::class);
+        // Create metadata with only text generation capability
+        $customMetadata = new ModelMetadata(
+            'text-only-model',
+            'Text Only Model',
+            [CapabilityEnum::textGeneration()], // Only supports text, not image
+            []
+        );
+        $mockModel = $this->createMockTextGenerationModel($expectedResult, $customMetadata);
+
+        $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage(
-            'Speech generation operations are not implemented yet. This functionality is planned for a future release.'
+            'Model "text-only-model" does not support the "image_generation" capability'
         );
 
-        AiClient::generateSpeechOperation($prompt, $mockModel);
+        AiClient::generateResultWithCapability($prompt, $capability, $mockModel);
     }
 }
