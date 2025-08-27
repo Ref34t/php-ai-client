@@ -22,35 +22,35 @@ class CapabilityUtilTest extends TestCase
         $result = CapabilityUtil::getCapabilityForGenerationType('text');
         $this->assertNotNull($result);
         $this->assertTrue($result->equals(CapabilityEnum::textGeneration()));
-        
+
         $result = CapabilityUtil::getCapabilityForGenerationType('image');
         $this->assertNotNull($result);
         $this->assertTrue($result->equals(CapabilityEnum::imageGeneration()));
-        
+
         $result = CapabilityUtil::getCapabilityForGenerationType('speech');
         $this->assertNotNull($result);
         $this->assertTrue($result->equals(CapabilityEnum::speechGeneration()));
-        
+
         $result = CapabilityUtil::getCapabilityForGenerationType('text-to-speech');
         $this->assertNotNull($result);
         $this->assertTrue($result->equals(CapabilityEnum::textToSpeechConversion()));
-        
+
         $result = CapabilityUtil::getCapabilityForGenerationType('tts');
         $this->assertNotNull($result);
         $this->assertTrue($result->equals(CapabilityEnum::textToSpeechConversion()));
-        
+
         $result = CapabilityUtil::getCapabilityForGenerationType('music');
         $this->assertNotNull($result);
         $this->assertTrue($result->equals(CapabilityEnum::musicGeneration()));
-        
+
         $result = CapabilityUtil::getCapabilityForGenerationType('video');
         $this->assertNotNull($result);
         $this->assertTrue($result->equals(CapabilityEnum::videoGeneration()));
-        
+
         $result = CapabilityUtil::getCapabilityForGenerationType('embedding');
         $this->assertNotNull($result);
         $this->assertTrue($result->equals(CapabilityEnum::embeddingGeneration()));
-        
+
         $result = CapabilityUtil::getCapabilityForGenerationType('embeddings');
         $this->assertNotNull($result);
         $this->assertTrue($result->equals(CapabilityEnum::embeddingGeneration()));
@@ -92,23 +92,23 @@ class CapabilityUtilTest extends TestCase
         $result = CapabilityUtil::getPrimaryOutputModality(CapabilityEnum::textGeneration());
         $this->assertNotNull($result);
         $this->assertTrue($result->equals(ModalityEnum::text()));
-        
+
         $result = CapabilityUtil::getPrimaryOutputModality(CapabilityEnum::imageGeneration());
         $this->assertNotNull($result);
         $this->assertTrue($result->equals(ModalityEnum::image()));
-        
+
         $result = CapabilityUtil::getPrimaryOutputModality(CapabilityEnum::speechGeneration());
         $this->assertNotNull($result);
         $this->assertTrue($result->equals(ModalityEnum::audio()));
-        
+
         $result = CapabilityUtil::getPrimaryOutputModality(CapabilityEnum::textToSpeechConversion());
         $this->assertNotNull($result);
         $this->assertTrue($result->equals(ModalityEnum::audio()));
-        
+
         $result = CapabilityUtil::getPrimaryOutputModality(CapabilityEnum::musicGeneration());
         $this->assertNotNull($result);
         $this->assertTrue($result->equals(ModalityEnum::audio()));
-        
+
         $result = CapabilityUtil::getPrimaryOutputModality(CapabilityEnum::videoGeneration());
         $this->assertNotNull($result);
         $this->assertTrue($result->equals(ModalityEnum::video()));
@@ -129,13 +129,34 @@ class CapabilityUtilTest extends TestCase
     {
         $expected = [ModalityEnum::text()];
 
-        $this->assertEquals($expected, CapabilityUtil::getDefaultInputModalities(CapabilityEnum::textGeneration()));
-        $this->assertEquals($expected, CapabilityUtil::getDefaultInputModalities(CapabilityEnum::imageGeneration()));
-        $this->assertEquals($expected, CapabilityUtil::getDefaultInputModalities(CapabilityEnum::speechGeneration()));
-        $this->assertEquals($expected, CapabilityUtil::getDefaultInputModalities(CapabilityEnum::textToSpeechConversion()));
-        $this->assertEquals($expected, CapabilityUtil::getDefaultInputModalities(CapabilityEnum::musicGeneration()));
-        $this->assertEquals($expected, CapabilityUtil::getDefaultInputModalities(CapabilityEnum::videoGeneration()));
-        $this->assertEquals($expected, CapabilityUtil::getDefaultInputModalities(CapabilityEnum::embeddingGeneration()));
+        $this->assertEquals(
+            $expected,
+            CapabilityUtil::getDefaultInputModalities(CapabilityEnum::textGeneration())
+        );
+        $this->assertEquals(
+            $expected,
+            CapabilityUtil::getDefaultInputModalities(CapabilityEnum::imageGeneration())
+        );
+        $this->assertEquals(
+            $expected,
+            CapabilityUtil::getDefaultInputModalities(CapabilityEnum::speechGeneration())
+        );
+        $this->assertEquals(
+            $expected,
+            CapabilityUtil::getDefaultInputModalities(CapabilityEnum::textToSpeechConversion())
+        );
+        $this->assertEquals(
+            $expected,
+            CapabilityUtil::getDefaultInputModalities(CapabilityEnum::musicGeneration())
+        );
+        $this->assertEquals(
+            $expected,
+            CapabilityUtil::getDefaultInputModalities(CapabilityEnum::videoGeneration())
+        );
+        $this->assertEquals(
+            $expected,
+            CapabilityUtil::getDefaultInputModalities(CapabilityEnum::embeddingGeneration())
+        );
     }
 
     /**
