@@ -239,11 +239,11 @@ abstract class AbstractOpenAiCompatibleTextGenerationModel extends AbstractApiBa
                 return [
                     'role' => $this->getMessageRoleString($message->getRole()),
                     'content' => array_values(array_filter(array_map(
-                        [$this, 'getMessagePartContentData],
+                        [$this, 'getMessagePartContentData'],
                         $messageParts
                     ))),
                     'tool_calls' => array_values(array_filter(array_map(
-                        [$this, 'getMessagePartToolCallData],
+                        [$this, 'getMessagePartToolCallData'],
                         $messageParts
                     ))),
                 ];
@@ -532,6 +532,10 @@ abstract class AbstractOpenAiCompatibleTextGenerationModel extends AbstractApiBa
      */
     protected function throwIfNotSuccessful(Response $response): void
     {
+        /*
+         * While this method only calls the utility method, it's important to have it here as a protected method so
+         * that child classes can override it if needed.
+         */
         ResponseUtil::throwIfNotSuccessful($response);
     }
 
