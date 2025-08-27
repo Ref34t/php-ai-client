@@ -24,6 +24,23 @@ use WordPress\AiClient\Results\DTO\GenerativeAiResult;
  * - Traditional API for array-based configuration (WordPress style)
  * - Integration with provider registry for model discovery
  *
+ * For advanced capability-based operations and model requirements analysis,
+ * see the utility classes (implemented in PR #64):
+ * - RequirementsUtil: Analyzes messages and configurations to infer model requirements
+ * - CapabilityUtil: Provides capability mappings, modality handling, and compatibility checks
+ *
+ * Example usage with utilities:
+ * ```php
+ * // Find capability for a generation type
+ * $capability = CapabilityUtil::getCapabilityForGenerationType('image');
+ *
+ * // Build requirements from messages
+ * $requirements = RequirementsUtil::fromMessages($messages, $capability);
+ *
+ * // Find suitable providers
+ * $providers = AiClient::defaultRegistry()->findModelsMetadataForSupport($requirements);
+ * ```
+ *
  * @since n.e.x.t
  *
  * @phpstan-import-type Prompt from PromptBuilder
