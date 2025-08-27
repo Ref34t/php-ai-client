@@ -239,15 +239,11 @@ abstract class AbstractOpenAiCompatibleTextGenerationModel extends AbstractApiBa
                 return [
                     'role' => $this->getMessageRoleString($message->getRole()),
                     'content' => array_values(array_filter(array_map(
-                        function (MessagePart $part): ?array {
-                            return $this->getMessagePartContentData($part);
-                        },
+                        [$this, 'getMessagePartContentData],
                         $messageParts
                     ))),
                     'tool_calls' => array_values(array_filter(array_map(
-                        function (MessagePart $part): ?array {
-                            return $this->getMessagePartToolCallData($part);
-                        },
+                        [$this, 'getMessagePartToolCallData],
                         $messageParts
                     ))),
                 ];
