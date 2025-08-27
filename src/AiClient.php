@@ -9,13 +9,13 @@ use WordPress\AiClient\Builders\PromptBuilder;
 use WordPress\AiClient\Operations\DTO\GenerativeAiOperation;
 use WordPress\AiClient\Providers\Contracts\ProviderAvailabilityInterface;
 use WordPress\AiClient\Providers\Models\Contracts\ModelInterface;
+use WordPress\AiClient\Providers\Models\Enums\CapabilityEnum;
 use WordPress\AiClient\Providers\Models\ImageGeneration\Contracts\ImageGenerationModelInterface;
 use WordPress\AiClient\Providers\Models\SpeechGeneration\Contracts\SpeechGenerationModelInterface;
 use WordPress\AiClient\Providers\Models\TextGeneration\Contracts\TextGenerationModelInterface;
 use WordPress\AiClient\Providers\Models\TextToSpeechConversion\Contracts\TextToSpeechConversionModelInterface;
 use WordPress\AiClient\Providers\ProviderRegistry;
 use WordPress\AiClient\Results\DTO\GenerativeAiResult;
-use WordPress\AiClient\Providers\Models\Enums\CapabilityEnum;
 
 /**
  * Main AI Client class providing both fluent and traditional APIs for AI operations.
@@ -190,8 +190,7 @@ class AiClient
         $prompt,
         CapabilityEnum $capability,
         ?ModelInterface $model = null
-    ): GenerativeAiResult
-    {
+    ): GenerativeAiResult {
         // If no model provided, use PromptBuilder with explicit capability
         if ($model === null) {
             return self::prompt($prompt)->generateResult($capability);
@@ -206,7 +205,7 @@ class AiClient
                 break;
             }
         }
-        
+
         if (!$supportsCapability) {
             throw new \InvalidArgumentException(
                 sprintf(

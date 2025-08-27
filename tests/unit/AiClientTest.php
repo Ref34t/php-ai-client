@@ -17,6 +17,7 @@ use WordPress\AiClient\Providers\DTO\ProviderMetadata;
 use WordPress\AiClient\Providers\Enums\ProviderTypeEnum;
 use WordPress\AiClient\Providers\Models\Contracts\ModelInterface;
 use WordPress\AiClient\Providers\Models\DTO\ModelMetadata;
+use WordPress\AiClient\Providers\Models\Enums\CapabilityEnum;
 use WordPress\AiClient\Providers\ProviderRegistry;
 use WordPress\AiClient\Results\DTO\Candidate;
 use WordPress\AiClient\Results\DTO\GenerativeAiResult;
@@ -24,7 +25,6 @@ use WordPress\AiClient\Results\DTO\TokenUsage;
 use WordPress\AiClient\Results\Enums\FinishReasonEnum;
 use WordPress\AiClient\Tests\mocks\MockImageGenerationModel;
 use WordPress\AiClient\Tests\mocks\MockTextGenerationModel;
-use WordPress\AiClient\Providers\Models\Enums\CapabilityEnum;
 
 /**
  * @covers \WordPress\AiClient\AiClient
@@ -387,7 +387,7 @@ class AiClientTest extends TestCase
         $mockMetadata->expects($this->once())
             ->method('getId')
             ->willReturn('unsupported-model');
-            
+
         $unsupportedModel->expects($this->once())
             ->method('metadata')
             ->willReturn($mockMetadata);
@@ -516,7 +516,7 @@ class AiClientTest extends TestCase
     public function testGenerateResultWithNullModelDelegatesToPromptBuilder(): void
     {
         $prompt = 'Test prompt for auto-discovery';
-        
+
         // Create a mock registry that returns empty results
         $mockRegistry = $this->createMock(ProviderRegistry::class);
         $mockRegistry
@@ -530,7 +530,7 @@ class AiClientTest extends TestCase
         // This should delegate to PromptBuilder's intelligent discovery
         $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('No models found that support the required capabilities');
-        
+
         AiClient::generateResult($prompt);
     }
 
@@ -577,12 +577,12 @@ class AiClientTest extends TestCase
     {
         $prompt = 'Test prompt';
         $invalidModel = $this->createMock(ModelInterface::class);
-        
+
         $mockMetadata = $this->createMock(\WordPress\AiClient\Providers\Models\DTO\ModelMetadata::class);
         $mockMetadata->expects($this->once())
             ->method('getId')
             ->willReturn('invalid-model-id');
-            
+
         $invalidModel->expects($this->once())
             ->method('metadata')
             ->willReturn($mockMetadata);
@@ -602,7 +602,7 @@ class AiClientTest extends TestCase
     {
         $prompt = 'Test prompt';
         $capability = CapabilityEnum::textGeneration();
-        
+
         // Create a mock registry that returns empty results
         $mockRegistry = $this->createMock(ProviderRegistry::class);
         $mockRegistry
@@ -615,7 +615,7 @@ class AiClientTest extends TestCase
 
         $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('No models found that support the required capabilities');
-        
+
         AiClient::generateResultWithCapability($prompt, $capability);
     }
 
@@ -632,7 +632,7 @@ class AiClientTest extends TestCase
         $mockMetadata->expects($this->once())
             ->method('getSupportedCapabilities')
             ->willReturn([$capability]);
-            
+
         $this->mockTextModel
             ->expects($this->once())
             ->method('metadata')
@@ -663,15 +663,15 @@ class AiClientTest extends TestCase
         $mockMetadata->expects($this->once())
             ->method('getId')
             ->willReturn('text-only-model');
-            
+
         $this->mockTextModel
-            ->expects($this->once())
+            ->expects($this->exactly(2))
             ->method('metadata')
             ->willReturn($mockMetadata);
 
         $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage(
-            'Model "text-only-model" does not support the "image-generation" capability'
+            'Model "text-only-model" does not support the "image_generation" capability'
         );
 
         AiClient::generateResultWithCapability($prompt, $capability, $this->mockTextModel);
