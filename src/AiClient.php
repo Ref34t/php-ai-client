@@ -121,8 +121,7 @@ class AiClient
         $prompt,
         $modelOrConfig,
         ?ProviderRegistry $registry = null
-    ): PromptBuilder
-    {
+    ): PromptBuilder {
         $builder = self::prompt($prompt, $registry);
 
         if ($modelOrConfig instanceof ModelInterface) {
@@ -214,8 +213,7 @@ class AiClient
         $prompt,
         $modelOrConfig = null,
         ?ProviderRegistry $registry = null
-    ): GenerativeAiResult
-    {
+    ): GenerativeAiResult {
         self::validateModelOrConfigParameter($modelOrConfig);
 
         // Route to PromptBuilder for ModelConfig and null cases
@@ -292,8 +290,7 @@ class AiClient
         $prompt,
         $modelOrConfig = null,
         ?ProviderRegistry $registry = null
-    ): GenerativeAiResult
-    {
+    ): GenerativeAiResult {
         self::validateModelOrConfigParameter($modelOrConfig);
         return self::configurePromptBuilder($prompt, $modelOrConfig, $registry)->generateTextResult();
     }
@@ -318,8 +315,7 @@ class AiClient
         $prompt,
         $modelOrConfig = null,
         ?ProviderRegistry $registry = null
-    ): GenerativeAiResult
-    {
+    ): GenerativeAiResult {
         self::validateModelOrConfigParameter($modelOrConfig);
         return self::configurePromptBuilder($prompt, $modelOrConfig, $registry)->generateImageResult();
     }
@@ -343,8 +339,7 @@ class AiClient
         $prompt,
         $modelOrConfig = null,
         ?ProviderRegistry $registry = null
-    ): GenerativeAiResult
-    {
+    ): GenerativeAiResult {
         self::validateModelOrConfigParameter($modelOrConfig);
         return self::configurePromptBuilder($prompt, $modelOrConfig, $registry)->convertTextToSpeechResult();
     }
@@ -368,8 +363,7 @@ class AiClient
         $prompt,
         $modelOrConfig = null,
         ?ProviderRegistry $registry = null
-    ): GenerativeAiResult
-    {
+    ): GenerativeAiResult {
         self::validateModelOrConfigParameter($modelOrConfig);
         return self::configurePromptBuilder($prompt, $modelOrConfig, $registry)->generateSpeechResult();
     }
