@@ -183,9 +183,9 @@ class AiClient
     /**
      * Creates a new prompt builder for fluent API usage.
      *
-     * This method will return an actual PromptBuilder instance once PR #49 is merged.
-     * The traditional API methods in this class will then delegate to PromptBuilder
-     * rather than implementing their own generation logic.
+     * Returns a PromptBuilder instance configured with the default registry.
+     * The traditional API methods in this class delegate to PromptBuilder
+     * for all generation logic.
      *
      * @since n.e.x.t
      *
