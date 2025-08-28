@@ -1020,6 +1020,7 @@ class PromptBuilder
         // If a model has been explicitly set, return it
         if ($this->model !== null) {
             $this->model->setConfig($this->modelConfig);
+            $this->registry->bindModelDependencies($this->model);
             return $this->model;
         }
 
