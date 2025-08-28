@@ -393,7 +393,7 @@ class AiClientTest extends TestCase
             'convertTextToSpeechResult',
             'generateSpeechResult'
         ];
-        
+
         $mockRegistry = $this->createMockEmptyRegistry();
 
         foreach ($methods as $method) {
@@ -582,7 +582,7 @@ class AiClientTest extends TestCase
             'convertTextToSpeechResult',
             'generateSpeechResult'
         ];
-        
+
         $mockRegistry = $this->createMockEmptyRegistry();
 
         foreach ($methods as $method) {

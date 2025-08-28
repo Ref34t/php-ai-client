@@ -117,7 +117,11 @@ class AiClient
      * @param ProviderRegistry|null $registry Optional custom registry to use.
      * @return PromptBuilder Configured prompt builder.
      */
-    private static function configurePromptBuilder($prompt, $modelOrConfig, ?ProviderRegistry $registry = null): PromptBuilder
+    private static function configurePromptBuilder(
+        $prompt,
+        $modelOrConfig,
+        ?ProviderRegistry $registry = null
+    ): PromptBuilder
     {
         $builder = self::prompt($prompt, $registry);
 
@@ -206,7 +210,11 @@ class AiClient
      * @throws \InvalidArgumentException If the provided model doesn't support any known generation type.
      * @throws \RuntimeException If no suitable model can be found for the prompt.
      */
-    public static function generateResult($prompt, $modelOrConfig = null, ?ProviderRegistry $registry = null): GenerativeAiResult
+    public static function generateResult(
+        $prompt,
+        $modelOrConfig = null,
+        ?ProviderRegistry $registry = null
+    ): GenerativeAiResult
     {
         self::validateModelOrConfigParameter($modelOrConfig);
 
@@ -280,7 +288,11 @@ class AiClient
      * @throws \InvalidArgumentException If the prompt format is invalid.
      * @throws \RuntimeException If no suitable model is found.
      */
-    public static function generateTextResult($prompt, $modelOrConfig = null, ?ProviderRegistry $registry = null): GenerativeAiResult
+    public static function generateTextResult(
+        $prompt,
+        $modelOrConfig = null,
+        ?ProviderRegistry $registry = null
+    ): GenerativeAiResult
     {
         self::validateModelOrConfigParameter($modelOrConfig);
         return self::configurePromptBuilder($prompt, $modelOrConfig, $registry)->generateTextResult();
@@ -302,7 +314,11 @@ class AiClient
      * @throws \InvalidArgumentException If the prompt format is invalid.
      * @throws \RuntimeException If no suitable model is found.
      */
-    public static function generateImageResult($prompt, $modelOrConfig = null, ?ProviderRegistry $registry = null): GenerativeAiResult
+    public static function generateImageResult(
+        $prompt,
+        $modelOrConfig = null,
+        ?ProviderRegistry $registry = null
+    ): GenerativeAiResult
     {
         self::validateModelOrConfigParameter($modelOrConfig);
         return self::configurePromptBuilder($prompt, $modelOrConfig, $registry)->generateImageResult();
@@ -323,7 +339,11 @@ class AiClient
      * @throws \InvalidArgumentException If the prompt format is invalid.
      * @throws \RuntimeException If no suitable model is found.
      */
-    public static function convertTextToSpeechResult($prompt, $modelOrConfig = null, ?ProviderRegistry $registry = null): GenerativeAiResult
+    public static function convertTextToSpeechResult(
+        $prompt,
+        $modelOrConfig = null,
+        ?ProviderRegistry $registry = null
+    ): GenerativeAiResult
     {
         self::validateModelOrConfigParameter($modelOrConfig);
         return self::configurePromptBuilder($prompt, $modelOrConfig, $registry)->convertTextToSpeechResult();
@@ -344,7 +364,11 @@ class AiClient
      * @throws \InvalidArgumentException If the prompt format is invalid.
      * @throws \RuntimeException If no suitable model is found.
      */
-    public static function generateSpeechResult($prompt, $modelOrConfig = null, ?ProviderRegistry $registry = null): GenerativeAiResult
+    public static function generateSpeechResult(
+        $prompt,
+        $modelOrConfig = null,
+        ?ProviderRegistry $registry = null
+    ): GenerativeAiResult
     {
         self::validateModelOrConfigParameter($modelOrConfig);
         return self::configurePromptBuilder($prompt, $modelOrConfig, $registry)->generateSpeechResult();
