@@ -114,11 +114,12 @@ class AiClient
      *
      * @param Prompt $prompt The prompt content.
      * @param ModelInterface|ModelConfig|null $modelOrConfig The model or config parameter.
+     * @param ProviderRegistry|null $registry Optional custom registry to use.
      * @return PromptBuilder Configured prompt builder.
      */
-    private static function configurePromptBuilder($prompt, $modelOrConfig): PromptBuilder
+    private static function configurePromptBuilder($prompt, $modelOrConfig, ?ProviderRegistry $registry = null): PromptBuilder
     {
-        $builder = self::prompt($prompt);
+        $builder = self::prompt($prompt, $registry);
 
         if ($modelOrConfig instanceof ModelInterface) {
             $builder->usingModel($modelOrConfig);
@@ -156,18 +157,6 @@ class AiClient
     }
 
     /**
-     * Sets the default provider registry instance.
-     *
-     * @since n.e.x.t
-     *
-     * @param ProviderRegistry $registry The provider registry to set as default.
-     */
-    public static function setDefaultRegistry(ProviderRegistry $registry): void
-    {
-        self::$defaultRegistry = $registry;
-    }
-
-    /**
      * Checks if a provider is configured and available for use.
      *
      * @since n.e.x.t
@@ -183,18 +172,19 @@ class AiClient
     /**
      * Creates a new prompt builder for fluent API usage.
      *
-     * Returns a PromptBuilder instance configured with the default registry.
+     * Returns a PromptBuilder instance configured with the specified or default registry.
      * The traditional API methods in this class delegate to PromptBuilder
      * for all generation logic.
      *
      * @since n.e.x.t
      *
      * @param Prompt $prompt Optional initial prompt content.
+     * @param ProviderRegistry|null $registry Optional custom registry. If null, uses default.
      * @return PromptBuilder The prompt builder instance.
      */
-    public static function prompt($prompt = null): PromptBuilder
+    public static function prompt($prompt = null, ?ProviderRegistry $registry = null): PromptBuilder
     {
-        return new PromptBuilder(self::defaultRegistry(), $prompt);
+        return new PromptBuilder($registry ?? self::defaultRegistry(), $prompt);
     }
 
     /**
@@ -210,36 +200,37 @@ class AiClient
      * @param ModelInterface|ModelConfig|null $modelOrConfig Optional specific model to use,
      *                                                        or model configuration for auto-discovery,
      *                                                        or null for defaults.
+     * @param ProviderRegistry|null $registry Optional custom registry. If null, uses default.
      * @return GenerativeAiResult The generation result.
      *
      * @throws \InvalidArgumentException If the provided model doesn't support any known generation type.
      * @throws \RuntimeException If no suitable model can be found for the prompt.
      */
-    public static function generateResult($prompt, $modelOrConfig = null): GenerativeAiResult
+    public static function generateResult($prompt, $modelOrConfig = null, ?ProviderRegistry $registry = null): GenerativeAiResult
     {
         self::validateModelOrConfigParameter($modelOrConfig);
 
         // Route to PromptBuilder for ModelConfig and null cases
         if ($modelOrConfig instanceof ModelConfig || $modelOrConfig === null) {
-            return self::configurePromptBuilder($prompt, $modelOrConfig)->generateResult();
+            return self::configurePromptBuilder($prompt, $modelOrConfig, $registry)->generateResult();
         }
 
         // Specific model provided: Infer capability from model interfaces and delegate
         $model = $modelOrConfig;
         if ($model instanceof TextGenerationModelInterface) {
-            return self::generateTextResult($prompt, $model);
+            return self::generateTextResult($prompt, $model, $registry);
         }
 
         if ($model instanceof ImageGenerationModelInterface) {
-            return self::generateImageResult($prompt, $model);
+            return self::generateImageResult($prompt, $model, $registry);
         }
 
         if ($model instanceof TextToSpeechConversionModelInterface) {
-            return self::convertTextToSpeechResult($prompt, $model);
+            return self::convertTextToSpeechResult($prompt, $model, $registry);
         }
 
         if ($model instanceof SpeechGenerationModelInterface) {
-            return self::generateSpeechResult($prompt, $model);
+            return self::generateSpeechResult($prompt, $model, $registry);
         }
 
         throw new \InvalidArgumentException(
@@ -283,15 +274,16 @@ class AiClient
      * @param ModelInterface|ModelConfig|null $modelOrConfig Optional specific model to use,
      *                                                        or model configuration for auto-discovery,
      *                                                        or null for defaults.
+     * @param ProviderRegistry|null $registry Optional custom registry. If null, uses default.
      * @return GenerativeAiResult The generation result.
      *
      * @throws \InvalidArgumentException If the prompt format is invalid.
      * @throws \RuntimeException If no suitable model is found.
      */
-    public static function generateTextResult($prompt, $modelOrConfig = null): GenerativeAiResult
+    public static function generateTextResult($prompt, $modelOrConfig = null, ?ProviderRegistry $registry = null): GenerativeAiResult
     {
         self::validateModelOrConfigParameter($modelOrConfig);
-        return self::configurePromptBuilder($prompt, $modelOrConfig)->generateTextResult();
+        return self::configurePromptBuilder($prompt, $modelOrConfig, $registry)->generateTextResult();
     }
 
 
@@ -304,15 +296,16 @@ class AiClient
      * @param ModelInterface|ModelConfig|null $modelOrConfig Optional specific model to use,
      *                                                        or model configuration for auto-discovery,
      *                                                        or null for defaults.
+     * @param ProviderRegistry|null $registry Optional custom registry. If null, uses default.
      * @return GenerativeAiResult The generation result.
      *
      * @throws \InvalidArgumentException If the prompt format is invalid.
      * @throws \RuntimeException If no suitable model is found.
      */
-    public static function generateImageResult($prompt, $modelOrConfig = null): GenerativeAiResult
+    public static function generateImageResult($prompt, $modelOrConfig = null, ?ProviderRegistry $registry = null): GenerativeAiResult
     {
         self::validateModelOrConfigParameter($modelOrConfig);
-        return self::configurePromptBuilder($prompt, $modelOrConfig)->generateImageResult();
+        return self::configurePromptBuilder($prompt, $modelOrConfig, $registry)->generateImageResult();
     }
 
     /**
@@ -324,15 +317,16 @@ class AiClient
      * @param ModelInterface|ModelConfig|null $modelOrConfig Optional specific model to use,
      *                                                        or model configuration for auto-discovery,
      *                                                        or null for defaults.
+     * @param ProviderRegistry|null $registry Optional custom registry. If null, uses default.
      * @return GenerativeAiResult The generation result.
      *
      * @throws \InvalidArgumentException If the prompt format is invalid.
      * @throws \RuntimeException If no suitable model is found.
      */
-    public static function convertTextToSpeechResult($prompt, $modelOrConfig = null): GenerativeAiResult
+    public static function convertTextToSpeechResult($prompt, $modelOrConfig = null, ?ProviderRegistry $registry = null): GenerativeAiResult
     {
         self::validateModelOrConfigParameter($modelOrConfig);
-        return self::configurePromptBuilder($prompt, $modelOrConfig)->convertTextToSpeechResult();
+        return self::configurePromptBuilder($prompt, $modelOrConfig, $registry)->convertTextToSpeechResult();
     }
 
     /**
@@ -344,14 +338,15 @@ class AiClient
      * @param ModelInterface|ModelConfig|null $modelOrConfig Optional specific model to use,
      *                                                        or model configuration for auto-discovery,
      *                                                        or null for defaults.
+     * @param ProviderRegistry|null $registry Optional custom registry. If null, uses default.
      * @return GenerativeAiResult The generation result.
      *
      * @throws \InvalidArgumentException If the prompt format is invalid.
      * @throws \RuntimeException If no suitable model is found.
      */
-    public static function generateSpeechResult($prompt, $modelOrConfig = null): GenerativeAiResult
+    public static function generateSpeechResult($prompt, $modelOrConfig = null, ?ProviderRegistry $registry = null): GenerativeAiResult
     {
         self::validateModelOrConfigParameter($modelOrConfig);
-        return self::configurePromptBuilder($prompt, $modelOrConfig)->generateSpeechResult();
+        return self::configurePromptBuilder($prompt, $modelOrConfig, $registry)->generateSpeechResult();
     }
 }

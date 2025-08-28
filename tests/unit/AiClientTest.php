@@ -25,15 +25,13 @@ class AiClientTest extends TestCase
 
     protected function setUp(): void
     {
-        // Set a clean registry for each test
-        AiClient::setDefaultRegistry(new ProviderRegistry());
+        // Tests use dependency injection - registry instances passed directly to methods
     }
 
 
     protected function tearDown(): void
     {
-        // Reset the default registry
-        AiClient::setDefaultRegistry(new ProviderRegistry());
+        // Tests use dependency injection - registry instances passed directly to methods
     }
 
     /**
@@ -53,7 +51,7 @@ class AiClientTest extends TestCase
     }
 
     /**
-     * Tests default registry getter and setter.
+     * Tests default registry getter.
      */
     public function testDefaultRegistry(): void
     {
@@ -73,15 +71,7 @@ class AiClientTest extends TestCase
             'Default registry should return the same instance (singleton pattern)'
         );
 
-        // Test that setting a new registry works
-        $newRegistry = new ProviderRegistry();
-        AiClient::setDefaultRegistry($newRegistry);
-
-        $this->assertSame(
-            $newRegistry,
-            AiClient::defaultRegistry(),
-            'After setting new registry, it should be returned by defaultRegistry()'
-        );
+        // Registry dependency injection is tested by passing custom registries to individual methods
     }
 
     /**
@@ -309,14 +299,11 @@ class AiClientTest extends TestCase
     {
         $prompt = 'Test prompt for auto-discovery';
 
-        // Set the mock registry as default
-        AiClient::setDefaultRegistry($this->createMockEmptyRegistry());
-
         // This should delegate to PromptBuilder's intelligent discovery
         $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('No models found that support the required capabilities');
 
-        AiClient::generateResult($prompt);
+        AiClient::generateResult($prompt, null, $this->createMockEmptyRegistry());
     }
 
     /**
@@ -383,13 +370,10 @@ class AiClientTest extends TestCase
         $config->setTemperature(0.8);
         $config->setMaxTokens(100);
 
-        // Set the mock registry as default
-        AiClient::setDefaultRegistry($this->createMockEmptyRegistry());
-
         $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('No models found that support the required capabilities');
 
-        AiClient::generateResult($prompt, $config);
+        AiClient::generateResult($prompt, $config, $this->createMockEmptyRegistry());
     }
 
 
@@ -402,9 +386,6 @@ class AiClientTest extends TestCase
         $config = new ModelConfig();
         $config->setTemperature(0.5);
 
-        // Set the mock registry as default
-        AiClient::setDefaultRegistry($this->createMockEmptyRegistry());
-
         // Test all traditional methods accept ModelConfig
         $methods = [
             'generateTextResult',
@@ -412,10 +393,12 @@ class AiClientTest extends TestCase
             'convertTextToSpeechResult',
             'generateSpeechResult'
         ];
+        
+        $mockRegistry = $this->createMockEmptyRegistry();
 
         foreach ($methods as $method) {
             try {
-                AiClient::$method($prompt, $config);
+                AiClient::$method($prompt, $config, $mockRegistry);
                 $this->fail("Expected InvalidArgumentException for $method");
             } catch (\InvalidArgumentException $e) {
                 $this->assertStringContainsString('No models found that support', $e->getMessage());
@@ -509,11 +492,8 @@ class AiClientTest extends TestCase
     {
         $prompt = 'Test prompt for null parameter';
 
-        // Set the mock registry as default
-        AiClient::setDefaultRegistry($this->createMockEmptyRegistry());
-
         try {
-            AiClient::$method($prompt, null);
+            AiClient::$method($prompt, null, $this->createMockEmptyRegistry());
             $this->fail("Expected InvalidArgumentException for $method with null (no providers)");
         } catch (\InvalidArgumentException $e) {
             // Should delegate to PromptBuilder and fail due to no providers
@@ -530,10 +510,8 @@ class AiClientTest extends TestCase
      */
     public function testModelConfigWithVariousParameters(): void
     {
-        // Set the mock registry as default
-        AiClient::setDefaultRegistry($this->createMockEmptyRegistry());
-
         // Test different ModelConfig configurations
+        $mockRegistry = $this->createMockEmptyRegistry();
         $configurations = [
             // Basic temperature setting
             function () {
@@ -562,7 +540,7 @@ class AiClientTest extends TestCase
             $config = $configFunction();
 
             try {
-                AiClient::generateResult($prompt, $config);
+                AiClient::generateResult($prompt, $config, $mockRegistry);
                 $this->fail("Expected InvalidArgumentException for configuration $index");
             } catch (\InvalidArgumentException $e) {
                 $this->assertStringContainsString(
@@ -582,13 +560,10 @@ class AiClientTest extends TestCase
         $prompt = 'Test with empty config';
         $emptyConfig = new ModelConfig();
 
-        // Set the mock registry as default
-        AiClient::setDefaultRegistry($this->createMockEmptyRegistry());
-
         $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('No models found that support the required capabilities');
 
-        AiClient::generateResult($prompt, $emptyConfig);
+        AiClient::generateResult($prompt, $emptyConfig, $this->createMockEmptyRegistry());
     }
 
     /**
@@ -600,9 +575,6 @@ class AiClientTest extends TestCase
         $config = new ModelConfig();
         $config->setTemperature(0.8);
 
-        // Set the mock registry as default
-        AiClient::setDefaultRegistry($this->createMockEmptyRegistry());
-
         $methods = [
             'generateResult',
             'generateTextResult',
@@ -610,10 +582,12 @@ class AiClientTest extends TestCase
             'convertTextToSpeechResult',
             'generateSpeechResult'
         ];
+        
+        $mockRegistry = $this->createMockEmptyRegistry();
 
         foreach ($methods as $method) {
             try {
-                AiClient::$method($prompt, $config);
+                AiClient::$method($prompt, $config, $mockRegistry);
                 $this->fail("Expected InvalidArgumentException for $method with ModelConfig");
             } catch (\InvalidArgumentException $e) {
                 $this->assertStringContainsString(
@@ -724,10 +698,8 @@ class AiClientTest extends TestCase
         $prompt = 'Integration test prompt';
 
         // Test that configurePromptBuilder is called with null
-        AiClient::setDefaultRegistry($this->createMockEmptyRegistry());
-
         $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessageMatches('/No models found that support/');
-        AiClient::generateResult($prompt, null);
+        AiClient::generateResult($prompt, null, $this->createMockEmptyRegistry());
     }
 }
