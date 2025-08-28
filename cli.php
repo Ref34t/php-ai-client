@@ -13,18 +13,9 @@
 
 declare(strict_types=1);
 
-use WordPress\AiClient\Builders\PromptBuilder;
-use WordPress\AiClient\ProviderImplementations\Anthropic\AnthropicProvider;
-use WordPress\AiClient\ProviderImplementations\Google\GoogleProvider;
-use WordPress\AiClient\ProviderImplementations\OpenAi\OpenAiProvider;
+use WordPress\AiClient\AiClient;
 use WordPress\AiClient\Providers\Http\Exception\ResponseException;
-use WordPress\AiClient\Providers\Http\HttpTransporterFactory;
 use WordPress\AiClient\Providers\Models\DTO\ModelConfig;
-use WordPress\AiClient\Providers\Models\DTO\ModelRequirements;
-use WordPress\AiClient\Providers\Models\DTO\RequiredOption;
-use WordPress\AiClient\Providers\Models\Enums\CapabilityEnum;
-use WordPress\AiClient\Providers\Models\TextGeneration\Contracts\TextGenerationModelInterface;
-use WordPress\AiClient\Providers\ProviderRegistry;
 
 require_once __DIR__ . '/vendor/autoload.php';
 
@@ -145,24 +136,15 @@ foreach ($named_args as $key => $value) {
     $model_config_data[$key] = $processed_value;
 }
 
-// --- SDK setup ---
-
-// This will eventually be obsolete, as the AiClient class will handle it.
-$providerRegistry = new ProviderRegistry();
-$providerRegistry->setHttpTransporter(HttpTransporterFactory::createTransporter());
-$providerRegistry->registerProvider(AnthropicProvider::class);
-$providerRegistry->registerProvider(GoogleProvider::class);
-$providerRegistry->registerProvider(OpenAiProvider::class);
-
 // --- Main logic ---
 
 try {
     $modelConfig = ModelConfig::fromArray($model_config_data);
 
-    $promptBuilder = new PromptBuilder($providerRegistry, $promptInput);
+    $promptBuilder = AiClient::prompt($promptInput);
     $promptBuilder = $promptBuilder->usingModelConfig($modelConfig);
     if ($providerId && $modelId) {
-        $providerClassName = $providerRegistry->getProviderClassName($providerId);
+        $providerClassName = AiClient::defaultRegistry()->getProviderClassName($providerId);
         $promptBuilder = $promptBuilder->usingModel($providerClassName::model($modelId));
     } elseif ($providerId) {
         $promptBuilder = $promptBuilder->usingProvider($providerId);
