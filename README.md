@@ -28,7 +28,7 @@ $text = AiClient::prompt('Write a 2-verse poem about PHP.')
     ->generateText();
 ```
 
-### Text generation using any model from a specific provider
+### Text generation using any compatible model from a specific provider
 
 ```php
 use WordPress\AiClient\AiClient;
@@ -38,7 +38,7 @@ $text = AiClient::prompt('Write a 2-verse poem about PHP.')
     ->generateText();
 ```
 
-### Text generation using any model
+### Text generation using any compatible model
 
 ```php
 use WordPress\AiClient\AiClient;
@@ -58,7 +58,7 @@ $text = AiClient::prompt('Write a 2-verse poem about PHP.')
     ->generateText();
 ```
 
-### Text generation with multiple candidates using any model
+### Text generation with multiple candidates using any compatible model
 
 ```php
 use WordPress\AiClient\AiClient;
@@ -67,7 +67,7 @@ $texts = AiClient::prompt('Write a 2-verse poem about PHP.')
     ->generateTexts(4);
 ```
 
-### Image generation using any model
+### Image generation using any compatible model
 
 ```php
 use WordPress\AiClient\AiClient;
