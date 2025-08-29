@@ -130,7 +130,7 @@ class Candidate extends AbstractDataTransferObject
 
         return new self(
             Message::fromArray($messageData),
-            FinishReasonEnum::from($array[self::KEY_FINISH_REASON]),
+            FinishReasonEnum::from($array[self::KEY_FINISH_REASON])
         );
     }
 }

@@ -178,7 +178,7 @@ class GoogleModelMetadataDirectory extends AbstractOpenAiCompatibleModelMetadata
                     $geminiWebSearchOptions,
                     $geminiMultimodalImageOutputOptions,
                     $imagenCapabilities,
-                    $imagenOptions,
+                    $imagenOptions
                 ): ModelMetadata {
                     $modelId = $modelData['baseModelId'] ?? $modelData['name'];
                     if (str_starts_with($modelId, 'models/')) {

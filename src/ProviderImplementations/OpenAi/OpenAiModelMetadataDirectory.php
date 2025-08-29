@@ -148,7 +148,13 @@ class OpenAiModelMetadataDirectory extends AbstractOpenAiCompatibleModelMetadata
         $ttsOptions = [
             new SupportedOption(OptionEnum::inputModalities(), [[ModalityEnum::text()]]),
             new SupportedOption(OptionEnum::outputModalities(), [[ModalityEnum::audio()]]),
-            new SupportedOption(OptionEnum::outputMimeType(), ['audio/mpeg', 'audio/ogg', 'audio/wav']),
+            new SupportedOption(OptionEnum::outputMimeType(), [
+                'audio/mpeg',
+                'audio/ogg',
+                'audio/wav',
+                'audio/flac',
+                'audio/aac',
+            ]),
             new SupportedOption(OptionEnum::outputSpeechVoice()),
             new SupportedOption(OptionEnum::customOptions()),
         ];
@@ -166,7 +172,7 @@ class OpenAiModelMetadataDirectory extends AbstractOpenAiCompatibleModelMetadata
                     $dalleImageOptions,
                     $gptImageOptions,
                     $ttsCapabilities,
-                    $ttsOptions,
+                    $ttsOptions
                 ): ModelMetadata {
                     $modelId = $modelData['id'];
                     if (

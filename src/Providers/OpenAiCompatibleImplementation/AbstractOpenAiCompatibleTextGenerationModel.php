@@ -255,6 +255,10 @@ abstract class AbstractOpenAiCompatibleTextGenerationModel extends AbstractApiBa
             array_unshift(
                 $messagesParam,
                 [
+                    /*
+                     * TODO: Replace this with 'developer' in the future.
+                     * See https://platform.openai.com/docs/api-reference/chat/create#chat_create-messages
+                     */
                     'role' => 'system',
                     'content' => [
                         [
@@ -311,7 +315,7 @@ abstract class AbstractOpenAiCompatibleTextGenerationModel extends AbstractApiBa
                     'The file typed message part must contain a file.'
                 );
             }
-            if ($file->getFileType()->isRemote()) {
+            if ($file->isRemote()) {
                 if ($file->isImage()) {
                     return [
                         'type' => 'image_url',
