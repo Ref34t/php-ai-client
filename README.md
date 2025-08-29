@@ -58,6 +58,15 @@ $text = AiClient::prompt('Write a 2-verse poem about PHP.')
     ->generateText();
 ```
 
+### Text generation with multiple candidates using any model
+
+```php
+use WordPress\AiClient\AiClient;
+
+$texts = AiClient::prompt('Write a 2-verse poem about PHP.')
+    ->generateTexts(4);
+```
+
 ### Image generation using any model
 
 ```php
