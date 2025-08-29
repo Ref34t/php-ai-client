@@ -6,11 +6,9 @@ namespace WordPress\AiClient\Tests\unit\Providers\Models\DTO;
 
 use JsonSerializable;
 use PHPUnit\Framework\TestCase;
-use WordPress\AiClient\Builders\PromptBuilder;
 use WordPress\AiClient\Common\Contracts\WithArrayTransformationInterface;
 use WordPress\AiClient\Common\Contracts\WithJsonSchemaInterface;
 use WordPress\AiClient\Files\DTO\File;
-use WordPress\AiClient\Messages\DTO\Message;
 use WordPress\AiClient\Messages\DTO\MessagePart;
 use WordPress\AiClient\Messages\DTO\UserMessage;
 use WordPress\AiClient\Messages\Enums\ModalityEnum;
@@ -515,16 +513,16 @@ class ModelRequirementsTest extends TestCase
 
         $capabilities = $requirements->getRequiredCapabilities();
         $this->assertContains(CapabilityEnum::textGeneration(), $capabilities);
-        
+
         // Check for input modalities option containing text
         $inputModalityOptions = array_filter(
             $requirements->getRequiredOptions(),
             fn($opt) => $opt->getName()->isInputModalities()
         );
         $this->assertNotEmpty($inputModalityOptions);
-        
+
         $modalityValues = array_values($inputModalityOptions)[0]->getValue();
-        
+
         // The array contains ModalityEnum objects, not strings
         $this->assertContains(ModalityEnum::text(), $modalityValues);
     }
@@ -560,7 +558,8 @@ class ModelRequirementsTest extends TestCase
      */
     public function testFromPromptDataWithImageInput(): void
     {
-        $imageFile = new File('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==');
+        $b64 = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==';
+        $imageFile = new File('data:image/png;base64,' . $b64);
         $messages = [
             new UserMessage([
                 new MessagePart('Describe this image'),
@@ -608,12 +607,12 @@ class ModelRequirementsTest extends TestCase
 
         $options = $requirements->getRequiredOptions();
         $this->assertNotEmpty($options);
-        
+
         // Check that we have the expected options based on ModelConfig settings
         $hasTemperature = false;
         $hasMaxTokens = false;
         $hasTopP = false;
-        
+
         foreach ($options as $option) {
             if ($option->getName()->isTemperature()) {
                 $hasTemperature = true;
@@ -628,7 +627,7 @@ class ModelRequirementsTest extends TestCase
                 $this->assertEquals(0.95, $option->getValue());
             }
         }
-        
+
         $this->assertTrue($hasTemperature, 'Temperature option should be present');
         $this->assertTrue($hasMaxTokens, 'Max tokens option should be present');
         $this->assertTrue($hasTopP, 'Top P option should be present');
