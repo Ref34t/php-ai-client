@@ -49,11 +49,11 @@ if (!function_exists('str_starts_with')) {
      */
     function str_starts_with(string $haystack, string $needle): bool
     {
-        if ( '' === $needle ) {
+        if ('' === $needle) {
             return true;
         }
 
-        return 0 === strpos( $haystack, $needle );
+        return 0 === strpos($haystack, $needle);
     }
 }
 
@@ -69,12 +69,12 @@ if (!function_exists('str_ends_with')) {
      */
     function str_ends_with(string $haystack, string $needle): bool
     {
-        if ( '' === $haystack ) {
+        if ('' === $haystack) {
             return '' === $needle;
         }
 
-        $len = strlen( $needle );
+        $len = strlen($needle);
 
-        return substr( $haystack, -$len, $len ) === $needle;
+        return substr($haystack, -$len, $len) === $needle;
     }
 }

@@ -90,7 +90,7 @@ if (empty($positional_args[0])) {
 
 // Prompt input. Allow complex input as a JSON string.
 $promptInput = $positional_args[0];
-if (strpos($promptInput, '{') === 0 || strpos($promptInput, '[') === 0) {
+if (str_starts_with($promptInput, '{') || str_starts_with($promptInput, '[')) {
     $decodedInput = json_decode($promptInput, true);
     if ($decodedInput) {
         $promptInput = $decodedInput;
