@@ -169,7 +169,7 @@ class OpenAiModelMetadataDirectory extends AbstractOpenAiCompatibleModelMetadata
                     $dalleImageOptions,
                     $gptImageOptions,
                     $ttsCapabilities,
-                    $ttsOptions,
+                    $ttsOptions
                 ): ModelMetadata {
                     $modelId = $modelData['id'];
                     if (

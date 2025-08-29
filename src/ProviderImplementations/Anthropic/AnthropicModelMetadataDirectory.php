@@ -116,7 +116,7 @@ class AnthropicModelMetadataDirectory extends AbstractOpenAiCompatibleModelMetad
                 static function (array $modelData) use (
                     $anthropicCapabilities,
                     $anthropicOptions,
-                    $anthropicWebSearchOptions,
+                    $anthropicWebSearchOptions
                 ): ModelMetadata {
                     $modelId = $modelData['id'];
                     $modelCaps = $anthropicCapabilities;
