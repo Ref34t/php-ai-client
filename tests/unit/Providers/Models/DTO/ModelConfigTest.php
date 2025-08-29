@@ -6,6 +6,8 @@ namespace WordPress\AiClient\Tests\unit\Providers\Models\DTO;
 
 use JsonSerializable;
 use PHPUnit\Framework\TestCase;
+use WordPress\AiClient\Common\Contracts\WithArrayTransformationInterface;
+use WordPress\AiClient\Common\Contracts\WithJsonSchemaInterface;
 use WordPress\AiClient\Files\Enums\FileTypeEnum;
 use WordPress\AiClient\Files\Enums\MediaOrientationEnum;
 use WordPress\AiClient\Messages\Enums\ModalityEnum;
@@ -70,6 +72,7 @@ class ModelConfigTest extends TestCase
         $this->assertNull($config->getOutputSchema());
         $this->assertNull($config->getOutputMediaOrientation());
         $this->assertNull($config->getOutputMediaAspectRatio());
+        $this->assertNull($config->getOutputSpeechVoice());
         $this->assertEquals([], $config->getCustomOptions());
     }
 
@@ -169,6 +172,10 @@ class ModelConfigTest extends TestCase
         $config->setOutputMediaAspectRatio('4:3');
         $this->assertEquals('4:3', $config->getOutputMediaAspectRatio());
 
+        // Test output speech voice
+        $config->setOutputSpeechVoice('alloy');
+        $this->assertEquals('alloy', $config->getOutputSpeechVoice());
+
         // Test custom options
         $customOptions = ['custom_param' => 'value', 'another_param' => 123];
         $config->setCustomOptions($customOptions);
@@ -210,6 +217,7 @@ class ModelConfigTest extends TestCase
             ModelConfig::KEY_OUTPUT_SCHEMA,
             ModelConfig::KEY_OUTPUT_MEDIA_ORIENTATION,
             ModelConfig::KEY_OUTPUT_MEDIA_ASPECT_RATIO,
+            ModelConfig::KEY_OUTPUT_SPEECH_VOICE,
             ModelConfig::KEY_CUSTOM_OPTIONS
         ];
 
@@ -228,6 +236,7 @@ class ModelConfigTest extends TestCase
         $this->assertEquals('string', $schema['properties'][ModelConfig::KEY_OUTPUT_FILE_TYPE]['type']);
         $this->assertEquals('string', $schema['properties'][ModelConfig::KEY_OUTPUT_MEDIA_ORIENTATION]['type']);
         $this->assertEquals('string', $schema['properties'][ModelConfig::KEY_OUTPUT_MEDIA_ASPECT_RATIO]['type']);
+        $this->assertEquals('string', $schema['properties'][ModelConfig::KEY_OUTPUT_SPEECH_VOICE]['type']);
         $this->assertEquals('object', $schema['properties'][ModelConfig::KEY_CUSTOM_OPTIONS]['type']);
 
         // Check constraints
@@ -266,6 +275,7 @@ class ModelConfigTest extends TestCase
         $config->setOutputSchema(['type' => 'object']);
         $config->setOutputMediaOrientation(MediaOrientationEnum::portrait());
         $config->setOutputMediaAspectRatio('9:16');
+        $config->setOutputSpeechVoice('onyx');
         $config->setCustomOptions(['key' => 'value']);
 
         $array = $config->toArray();
@@ -290,6 +300,7 @@ class ModelConfigTest extends TestCase
         $this->assertEquals(['type' => 'object'], $array[ModelConfig::KEY_OUTPUT_SCHEMA]);
         $this->assertEquals('portrait', $array[ModelConfig::KEY_OUTPUT_MEDIA_ORIENTATION]);
         $this->assertEquals('9:16', $array[ModelConfig::KEY_OUTPUT_MEDIA_ASPECT_RATIO]);
+        $this->assertEquals('onyx', $array[ModelConfig::KEY_OUTPUT_SPEECH_VOICE]);
         $this->assertEquals(['key' => 'value'], $array[ModelConfig::KEY_CUSTOM_OPTIONS]);
     }
 
@@ -401,6 +412,7 @@ class ModelConfigTest extends TestCase
             ModelConfig::KEY_OUTPUT_FILE_TYPE => 'inline',
             ModelConfig::KEY_OUTPUT_MEDIA_ORIENTATION => 'landscape',
             ModelConfig::KEY_OUTPUT_MEDIA_ASPECT_RATIO => '16:9',
+            ModelConfig::KEY_OUTPUT_SPEECH_VOICE => 'fable',
             ModelConfig::KEY_CUSTOM_OPTIONS => ['custom' => true]
         ];
 
@@ -430,6 +442,7 @@ class ModelConfigTest extends TestCase
         $this->assertEquals(FileTypeEnum::inline(), $config->getOutputFileType());
         $this->assertEquals(MediaOrientationEnum::landscape(), $config->getOutputMediaOrientation());
         $this->assertEquals('16:9', $config->getOutputMediaAspectRatio());
+        $this->assertEquals('fable', $config->getOutputSpeechVoice());
         $this->assertEquals(['custom' => true], $config->getCustomOptions());
     }
 
@@ -464,6 +477,7 @@ class ModelConfigTest extends TestCase
         $original->setOutputFileType(FileTypeEnum::inline());
         $original->setOutputMediaOrientation(MediaOrientationEnum::square());
         $original->setOutputMediaAspectRatio('1:1');
+        $original->setOutputSpeechVoice('shimmer');
         $original->setCustomOptions(['test' => 'value']);
 
         $array = $original->toArray();
@@ -477,6 +491,7 @@ class ModelConfigTest extends TestCase
         $this->assertEquals($original->getOutputFileType(), $restored->getOutputFileType());
         $this->assertEquals($original->getOutputMediaOrientation(), $restored->getOutputMediaOrientation());
         $this->assertEquals($original->getOutputMediaAspectRatio(), $restored->getOutputMediaAspectRatio());
+        $this->assertEquals($original->getOutputSpeechVoice(), $restored->getOutputSpeechVoice());
         $this->assertEquals($original->getCustomOptions(), $restored->getCustomOptions());
     }
 
@@ -601,11 +616,11 @@ class ModelConfigTest extends TestCase
         $config = new ModelConfig();
 
         $this->assertInstanceOf(
-            \WordPress\AiClient\Common\Contracts\WithArrayTransformationInterface::class,
+            WithArrayTransformationInterface::class,
             $config
         );
         $this->assertInstanceOf(
-            \WordPress\AiClient\Common\Contracts\WithJsonSchemaInterface::class,
+            WithJsonSchemaInterface::class,
             $config
         );
         $this->assertInstanceOf(

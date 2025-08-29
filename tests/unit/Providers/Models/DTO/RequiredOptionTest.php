@@ -6,6 +6,8 @@ namespace WordPress\AiClient\Tests\unit\Providers\Models\DTO;
 
 use JsonSerializable;
 use PHPUnit\Framework\TestCase;
+use WordPress\AiClient\Common\Contracts\WithArrayTransformationInterface;
+use WordPress\AiClient\Common\Contracts\WithJsonSchemaInterface;
 use WordPress\AiClient\Providers\Models\DTO\RequiredOption;
 use WordPress\AiClient\Providers\Models\Enums\OptionEnum;
 
@@ -432,11 +434,11 @@ class RequiredOptionTest extends TestCase
         $option = new RequiredOption(OptionEnum::maxTokens(), 'value');
 
         $this->assertInstanceOf(
-            \WordPress\AiClient\Common\Contracts\WithArrayTransformationInterface::class,
+            WithArrayTransformationInterface::class,
             $option
         );
         $this->assertInstanceOf(
-            \WordPress\AiClient\Common\Contracts\WithJsonSchemaInterface::class,
+            WithJsonSchemaInterface::class,
             $option
         );
         $this->assertInstanceOf(

@@ -4,6 +4,11 @@ declare(strict_types=1);
 
 namespace WordPress\AiClient\Tests\mocks;
 
+use WordPress\AiClient\Providers\DTO\ProviderMetadata;
+use WordPress\AiClient\Providers\Http\Contracts\WithHttpTransporterInterface;
+use WordPress\AiClient\Providers\Http\Contracts\WithRequestAuthenticationInterface;
+use WordPress\AiClient\Providers\Http\Traits\WithHttpTransporterTrait;
+use WordPress\AiClient\Providers\Http\Traits\WithRequestAuthenticationTrait;
 use WordPress\AiClient\Providers\Models\Contracts\ModelInterface;
 use WordPress\AiClient\Providers\Models\DTO\ModelConfig;
 use WordPress\AiClient\Providers\Models\DTO\ModelMetadata;
@@ -13,8 +18,11 @@ use WordPress\AiClient\Providers\Models\DTO\ModelMetadata;
  *
  * @since n.e.x.t
  */
-class MockModel implements ModelInterface
+class MockModel implements ModelInterface, WithHttpTransporterInterface, WithRequestAuthenticationInterface
 {
+    use WithHttpTransporterTrait;
+    use WithRequestAuthenticationTrait;
+
     /**
      * @var ModelMetadata The model metadata.
      */
@@ -43,6 +51,15 @@ class MockModel implements ModelInterface
     public function metadata(): ModelMetadata
     {
         return $this->metadata;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function providerMetadata(): ProviderMetadata
+    {
+        // Return the MockProvider's metadata
+        return MockProvider::metadata();
     }
 
     /**

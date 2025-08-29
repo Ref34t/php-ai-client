@@ -6,6 +6,8 @@ namespace WordPress\AiClient\Tests\unit\Providers\Models\DTO;
 
 use JsonSerializable;
 use PHPUnit\Framework\TestCase;
+use WordPress\AiClient\Common\Contracts\WithArrayTransformationInterface;
+use WordPress\AiClient\Common\Contracts\WithJsonSchemaInterface;
 use WordPress\AiClient\Providers\Models\DTO\SupportedOption;
 use WordPress\AiClient\Providers\Models\Enums\OptionEnum;
 
@@ -136,6 +138,29 @@ class SupportedOptionTest extends TestCase
         $this->assertTrue($option->isSupportedValue(['type' => 'text']));
         $this->assertFalse($option->isSupportedValue(['type' => 'xml']));
         $this->assertFalse($option->isSupportedValue(['type' => 'json_object', 'extra' => 'field']));
+    }
+
+    /**
+     * Tests that isSupportedValue correctly handles unordered array values.
+     *
+     * @return void
+     */
+    public function testIsSupportedValueWithUnorderedArray(): void
+    {
+        // Just use any option enum value for the name.
+        $option = new SupportedOption(
+            OptionEnum::outputSpeechVoice(),
+            [['red', 'green', 'blue'], ['yellow', 'orange']]
+        );
+
+        // Test with an array that has the same elements but in a different order
+        $this->assertTrue($option->isSupportedValue(['blue', 'red', 'green']));
+        $this->assertTrue($option->isSupportedValue(['orange', 'yellow']));
+
+        // Test with an array that has different elements or missing elements
+        $this->assertFalse($option->isSupportedValue(['red', 'green']));
+        $this->assertFalse($option->isSupportedValue(['red', 'green', 'blue', 'purple']));
+        $this->assertFalse($option->isSupportedValue(['red', 'yellow', 'blue']));
     }
 
     /**
@@ -400,11 +425,11 @@ class SupportedOptionTest extends TestCase
         $option = new SupportedOption(OptionEnum::maxTokens(), ['value']);
 
         $this->assertInstanceOf(
-            \WordPress\AiClient\Common\Contracts\WithArrayTransformationInterface::class,
+            WithArrayTransformationInterface::class,
             $option
         );
         $this->assertInstanceOf(
-            \WordPress\AiClient\Common\Contracts\WithJsonSchemaInterface::class,
+            WithJsonSchemaInterface::class,
             $option
         );
         $this->assertInstanceOf(

@@ -85,6 +85,21 @@ class SupportedOption extends AbstractDataTransferObject
             return true;
         }
 
+        // If the value is an array, consider it a set (i.e. order doesn't matter).
+        if (is_array($value)) {
+            sort($value);
+            foreach ($this->supportedValues as $supportedValue) {
+                if (!is_array($supportedValue)) {
+                    continue;
+                }
+                sort($supportedValue);
+                if ($value === $supportedValue) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
         return in_array($value, $this->supportedValues, true);
     }
 

@@ -34,7 +34,7 @@ class OptionEnumTest extends TestCase
     {
         return [
             // Explicitly defined constant (not in ModelConfig)
-            'INPUT_MODALITIES' => 'input_modalities',
+            'INPUT_MODALITIES' => 'inputModalities',
 
             // Dynamically added from ModelConfig KEY_* constants
             'OUTPUT_MODALITIES' => 'outputModalities',
@@ -56,6 +56,7 @@ class OptionEnumTest extends TestCase
             'OUTPUT_SCHEMA' => 'outputSchema',
             'OUTPUT_MEDIA_ORIENTATION' => 'outputMediaOrientation',
             'OUTPUT_MEDIA_ASPECT_RATIO' => 'outputMediaAspectRatio',
+            'OUTPUT_SPEECH_VOICE' => 'outputSpeechVoice',
             'CUSTOM_OPTIONS' => 'customOptions',
         ];
     }

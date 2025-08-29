@@ -72,6 +72,7 @@ final class MimeType
         'ogg' => 'audio/ogg',
         'flac' => 'audio/flac',
         'm4a' => 'audio/m4a',
+        'aac' => 'audio/aac',
 
         // Video
         'mp4' => 'video/mp4',
@@ -128,6 +129,27 @@ final class MimeType
         }
 
         $this->value = strtolower($value);
+    }
+
+    /**
+     * Gets the primary known file extension for this MIME type.
+     *
+     * @since n.e.x.t
+     *
+     * @return string The file extension (without the dot).
+     * @throws InvalidArgumentException If no known extension exists for this MIME type.
+     */
+    public function toExtension(): string
+    {
+        // Reverse lookup for the MIME type to find the extension.
+        $extension = array_search($this->value, self::$extensionMap, true);
+        if ($extension === false) {
+            throw new InvalidArgumentException(
+                sprintf('No known extension for MIME type: %s', $this->value)
+            );
+        }
+
+        return $extension;
     }
 
     /**

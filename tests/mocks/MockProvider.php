@@ -11,6 +11,7 @@ use WordPress\AiClient\Providers\DTO\ProviderMetadata;
 use WordPress\AiClient\Providers\Enums\ProviderTypeEnum;
 use WordPress\AiClient\Providers\Models\Contracts\ModelInterface;
 use WordPress\AiClient\Providers\Models\DTO\ModelConfig;
+use WordPress\AiClient\Providers\Models\DTO\ModelMetadata;
 use WordPress\AiClient\Providers\Models\Enums\CapabilityEnum;
 
 /**
@@ -74,7 +75,7 @@ class MockProvider implements ProviderInterface
         if (static::$modelMetadataDirectory === null) {
             // Create some mock models for testing
             $mockModels = [
-                'mock-text-model' => new \WordPress\AiClient\Providers\Models\DTO\ModelMetadata(
+                'mock-text-model' => new ModelMetadata(
                     'mock-text-model',
                     'Mock Text Model',
                     [CapabilityEnum::textGeneration()],

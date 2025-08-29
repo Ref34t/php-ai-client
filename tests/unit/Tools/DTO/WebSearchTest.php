@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace WordPress\AiClient\Tests\unit\Tools\DTO;
 
 use PHPUnit\Framework\TestCase;
+use WordPress\AiClient\Common\Contracts\WithJsonSchemaInterface;
 use WordPress\AiClient\Tests\traits\ArrayTransformationTestTrait;
 use WordPress\AiClient\Tools\DTO\WebSearch;
 
@@ -222,7 +223,7 @@ class WebSearchTest extends TestCase
         $webSearch = new WebSearch();
 
         $this->assertInstanceOf(
-            \WordPress\AiClient\Common\Contracts\WithJsonSchemaInterface::class,
+            WithJsonSchemaInterface::class,
             $webSearch
         );
     }

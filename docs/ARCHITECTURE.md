@@ -893,7 +893,7 @@ direction LR
             +send(Request $request) Response
         }
         class RequestAuthenticationInterface {
-            +authenticate(Request $request) void
+            +authenticateRequest(Request $request) Request
             +getJsonSchema() array< string, mixed >$
         }
         class WithHttpTransporterInterface {

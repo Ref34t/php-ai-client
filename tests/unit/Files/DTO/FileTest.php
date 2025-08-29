@@ -6,8 +6,10 @@ namespace WordPress\AiClient\Tests\unit\Files\DTO;
 
 use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
+use WordPress\AiClient\Common\Contracts\WithArrayTransformationInterface;
 use WordPress\AiClient\Files\DTO\File;
 use WordPress\AiClient\Files\Enums\FileTypeEnum;
+use WordPress\AiClient\Files\ValueObjects\MimeType;
 
 /**
  * @covers \WordPress\AiClient\Files\DTO\File
@@ -206,7 +208,7 @@ class FileTest extends TestCase
         $file = new File('https://example.com/video.mp4');
 
         $this->assertEquals('video/mp4', $file->getMimeType());
-        $this->assertInstanceOf(\WordPress\AiClient\Files\ValueObjects\MimeType::class, $file->getMimeTypeObject());
+        $this->assertInstanceOf(MimeType::class, $file->getMimeTypeObject());
         $this->assertTrue($file->isVideo());
         $this->assertFalse($file->isImage());
         $this->assertFalse($file->isAudio());
@@ -294,7 +296,7 @@ class FileTest extends TestCase
         $json = $file->toArray();
 
         $this->assertIsArray($json);
-        $this->assertEquals(\WordPress\AiClient\Files\Enums\FileTypeEnum::remote()->value, $json[File::KEY_FILE_TYPE]);
+        $this->assertEquals(FileTypeEnum::remote()->value, $json[File::KEY_FILE_TYPE]);
         $this->assertEquals('image/jpeg', $json[File::KEY_MIME_TYPE]);
         $this->assertEquals('https://example.com/image.jpg', $json[File::KEY_URL]);
         $this->assertArrayNotHasKey(File::KEY_BASE64_DATA, $json);
@@ -313,7 +315,7 @@ class FileTest extends TestCase
         $json = $file->toArray();
 
         $this->assertIsArray($json);
-        $this->assertEquals(\WordPress\AiClient\Files\Enums\FileTypeEnum::inline()->value, $json[File::KEY_FILE_TYPE]);
+        $this->assertEquals(FileTypeEnum::inline()->value, $json[File::KEY_FILE_TYPE]);
         $this->assertEquals('text/plain', $json[File::KEY_MIME_TYPE]);
         $this->assertEquals($base64Data, $json[File::KEY_BASE64_DATA]);
         $this->assertArrayNotHasKey(File::KEY_URL, $json);
@@ -327,7 +329,7 @@ class FileTest extends TestCase
     public function testFromArrayRemoteFile(): void
     {
         $json = [
-            File::KEY_FILE_TYPE => \WordPress\AiClient\Files\Enums\FileTypeEnum::remote()->value,
+            File::KEY_FILE_TYPE => FileTypeEnum::remote()->value,
             File::KEY_MIME_TYPE => 'image/png',
             File::KEY_URL => 'https://example.com/test.png'
         ];
@@ -350,7 +352,7 @@ class FileTest extends TestCase
     {
         $base64Data = 'SGVsbG8gV29ybGQ=';
         $json = [
-            File::KEY_FILE_TYPE => \WordPress\AiClient\Files\Enums\FileTypeEnum::inline()->value,
+            File::KEY_FILE_TYPE => FileTypeEnum::inline()->value,
             File::KEY_MIME_TYPE => 'text/plain',
             File::KEY_BASE64_DATA => $base64Data
         ];
@@ -401,7 +403,7 @@ class FileTest extends TestCase
         $file = new File('https://example.com/test.jpg');
 
         $this->assertInstanceOf(
-            \WordPress\AiClient\Common\Contracts\WithArrayTransformationInterface::class,
+            WithArrayTransformationInterface::class,
             $file
         );
     }

@@ -12,7 +12,8 @@ use WordPress\AiClient\Providers\Http\DTO\Request;
  *
  * @since n.e.x.t
  */
-interface RequestAuthenticationInterface extends WithJsonSchemaInterface
+interface RequestAuthenticationInterface extends
+    WithJsonSchemaInterface
 {
     /**
      * Authenticates an HTTP request.
@@ -20,7 +21,7 @@ interface RequestAuthenticationInterface extends WithJsonSchemaInterface
      * @since n.e.x.t
      *
      * @param Request $request The request to authenticate.
-     * @return void
+     * @return Request The authenticated request.
      */
-    public function authenticate(Request $request): void;
+    public function authenticateRequest(Request $request): Request;
 }

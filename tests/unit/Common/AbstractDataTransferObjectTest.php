@@ -8,6 +8,8 @@ use JsonSerializable;
 use PHPUnit\Framework\TestCase;
 use stdClass;
 use WordPress\AiClient\Common\AbstractDataTransferObject;
+use WordPress\AiClient\Common\Contracts\WithArrayTransformationInterface;
+use WordPress\AiClient\Common\Contracts\WithJsonSchemaInterface;
 
 /**
  * Tests for the AbstractDataTransferObject class.
@@ -546,10 +548,10 @@ class AbstractDataTransferObjectTest extends TestCase
 
         // Verify interface implementations
         $this->assertInstanceOf(
-            \WordPress\AiClient\Common\Contracts\WithArrayTransformationInterface::class,
+            WithArrayTransformationInterface::class,
             $testObject
         );
-        $this->assertInstanceOf(\WordPress\AiClient\Common\Contracts\WithJsonSchemaInterface::class, $testObject);
+        $this->assertInstanceOf(WithJsonSchemaInterface::class, $testObject);
         $this->assertInstanceOf(JsonSerializable::class, $testObject);
 
         // Verify methods exist and work

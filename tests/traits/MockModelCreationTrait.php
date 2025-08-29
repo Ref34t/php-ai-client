@@ -15,10 +15,12 @@ use WordPress\AiClient\Providers\Models\DTO\ModelMetadata;
 use WordPress\AiClient\Providers\Models\Enums\CapabilityEnum;
 use WordPress\AiClient\Providers\Models\ImageGeneration\Contracts\ImageGenerationModelInterface;
 use WordPress\AiClient\Providers\Models\TextGeneration\Contracts\TextGenerationModelInterface;
+use WordPress\AiClient\Providers\ProviderRegistry;
 use WordPress\AiClient\Results\DTO\Candidate;
 use WordPress\AiClient\Results\DTO\GenerativeAiResult;
 use WordPress\AiClient\Results\DTO\TokenUsage;
 use WordPress\AiClient\Results\Enums\FinishReasonEnum;
+use WordPress\AiClient\Tests\mocks\MockProvider;
 
 /**
  * Trait providing shared mock model creation methods for testing.
@@ -30,6 +32,19 @@ use WordPress\AiClient\Results\Enums\FinishReasonEnum;
  */
 trait MockModelCreationTrait
 {
+    /**
+     * Creates a provider registry with the mock provider registered.
+     *
+     * @since n.e.x.t
+     *
+     * @return ProviderRegistry The registry with mock provider.
+     */
+    protected function createRegistryWithMockProvider(): ProviderRegistry
+    {
+        $registry = new ProviderRegistry();
+        $registry->registerProvider(MockProvider::class);
+        return $registry;
+    }
     /**
      * Creates a test GenerativeAiResult for testing purposes.
      *
@@ -45,7 +60,7 @@ trait MockModelCreationTrait
         $tokenUsage = new TokenUsage(10, 20, 30);
 
         $providerMetadata = new ProviderMetadata(
-            'mock-provider',
+            'mock',
             'Mock Provider',
             ProviderTypeEnum::cloud()
         );
@@ -116,14 +131,29 @@ trait MockModelCreationTrait
     ): ModelInterface {
         $metadata = $metadata ?? $this->createTestTextModelMetadata();
 
-        return new class ($metadata, $result) implements ModelInterface, TextGenerationModelInterface {
+        $providerMetadata = new ProviderMetadata(
+            'mock',
+            'Mock Provider',
+            ProviderTypeEnum::cloud()
+        );
+
+        return new class (
+            $metadata,
+            $providerMetadata,
+            $result
+        ) implements ModelInterface, TextGenerationModelInterface {
             private ModelMetadata $metadata;
+            private ProviderMetadata $providerMetadata;
             private GenerativeAiResult $result;
             private ModelConfig $config;
 
-            public function __construct(ModelMetadata $metadata, GenerativeAiResult $result)
-            {
+            public function __construct(
+                ModelMetadata $metadata,
+                ProviderMetadata $providerMetadata,
+                GenerativeAiResult $result
+            ) {
                 $this->metadata = $metadata;
+                $this->providerMetadata = $providerMetadata;
                 $this->result = $result;
                 $this->config = new ModelConfig();
             }
@@ -131,6 +161,11 @@ trait MockModelCreationTrait
             public function metadata(): ModelMetadata
             {
                 return $this->metadata;
+            }
+
+            public function providerMetadata(): ProviderMetadata
+            {
+                return $this->providerMetadata;
             }
 
             public function setConfig(ModelConfig $config): void
@@ -168,14 +203,29 @@ trait MockModelCreationTrait
     ): ModelInterface {
         $metadata = $metadata ?? $this->createTestImageModelMetadata();
 
-        return new class ($metadata, $result) implements ModelInterface, ImageGenerationModelInterface {
+        $providerMetadata = new ProviderMetadata(
+            'mock',
+            'Mock Provider',
+            ProviderTypeEnum::cloud()
+        );
+
+        return new class (
+            $metadata,
+            $providerMetadata,
+            $result
+        ) implements ModelInterface, ImageGenerationModelInterface {
             private ModelMetadata $metadata;
+            private ProviderMetadata $providerMetadata;
             private GenerativeAiResult $result;
             private ModelConfig $config;
 
-            public function __construct(ModelMetadata $metadata, GenerativeAiResult $result)
-            {
+            public function __construct(
+                ModelMetadata $metadata,
+                ProviderMetadata $providerMetadata,
+                GenerativeAiResult $result
+            ) {
                 $this->metadata = $metadata;
+                $this->providerMetadata = $providerMetadata;
                 $this->result = $result;
                 $this->config = new ModelConfig();
             }
@@ -183,6 +233,11 @@ trait MockModelCreationTrait
             public function metadata(): ModelMetadata
             {
                 return $this->metadata;
+            }
+
+            public function providerMetadata(): ProviderMetadata
+            {
+                return $this->providerMetadata;
             }
 
             public function setConfig(ModelConfig $config): void
@@ -212,6 +267,11 @@ trait MockModelCreationTrait
     {
         $mockModel = $this->createMock(ModelInterface::class);
         $mockMetadata = $this->createMock(ModelMetadata::class);
+        $mockProviderMetadata = new ProviderMetadata(
+            'mock',
+            'Mock Provider',
+            ProviderTypeEnum::cloud()
+        );
 
         $mockMetadata->expects($this->any())
             ->method('getId')
@@ -220,6 +280,14 @@ trait MockModelCreationTrait
         $mockModel->expects($this->any())
             ->method('metadata')
             ->willReturn($mockMetadata);
+
+        $mockModel->expects($this->any())
+            ->method('providerMetadata')
+            ->willReturn($mockProviderMetadata);
+
+        $mockModel->expects($this->any())
+            ->method('getConfig')
+            ->willReturn(new ModelConfig());
 
         return $mockModel;
     }

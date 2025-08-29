@@ -154,6 +154,82 @@ class MimeTypeTest extends TestCase
     }
 
     /**
+     * Tests toExtension method.
+     *
+     * @dataProvider mimeTypeToExtensionProvider
+     * @param string $mimeType
+     * @param string $expectedExtension
+     * @return void
+     */
+    public function testToExtension(string $mimeType, string $expectedExtension): void
+    {
+        $mimeType = new MimeType($mimeType);
+        $this->assertEquals($expectedExtension, $mimeType->toExtension());
+    }
+
+    /**
+     * Provides MIME types and expected extensions.
+     *
+     * @return array
+     */
+    public function mimeTypeToExtensionProvider(): array
+    {
+        return [
+            // Text
+            ['text/plain', 'txt'],
+            ['text/html', 'html'],
+            ['text/css', 'css'],
+            ['application/javascript', 'js'],
+            ['application/json', 'json'],
+            ['application/xml', 'xml'],
+            ['text/csv', 'csv'],
+
+            // Images
+            ['image/jpeg', 'jpg'],
+            ['image/png', 'png'],
+            ['image/gif', 'gif'],
+            ['image/webp', 'webp'],
+            ['image/svg+xml', 'svg'],
+            ['image/x-icon', 'ico'],
+
+            // Documents
+            ['application/pdf', 'pdf'],
+            ['application/msword', 'doc'],
+            ['application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'docx'],
+            ['application/vnd.ms-excel', 'xls'],
+            ['application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'xlsx'],
+
+            // Audio
+            ['audio/mpeg', 'mp3'],
+            ['audio/wav', 'wav'],
+            ['audio/ogg', 'ogg'],
+
+            // Video
+            ['video/mp4', 'mp4'],
+            ['video/x-msvideo', 'avi'],
+            ['video/webm', 'webm'],
+
+            // Archives
+            ['application/zip', 'zip'],
+            ['application/x-tar', 'tar'],
+            ['application/gzip', 'gz'],
+        ];
+    }
+
+    /**
+     * Tests toExtension throws exception for unknown MIME type.
+     *
+     * @return void
+     */
+    public function testToExtensionThrowsExceptionForUnknownMimeType(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('No known extension for MIME type: application/octet-stream');
+
+        (new MimeType('application/octet-stream'))->toExtension();
+    }
+
+    /**
      * Tests isValid method.
      *
      * @return void

@@ -191,6 +191,9 @@ class PromptBuilder
     /**
      * Sets the model to use for generation.
      *
+     * The model's configuration will be merged with the builder's configuration,
+     * with the builder's configuration taking precedence for any overlapping settings.
+     *
      * @since n.e.x.t
      *
      * @param ModelInterface $model The model to use.
@@ -199,6 +202,14 @@ class PromptBuilder
     public function usingModel(ModelInterface $model): self
     {
         $this->model = $model;
+
+        // Merge model's config with builder's config, with builder's config taking precedence
+        $modelConfigArray = $model->getConfig()->toArray();
+        $builderConfigArray = $this->modelConfig->toArray();
+        $mergedConfigArray = array_merge($modelConfigArray, $builderConfigArray);
+
+        $this->modelConfig = ModelConfig::fromArray($mergedConfigArray);
+
         return $this;
     }
 
@@ -1009,6 +1020,7 @@ class PromptBuilder
         // If a model has been explicitly set, return it
         if ($this->model !== null) {
             $this->model->setConfig($this->modelConfig);
+            $this->registry->bindModelDependencies($this->model);
             return $this->model;
         }
 

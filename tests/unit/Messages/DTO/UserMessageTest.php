@@ -14,7 +14,7 @@ use WordPress\AiClient\Messages\Enums\MessageRoleEnum;
 use WordPress\AiClient\Tests\traits\ArrayTransformationTestTrait;
 
 /**
- * @covers \WordPress\AiClient\Messages\DTO\UserMessage
+ * @covers UserMessage
  */
 class UserMessageTest extends TestCase
 {
@@ -82,7 +82,7 @@ class UserMessageTest extends TestCase
     {
         $message = new UserMessage([]);
 
-        $this->assertInstanceOf(\WordPress\AiClient\Messages\DTO\Message::class, $message);
+        $this->assertInstanceOf(Message::class, $message);
     }
 
     /**
@@ -138,7 +138,7 @@ class UserMessageTest extends TestCase
     public function testJsonSchemaInheritance(): void
     {
         $schema = UserMessage::getJsonSchema();
-        $parentSchema = \WordPress\AiClient\Messages\DTO\Message::getJsonSchema();
+        $parentSchema = Message::getJsonSchema();
 
         $this->assertEquals($parentSchema, $schema);
     }

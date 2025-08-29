@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace WordPress\AiClient\Tests\traits;
 
+use WordPress\AiClient\Common\Contracts\WithArrayTransformationInterface;
+
 /**
  * Trait for testing array transformation functionality.
  *
@@ -20,7 +22,7 @@ trait ArrayTransformationTestTrait
     protected function assertImplementsArrayTransformation($object): void
     {
         $this->assertInstanceOf(
-            \WordPress\AiClient\Common\Contracts\WithArrayTransformationInterface::class,
+            WithArrayTransformationInterface::class,
             $object,
             'Object should implement WithArrayTransformationInterface interface'
         );

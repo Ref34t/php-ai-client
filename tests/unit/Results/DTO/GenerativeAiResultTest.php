@@ -17,6 +17,7 @@ use WordPress\AiClient\Providers\DTO\ProviderMetadata;
 use WordPress\AiClient\Providers\Enums\ProviderTypeEnum;
 use WordPress\AiClient\Providers\Models\DTO\ModelMetadata;
 use WordPress\AiClient\Providers\Models\Enums\CapabilityEnum;
+use WordPress\AiClient\Results\Contracts\ResultInterface;
 use WordPress\AiClient\Results\DTO\Candidate;
 use WordPress\AiClient\Results\DTO\GenerativeAiResult;
 use WordPress\AiClient\Results\DTO\TokenUsage;
@@ -659,7 +660,7 @@ class GenerativeAiResultTest extends TestCase
         );
 
         $this->assertInstanceOf(
-            \WordPress\AiClient\Results\Contracts\ResultInterface::class,
+            ResultInterface::class,
             $result
         );
     }
