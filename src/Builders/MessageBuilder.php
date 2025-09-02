@@ -17,8 +17,6 @@ use WordPress\AiClient\Tools\DTO\FunctionResponse;
  *
  * This class provides a fluent interface for building messages with various
  * content types including text, files, function calls, and function responses.
- * It automatically handles role-specific validation and creates the appropriate
- * message subclass based on the configured role.
  *
  * @since n.e.x.t
  */
