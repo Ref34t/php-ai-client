@@ -12,7 +12,6 @@ use WordPress\AiClient\Files\Enums\FileTypeEnum;
 use WordPress\AiClient\Files\Enums\MediaOrientationEnum;
 use WordPress\AiClient\Messages\Enums\ModalityEnum;
 use WordPress\AiClient\Providers\Models\DTO\ModelConfig;
-use WordPress\AiClient\Providers\Models\Enums\OptionEnum;
 use WordPress\AiClient\Tools\DTO\FunctionDeclaration;
 use WordPress\AiClient\Tools\DTO\WebSearch;
 
@@ -704,5 +703,4 @@ class ModelConfigTest extends TestCase
         $restored = ModelConfig::fromArray($array);
         $this->assertEquals($customOptions, $restored->getCustomOptions());
     }
-
 }
