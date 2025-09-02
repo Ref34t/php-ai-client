@@ -26,7 +26,11 @@ class NetworkException extends RuntimeException
      * @param \Throwable|null $previous The underlying network exception.
      * @return self
      */
-    public static function fromConnectionFailure(string $uri, string $reason = 'Connection failed', ?\Throwable $previous = null): self
+    public static function fromConnectionFailure(
+        string $uri,
+        string $reason = 'Connection failed',
+        ?\Throwable $previous = null
+    ): self
     {
         $message = sprintf('Network connection failed for %s: %s', $uri, $reason);
 
@@ -44,7 +48,12 @@ class NetworkException extends RuntimeException
      * @param \Throwable|null $previous The underlying timeout exception.
      * @return self
      */
-    public static function fromTimeout(string $uri, string $timeoutType = 'request', ?int $timeoutSeconds = null, ?\Throwable $previous = null): self
+    public static function fromTimeout(
+        string $uri,
+        string $timeoutType = 'request',
+        ?int $timeoutSeconds = null,
+        ?\Throwable $previous = null
+    ): self
     {
         $message = sprintf('Network %s timeout for %s', $timeoutType, $uri);
         if ($timeoutSeconds !== null) {

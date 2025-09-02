@@ -79,7 +79,11 @@ class HttpTransporter implements HttpTransporterInterface
         } catch (\Psr\Http\Client\ClientExceptionInterface $e) {
             // Handle other PSR-18 client exceptions that are not network-related
             throw new RuntimeException(
-                sprintf('HTTP client error occurred while sending request to %s: %s', $request->getUri(), $e->getMessage()),
+                sprintf(
+                    'HTTP client error occurred while sending request to %s: %s',
+                    $request->getUri(),
+                    $e->getMessage()
+                ),
                 0,
                 $e
             );
