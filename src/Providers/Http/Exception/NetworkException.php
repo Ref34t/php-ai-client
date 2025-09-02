@@ -29,7 +29,7 @@ class NetworkException extends RuntimeException
     public static function fromConnectionFailure(string $uri, string $reason = 'Connection failed', ?\Throwable $previous = null): self
     {
         $message = sprintf('Network connection failed for %s: %s', $uri, $reason);
-        
+
         return new self($message, 0, $previous);
     }
 
@@ -50,7 +50,7 @@ class NetworkException extends RuntimeException
         if ($timeoutSeconds !== null) {
             $message .= sprintf(' (after %d seconds)', $timeoutSeconds);
         }
-        
+
         return new self($message, 0, $previous);
     }
 
@@ -70,7 +70,7 @@ class NetworkException extends RuntimeException
             $uri,
             $networkException->getMessage()
         );
-        
+
         return new self($message, 0, $networkException);
     }
 
@@ -86,7 +86,7 @@ class NetworkException extends RuntimeException
     public static function fromDnsFailure(string $hostname, ?\Throwable $previous = null): self
     {
         $message = sprintf('Failed to resolve hostname: %s', $hostname);
-        
+
         return new self($message, 0, $previous);
     }
 
@@ -103,7 +103,7 @@ class NetworkException extends RuntimeException
     public static function fromSslError(string $uri, string $sslError, ?\Throwable $previous = null): self
     {
         $message = sprintf('SSL/TLS error for %s: %s', $uri, $sslError);
-        
+
         return new self($message, 0, $previous);
     }
 }

@@ -72,9 +72,9 @@ class ResponseException extends RuntimeException
     public static function fromMalformedResponse(string $apiName, string $reason, ?Response $response = null): self
     {
         $message = sprintf('Malformed %s API response: %s', $apiName, $reason);
-        
+
         $statusCode = $response ? $response->getStatusCode() : 0;
-        
+
         return new self($message, $statusCode);
     }
 
@@ -91,7 +91,7 @@ class ResponseException extends RuntimeException
     public static function fromParsingFailure(string $apiName, string $dataType, ?\Throwable $previous = null): self
     {
         $message = sprintf('Failed to parse %s from %s API response', $dataType, $apiName);
-        
+
         return new self($message, 0, $previous);
     }
 }

@@ -51,7 +51,7 @@ class RequestException extends InvalidArgumentException
     {
         $body = $response->getBody();
         $errorDetail = $body ? substr($body, 0, 200) : 'Invalid request parameters';
-        
+
         $message = sprintf(
             'Bad request to %s API (400): %s',
             $apiName,
