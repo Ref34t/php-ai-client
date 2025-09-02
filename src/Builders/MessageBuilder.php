@@ -178,14 +178,14 @@ class MessageBuilder
     }
 
     /**
-     * Validates that the message is ready to be built.
+     * Builds and returns the Message object.
      *
      * @since n.e.x.t
      *
-     * @return void
-     * @throws InvalidArgumentException If validation fails.
+     * @return Message The built message.
+     * @throws InvalidArgumentException If the message validation fails.
      */
-    private function validateForBuild(): void
+    public function get(): Message
     {
         if (empty($this->parts)) {
             throw new InvalidArgumentException(
@@ -198,34 +198,6 @@ class MessageBuilder
                 'Cannot build a message with no role. Set a role using usingRole() or similar methods.'
             );
         }
-
-        // Validate parts are appropriate for the role
-        foreach ($this->parts as $part) {
-            if ($this->role->isUser() && $part->getType()->isFunctionCall()) {
-                throw new InvalidArgumentException(
-                    'User messages cannot contain function calls.'
-                );
-            }
-
-            if ($this->role->isModel() && $part->getType()->isFunctionResponse()) {
-                throw new InvalidArgumentException(
-                    'Model messages cannot contain function responses.'
-                );
-            }
-        }
-    }
-
-    /**
-     * Builds and returns the Message object.
-     *
-     * @since n.e.x.t
-     *
-     * @return Message The built message.
-     * @throws InvalidArgumentException If the message validation fails.
-     */
-    public function get(): Message
-    {
-        $this->validateForBuild();
 
         // At this point, we've validated that $this->role is not null
         /** @var MessageRoleEnum $role */
