@@ -2,7 +2,9 @@
 
 declare(strict_types=1);
 
-namespace WordPress\AiClient\Exceptions;
+namespace WordPress\AiClient\Common\Exception;
+
+use WordPress\AiClient\Exceptions\AiClientExceptionInterface;
 
 /**
  * Exception thrown for runtime errors.

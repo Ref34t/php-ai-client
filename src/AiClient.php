@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace WordPress\AiClient;
 
 use WordPress\AiClient\Builders\PromptBuilder;
-use WordPress\AiClient\Exceptions\InvalidArgumentException;
-use WordPress\AiClient\Exceptions\RuntimeException;
+use WordPress\AiClient\Common\Exception\InvalidArgumentException;
+use WordPress\AiClient\Common\Exception\RuntimeException;
 use WordPress\AiClient\ProviderImplementations\Anthropic\AnthropicProvider;
 use WordPress\AiClient\ProviderImplementations\Google\GoogleProvider;
 use WordPress\AiClient\ProviderImplementations\OpenAi\OpenAiProvider;

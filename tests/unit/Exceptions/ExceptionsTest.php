@@ -5,21 +5,21 @@ declare(strict_types=1);
 namespace WordPress\AiClient\Tests\unit\Exceptions;
 
 use PHPUnit\Framework\TestCase;
+use WordPress\AiClient\Common\Exception\InvalidArgumentException;
+use WordPress\AiClient\Common\Exception\RuntimeException;
 use WordPress\AiClient\Exceptions\AiClientExceptionInterface;
-use WordPress\AiClient\Exceptions\InvalidArgumentException;
-use WordPress\AiClient\Exceptions\NetworkException;
-use WordPress\AiClient\Exceptions\RequestException;
-use WordPress\AiClient\Exceptions\RuntimeException;
+use WordPress\AiClient\Providers\Http\Exception\NetworkException;
+use WordPress\AiClient\Providers\Http\Exception\RequestException;
 
 /**
  * Tests for AI Client exceptions.
  *
  * @since 0.2.0
+ * @covers \WordPress\AiClient\Common\Exception\InvalidArgumentException
+ * @covers \WordPress\AiClient\Common\Exception\RuntimeException
  * @covers \WordPress\AiClient\Exceptions\AiClientExceptionInterface
- * @covers \WordPress\AiClient\Exceptions\InvalidArgumentException
- * @covers \WordPress\AiClient\Exceptions\RuntimeException
- * @covers \WordPress\AiClient\Exceptions\NetworkException
- * @covers \WordPress\AiClient\Exceptions\RequestException
+ * @covers \WordPress\AiClient\Providers\Http\Exception\NetworkException
+ * @covers \WordPress\AiClient\Providers\Http\Exception\RequestException
  */
 class ExceptionsTest extends TestCase
 {
