@@ -19,6 +19,10 @@ use WordPress\AiClient\Tools\DTO\FunctionResponse;
  * content types including text, files, function calls, and function responses.
  *
  * @since n.e.x.t
+ *
+ * @phpstan-import-type MessagePartArrayShape from MessagePart
+ *
+ * @phpstan-type Input string|MessagePart|MessagePartArrayShape|File|FunctionCall|FunctionResponse|null
  */
 class MessageBuilder
 {
@@ -37,15 +41,34 @@ class MessageBuilder
      *
      * @since n.e.x.t
      *
-     * @param string|null $text Optional initial text content.
+     * @param Input $input Optional initial content.
      * @param MessageRoleEnum|null $role Optional role.
      */
-    public function __construct(?string $text = null, ?MessageRoleEnum $role = null)
+    public function __construct($input = null, ?MessageRoleEnum $role = null)
     {
         $this->role = $role;
 
-        if ($text !== null) {
-            $this->withText($text);
+        if ($input === null) {
+            return;
+        }
+
+        // Handle different input types
+        if ($input instanceof MessagePart) {
+            $this->parts[] = $input;
+        } elseif (is_string($input)) {
+            $this->withText($input);
+        } elseif ($input instanceof File) {
+            $this->withFile($input);
+        } elseif ($input instanceof FunctionCall) {
+            $this->withFunctionCall($input);
+        } elseif ($input instanceof FunctionResponse) {
+            $this->withFunctionResponse($input);
+        } elseif (is_array($input) && MessagePart::isArrayShape($input)) {
+            $this->parts[] = MessagePart::fromArray($input);
+        } else {
+            throw new InvalidArgumentException(
+                'Input must be a string, MessagePart, MessagePartArrayShape, File, FunctionCall, or FunctionResponse.'
+            );
         }
     }
 

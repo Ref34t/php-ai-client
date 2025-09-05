@@ -296,7 +296,7 @@ direction LR
     namespace AiClientNamespace {
         class AiClient {
             +prompt(string|Message|null $text = null) PromptBuilder$
-            +message(?string $text) MessageBuilder$
+            +message($input = null) MessageBuilder$
         }
     }
 
@@ -443,7 +443,7 @@ direction LR
     namespace AiClientNamespace {
         class AiClient {
             +prompt(string|Message|null $text = null) PromptBuilder$
-            +message(?string $text) MessageBuilder$
+            +message($input = null) MessageBuilder$
             +defaultRegistry() ProviderRegistry$
             +isConfigured(ProviderAvailabilityInterface $availability) bool$
             +generateResult(string|MessagePart|MessagePart[]|Message|Message[] $prompt, ModelInterface $model) GenerativeAiResult$

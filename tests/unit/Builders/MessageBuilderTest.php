@@ -404,4 +404,126 @@ class MessageBuilderTest extends TestCase
         $this->assertTrue($message2->getRole()->isModel());
         $this->assertCount(2, $message2->getParts());
     }
+
+    /**
+     * Tests constructor with MessagePart input.
+     *
+     * @return void
+     */
+    public function testConstructorWithMessagePartInput(): void
+    {
+        $messagePart = new MessagePart('Test text');
+        $builder = new MessageBuilder($messagePart, MessageRoleEnum::user());
+        $message = $builder->get();
+
+        $this->assertTrue($message->getRole()->isUser());
+        $parts = $message->getParts();
+        $this->assertCount(1, $parts);
+        $this->assertSame($messagePart, $parts[0]);
+    }
+
+    /**
+     * Tests constructor with File input.
+     *
+     * @return void
+     */
+    public function testConstructorWithFileInput(): void
+    {
+        $file = new File('data:image/png;base64,test', 'image/png');
+        $builder = new MessageBuilder($file, MessageRoleEnum::user());
+        $message = $builder->get();
+
+        $this->assertTrue($message->getRole()->isUser());
+        $parts = $message->getParts();
+        $this->assertCount(1, $parts);
+        $this->assertTrue($parts[0]->getType()->isFile());
+        $this->assertSame($file, $parts[0]->getFile());
+    }
+
+    /**
+     * Tests constructor with FunctionCall input.
+     *
+     * @return void
+     */
+    public function testConstructorWithFunctionCallInput(): void
+    {
+        $functionCall = new FunctionCall('id', 'test_func', ['arg' => 'val']);
+        $builder = new MessageBuilder($functionCall, MessageRoleEnum::model());
+        $message = $builder->get();
+
+        $this->assertTrue($message->getRole()->isModel());
+        $parts = $message->getParts();
+        $this->assertCount(1, $parts);
+        $this->assertTrue($parts[0]->getType()->isFunctionCall());
+        $this->assertSame($functionCall, $parts[0]->getFunctionCall());
+    }
+
+    /**
+     * Tests constructor with FunctionResponse input.
+     *
+     * @return void
+     */
+    public function testConstructorWithFunctionResponseInput(): void
+    {
+        $functionResponse = new FunctionResponse('id', 'test_func', ['result' => 'success']);
+        $builder = new MessageBuilder($functionResponse, MessageRoleEnum::user());
+        $message = $builder->get();
+
+        $this->assertTrue($message->getRole()->isUser());
+        $parts = $message->getParts();
+        $this->assertCount(1, $parts);
+        $this->assertTrue($parts[0]->getType()->isFunctionResponse());
+        $this->assertSame($functionResponse, $parts[0]->getFunctionResponse());
+    }
+
+    /**
+     * Tests constructor with MessagePartArrayShape input.
+     *
+     * @return void
+     */
+    public function testConstructorWithMessagePartArrayShapeInput(): void
+    {
+        $partArray = ['text' => 'Hello from array'];
+        $builder = new MessageBuilder($partArray, MessageRoleEnum::user());
+        $message = $builder->get();
+
+        $this->assertTrue($message->getRole()->isUser());
+        $parts = $message->getParts();
+        $this->assertCount(1, $parts);
+        $this->assertTrue($parts[0]->getType()->isText());
+        $this->assertEquals('Hello from array', $parts[0]->getText());
+    }
+
+    /**
+     * Tests constructor with invalid input throws exception.
+     *
+     * @return void
+     */
+    public function testConstructorWithInvalidInputThrowsException(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage(
+            'Input must be a string, MessagePart, MessagePartArrayShape, File, FunctionCall, or FunctionResponse.'
+        );
+
+        new MessageBuilder(['invalid' => 'array']);
+    }
+
+    /**
+     * Tests constructor with null input creates empty builder.
+     *
+     * @return void
+     */
+    public function testConstructorWithNullInputCreatesEmptyBuilder(): void
+    {
+        $builder = new MessageBuilder(null, MessageRoleEnum::user());
+        
+        // Should be able to add content and build
+        $message = $builder->withText('Added later')->get();
+        
+        $this->assertTrue($message->getRole()->isUser());
+        $parts = $message->getParts();
+        $this->assertCount(1, $parts);
+        $this->assertEquals('Added later', $parts[0]->getText());
+    }
 }
