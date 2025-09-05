@@ -33,35 +33,6 @@ class ResponseUtil
             return;
         }
 
-        $errorMessage = sprintf(
-            'Bad status code: %d.',
-            $response->getStatusCode()
-        );
-
-        // Handle common error formats in API responses.
-        $data = $response->getData();
-        if (
-            is_array($data) &&
-            isset($data['error']) &&
-            is_array($data['error']) &&
-            isset($data['error']['message']) &&
-            is_string($data['error']['message'])
-        ) {
-            $errorMessage .= ' ' . $data['error']['message'];
-        } elseif (
-            is_array($data) &&
-            isset($data['error']) &&
-            is_string($data['error'])
-        ) {
-            $errorMessage .= ' ' . $data['error'];
-        } elseif (
-            is_array($data) &&
-            isset($data['message']) &&
-            is_string($data['message'])
-        ) {
-            $errorMessage .= ' ' . $data['message'];
-        }
-
-        throw new ResponseException($errorMessage, $response->getStatusCode());
+        throw ResponseException::fromBadResponse($response);
     }
 }

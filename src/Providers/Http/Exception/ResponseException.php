@@ -39,59 +39,51 @@ class ResponseException extends RuntimeException
         return new self($message);
     }
 
+
     /**
-     * Creates a ResponseException for unexpected API response structure.
+     * Creates a ResponseException from a bad HTTP response.
+     *
+     * This method extracts error details from common API response formats
+     * and creates an exception with a descriptive message and status code.
      *
      * @since n.e.x.t
      *
-     * @param string $apiName The name of the API/provider.
-     * @param string $expected What structure was expected.
-     * @param string $actual What was actually received.
+     * @param Response $response The HTTP response that failed.
      * @return self
      */
-    public static function fromUnexpectedStructure(string $apiName, string $expected, string $actual = 'unknown'): self
+    public static function fromBadResponse(Response $response): self
     {
-        return new self(sprintf(
-            'Unexpected %s API response structure. Expected: %s, Got: %s',
-            $apiName,
-            $expected,
-            $actual
-        ));
+        $errorMessage = sprintf(
+            'Bad status code: %d.',
+            $response->getStatusCode()
+        );
+
+        // Handle common error formats in API responses.
+        $data = $response->getData();
+        if (
+            is_array($data) &&
+            isset($data['error']) &&
+            is_array($data['error']) &&
+            isset($data['error']['message']) &&
+            is_string($data['error']['message'])
+        ) {
+            $errorMessage .= ' ' . $data['error']['message'];
+        } elseif (
+            is_array($data) &&
+            isset($data['error']) &&
+            is_string($data['error'])
+        ) {
+            $errorMessage .= ' ' . $data['error'];
+        } elseif (
+            is_array($data) &&
+            isset($data['message']) &&
+            is_string($data['message'])
+        ) {
+            $errorMessage .= ' ' . $data['message'];
+        }
+
+        return new self($errorMessage, $response->getStatusCode());
     }
 
-    /**
-     * Creates a ResponseException for malformed response data.
-     *
-     * @since n.e.x.t
-     *
-     * @param string $apiName The name of the API/provider.
-     * @param string $reason Why the response is considered malformed.
-     * @param Response|null $response The response object if available.
-     * @return self
-     */
-    public static function fromMalformedResponse(string $apiName, string $reason, ?Response $response = null): self
-    {
-        $message = sprintf('Malformed %s API response: %s', $apiName, $reason);
 
-        $statusCode = $response ? $response->getStatusCode() : 0;
-
-        return new self($message, $statusCode);
-    }
-
-    /**
-     * Creates a ResponseException from response parsing failure.
-     *
-     * @since n.e.x.t
-     *
-     * @param string $apiName The name of the API/provider.
-     * @param string $dataType The type of data that failed to parse.
-     * @param \Throwable|null $previous The previous exception that caused parsing to fail.
-     * @return self
-     */
-    public static function fromParsingFailure(string $apiName, string $dataType, ?\Throwable $previous = null): self
-    {
-        $message = sprintf('Failed to parse %s from %s API response', $dataType, $apiName);
-
-        return new self($message, 0, $previous);
-    }
 }
