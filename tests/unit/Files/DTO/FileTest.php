@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace WordPress\AiClient\Tests\unit\Files\DTO;
 
-use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
 use WordPress\AiClient\Common\Contracts\WithArrayTransformationInterface;
+use WordPress\AiClient\Common\Exception\InvalidArgumentException;
 use WordPress\AiClient\Files\DTO\File;
 use WordPress\AiClient\Files\Enums\FileTypeEnum;
 use WordPress\AiClient\Files\ValueObjects\MimeType;
@@ -280,7 +280,7 @@ class FileTest extends TestCase
     public function testUrlWithUnknownExtension(): void
     {
         $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Unable to determine MIME type. Please provide it explicitly.');
+        $this->expectExceptionMessage('Unknown file extension: unknown');
 
         new File('https://example.com/file.unknown');
     }
