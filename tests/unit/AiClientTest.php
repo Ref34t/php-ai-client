@@ -9,10 +9,10 @@ use RuntimeException;
 use WordPress\AiClient\AiClient;
 use WordPress\AiClient\Messages\DTO\MessagePart;
 use WordPress\AiClient\Messages\DTO\UserMessage;
+use WordPress\AiClient\ProviderImplementations\OpenAi\OpenAiProvider;
 use WordPress\AiClient\Providers\Contracts\ProviderAvailabilityInterface;
 use WordPress\AiClient\Providers\Models\DTO\ModelConfig;
 use WordPress\AiClient\Providers\ProviderRegistry;
-use WordPress\AiClient\ProviderImplementations\OpenAi\OpenAiProvider;
 use WordPress\AiClient\Tests\traits\MockModelCreationTrait;
 
 /**
@@ -350,7 +350,8 @@ class AiClientTest extends TestCase
             $this->fail("Expected InvalidArgumentException for isConfigured with $expectedType");
         } catch (\InvalidArgumentException $e) {
             $this->assertStringContainsString(
-                'Parameter must be a ProviderAvailabilityInterface instance, provider ID string, or provider class name.',
+                'Parameter must be a ProviderAvailabilityInterface instance, provider ID string, ' .
+                'or provider class name.',
                 $e->getMessage(),
                 "isConfigured should reject invalid parameter type: $expectedType"
             );
