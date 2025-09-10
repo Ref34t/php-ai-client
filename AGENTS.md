@@ -87,8 +87,8 @@ All parameters, return values, and properties must use explicit type hints, exce
 
 All exceptions must use the project's custom exception classes rather than PHP built-in exceptions. This includes:
 
-- Use `WordPress\AiClient\Common\Exception\InvalidArgumentException` instead of PHP's `\InvalidArgumentException`
-- Use `WordPress\AiClient\Common\Exception\RuntimeException` instead of PHP's `\RuntimeException`
+- Use the custom primitive exceptions in `WordPress\AiClient\Common\Exception\` instead of the PHP primitive exceptions
+- If a PHP primitive exception is needed that doesn't have a custom exception counterpart, then create one that extends the primitive and implements AiClientExceptionInterface
 - All custom exceptions implement `WordPress\AiClient\Exceptions\AiClientExceptionInterface` for unified exception handling
 - Follow usage-driven design: only implement static factory methods that are actually used in the codebase
 
