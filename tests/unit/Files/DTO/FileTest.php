@@ -280,7 +280,7 @@ class FileTest extends TestCase
     public function testUrlWithUnknownExtension(): void
     {
         $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Unknown file extension: unknown');
+        $this->expectExceptionMessage('Unable to determine MIME type. Please provide it explicitly.');
 
         new File('https://example.com/file.unknown');
     }
