@@ -16,8 +16,6 @@ use WordPress\AiClient\Providers\Http\Contracts\HttpTransporterInterface;
 use WordPress\AiClient\Providers\Http\DTO\Request;
 use WordPress\AiClient\Providers\Http\DTO\Response;
 use WordPress\AiClient\Providers\Http\Exception\NetworkException;
-use WordPress\AiClient\Providers\Http\Exception\RequestException;
-
 /**
  * HTTP transporter implementation using HTTPlug.
  *
@@ -87,13 +85,6 @@ class HttpTransporter implements HttpTransporterInterface
                 0,
                 $e
             );
-        }
-
-        // Check for 400 Bad Request responses indicating invalid request data
-        if ($psr7Response->getStatusCode() === 400) {
-            $body = (string) $psr7Response->getBody();
-            $errorDetail = $body ? substr($body, 0, 200) : 'Invalid request parameters';
-            throw RequestException::fromBadRequest($psr7Request, $errorDetail);
         }
 
         return $this->convertFromPsr7Response($psr7Response);

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace WordPress\AiClient\Providers\Http\Util;
 
 use WordPress\AiClient\Providers\Http\DTO\Response;
+use WordPress\AiClient\Providers\Http\Exception\ClientException;
 use WordPress\AiClient\Providers\Http\Exception\ResponseException;
 
 /**
@@ -31,6 +32,13 @@ class ResponseUtil
     {
         if ($response->isSuccessful()) {
             return;
+        }
+
+        // Check for 400 Bad Request responses indicating invalid request data
+        if ($response->getStatusCode() === 400) {
+            $body = (string) $response->getBody();
+            $errorDetail = $body ? substr($body, 0, 200) : 'Invalid request parameters';
+            throw ClientException::fromBadRequestResponse($errorDetail);
         }
 
         throw ResponseException::fromBadResponse($response);
