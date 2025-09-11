@@ -243,7 +243,7 @@ class GenerativeAiResultTest extends TestCase
         );
 
         $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessage('No text content found in the candidates');
+        $this->expectExceptionMessage('No text content found in first candidate');
 
         $result->toText();
     }

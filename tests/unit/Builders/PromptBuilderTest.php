@@ -1601,7 +1601,7 @@ class PromptBuilderTest extends TestCase
         $builder->usingModel($model);
 
         $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessage('No text content found in the candidates');
+        $this->expectExceptionMessage('No text content found in first candidate');
 
         $builder->generateText();
     }
@@ -1635,7 +1635,7 @@ class PromptBuilderTest extends TestCase
         $builder->usingModel($model);
 
         $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessage('No text content found in the candidates');
+        $this->expectExceptionMessage('No text content found in first candidate');
 
         $builder->generateText();
     }
@@ -2534,7 +2534,7 @@ class PromptBuilderTest extends TestCase
         $builder->usingModel($model);
 
         $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessage('No text content found in the candidates');
+        $this->expectExceptionMessage('No text content found in first candidate');
 
         $builder->generateText();
     }

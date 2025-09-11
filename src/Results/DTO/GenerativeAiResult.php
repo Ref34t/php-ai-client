@@ -9,7 +9,6 @@ use RuntimeException;
 use WordPress\AiClient\Common\AbstractDataTransferObject;
 use WordPress\AiClient\Files\DTO\File;
 use WordPress\AiClient\Messages\DTO\Message;
-use WordPress\AiClient\Messages\Enums\MessagePartChannelEnum;
 use WordPress\AiClient\Providers\DTO\ProviderMetadata;
 use WordPress\AiClient\Providers\Models\DTO\ModelMetadata;
 use WordPress\AiClient\Results\Contracts\ResultInterface;
@@ -209,18 +208,16 @@ class GenerativeAiResult extends AbstractDataTransferObject implements ResultInt
      */
     public function toText(): string
     {
-        foreach ($this->candidates as $candidate) {
-            $message = $candidate->getMessage();
-            foreach ($message->getParts() as $part) {
-                $channel = $part->getChannel();
-                $text = $part->getText();
-                if (MessagePartChannelEnum::content() === $channel && $text !== null) {
-                    return $text;
-                }
+        $message = $this->candidates[0]->getMessage();
+        foreach ($message->getParts() as $part) {
+            $channel = $part->getChannel();
+            $text = $part->getText();
+            if ($channel->isContent() && $text !== null) {
+                return $text;
             }
         }
 
-        throw new RuntimeException('No text content found in the candidates');
+        throw new RuntimeException('No text content found in first candidate');
     }
 
     /**
@@ -334,7 +331,7 @@ class GenerativeAiResult extends AbstractDataTransferObject implements ResultInt
             foreach ($message->getParts() as $part) {
                 $channel = $part->getChannel();
                 $text = $part->getText();
-                if (MessagePartChannelEnum::content() === $channel && $text !== null) {
+                if ($channel->isContent() && $text !== null) {
                     $texts[] = $text;
                     break;
                 }
