@@ -221,7 +221,7 @@ class GenerativeAiResult extends AbstractDataTransferObject implements ResultInt
     }
 
     /**
-     * Converts the first candidate to a file.
+     * Converts the first content candidate to a file.
      *
      * @since 0.1.0
      *
@@ -232,8 +232,9 @@ class GenerativeAiResult extends AbstractDataTransferObject implements ResultInt
     {
         $message = $this->candidates[0]->getMessage();
         foreach ($message->getParts() as $part) {
+            $channel = $part->getChannel();
             $file = $part->getFile();
-            if ($file !== null) {
+            if ($channel->isContent() && $file !== null) {
                 return $file;
             }
         }
@@ -353,8 +354,9 @@ class GenerativeAiResult extends AbstractDataTransferObject implements ResultInt
         foreach ($this->candidates as $candidate) {
             $message = $candidate->getMessage();
             foreach ($message->getParts() as $part) {
+                $channel = $part->getChannel();
                 $file = $part->getFile();
-                if ($file !== null) {
+                if ($channel->isContent() && $file !== null) {
                     $files[] = $file;
                     break;
                 }
