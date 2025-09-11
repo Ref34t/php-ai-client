@@ -116,7 +116,7 @@ class AiClient
      * Checks if a provider is configured and available for use.
      *
      * Supports multiple input formats for developer convenience:
-     * - ProviderAvailabilityInterface: Direct availability check (backward compatible)
+     * - ProviderAvailabilityInterface: Direct availability check
      * - string (provider ID): e.g., AiClient::isConfigured('openai')
      * - string (class name): e.g., AiClient::isConfigured(OpenAiProvider::class)
      *
