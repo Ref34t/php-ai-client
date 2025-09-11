@@ -199,7 +199,9 @@ class GenerativeAiResult extends AbstractDataTransferObject implements ResultInt
     }
 
     /**
-     * Converts the first content candidate to text.
+     * Converts the first candidate to text.
+     *
+     * Only text from the content channel is considered. Text within model thought or reasoning is ignored.
      *
      * @since 0.1.0
      *
@@ -221,7 +223,9 @@ class GenerativeAiResult extends AbstractDataTransferObject implements ResultInt
     }
 
     /**
-     * Converts the first content candidate to a file.
+     * Converts the first candidate to a file.
+     *
+     * Only files from the content channel are considered. Files within model thought or reasoning are ignored.
      *
      * @since 0.1.0
      *
@@ -318,7 +322,7 @@ class GenerativeAiResult extends AbstractDataTransferObject implements ResultInt
     }
 
     /**
-     * Converts all content candidates to a text array.
+     * Converts all candidates to text.
      *
      * @since 0.1.0
      *
