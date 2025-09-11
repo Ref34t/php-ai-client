@@ -6,6 +6,7 @@ namespace WordPress\AiClient\Providers\Http\Util;
 
 use WordPress\AiClient\Providers\Http\DTO\Response;
 use WordPress\AiClient\Providers\Http\Exception\ClientException;
+use WordPress\AiClient\Providers\Http\Exception\RedirectException;
 use WordPress\AiClient\Providers\Http\Exception\ResponseException;
 use WordPress\AiClient\Providers\Http\Exception\ServerException;
 
@@ -21,6 +22,7 @@ class ResponseUtil
      *
      * This method checks the HTTP status code of the response and throws
      * the appropriate exception type based on the status code range:
+     * - 3xx: RedirectException (redirect responses)
      * - 4xx: ClientException (client errors)
      * - 5xx: ServerException (server errors)
      * - Other unsuccessful responses: ResponseException (malformed responses)
@@ -28,6 +30,7 @@ class ResponseUtil
      * @since 0.1.0
      *
      * @param Response $response The HTTP response to check.
+     * @throws RedirectException If the response indicates a redirect (3xx).
      * @throws ClientException If the response indicates a client error (4xx).
      * @throws ServerException If the response indicates a server error (5xx).
      * @throws ResponseException If the response format is unexpected.
@@ -39,6 +42,11 @@ class ResponseUtil
         }
 
         $statusCode = $response->getStatusCode();
+
+        // 3xx Redirect Responses
+        if ($statusCode >= 300 && $statusCode < 400) {
+            throw RedirectException::fromRedirectResponse($response);
+        }
 
         // 4xx Client Errors
         if ($statusCode >= 400 && $statusCode < 500) {
@@ -57,8 +65,7 @@ class ResponseUtil
             throw ServerException::fromServerError($response);
         }
 
-        // Other unsuccessful responses (3xx redirects, etc.) - these should be rare
-        // as most HTTP clients handle redirects automatically
+        // Other unsuccessful responses - should be extremely rare
         throw ResponseException::fromBadResponse($response);
     }
 }

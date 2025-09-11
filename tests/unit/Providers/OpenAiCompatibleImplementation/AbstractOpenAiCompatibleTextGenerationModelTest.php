@@ -17,6 +17,7 @@ use WordPress\AiClient\Providers\DTO\ProviderMetadata;
 use WordPress\AiClient\Providers\Http\Contracts\HttpTransporterInterface;
 use WordPress\AiClient\Providers\Http\Contracts\RequestAuthenticationInterface;
 use WordPress\AiClient\Providers\Http\DTO\Response;
+use WordPress\AiClient\Providers\Http\Exception\ClientException;
 use WordPress\AiClient\Providers\Http\Exception\ResponseException;
 use WordPress\AiClient\Providers\Models\DTO\ModelConfig;
 use WordPress\AiClient\Providers\Models\DTO\ModelMetadata;
@@ -158,8 +159,8 @@ class AbstractOpenAiCompatibleTextGenerationModelTest extends TestCase
 
         $model = $this->createModel();
 
-        $this->expectException(ResponseException::class);
-        $this->expectExceptionMessage('Bad status code: 400. Bad Request');
+        $this->expectException(ClientException::class);
+        $this->expectExceptionMessage('Bad request (400): {"error": "Bad Request"}');
 
         $model->generateTextResult($prompt);
     }

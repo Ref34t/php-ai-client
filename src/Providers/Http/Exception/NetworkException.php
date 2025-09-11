@@ -6,7 +6,6 @@ namespace WordPress\AiClient\Providers\Http\Exception;
 
 use Psr\Http\Client\NetworkExceptionInterface;
 use Psr\Http\Message\RequestInterface;
-use WordPress\AiClient\Common\Exception\RuntimeException;
 
 /**
  * Exception thrown for network-related errors.
@@ -16,7 +15,7 @@ use WordPress\AiClient\Common\Exception\RuntimeException;
  *
  * @since n.e.x.t
  */
-class NetworkException extends RuntimeException implements NetworkExceptionInterface
+class NetworkException extends RequestException implements NetworkExceptionInterface
 {
     /**
      * The request that failed.
