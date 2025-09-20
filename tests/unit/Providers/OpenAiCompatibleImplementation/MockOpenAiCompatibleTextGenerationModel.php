@@ -20,6 +20,9 @@ use WordPress\AiClient\Results\DTO\GenerativeAiResult;
 
 /**
  * Mock class for testing AbstractOpenAiCompatibleTextGenerationModel.
+ *
+ * This mock represents a text generation model that implements OpenAI's API format,
+ * which can be used by any AI provider offering OpenAI-compatible endpoints.
  */
 class MockOpenAiCompatibleTextGenerationModel extends AbstractOpenAiCompatibleTextGenerationModel
 {
@@ -113,9 +116,9 @@ class MockOpenAiCompatibleTextGenerationModel extends AbstractOpenAiCompatibleTe
         return $this->prepareGenerateTextParams($prompt);
     }
 
-    public function exposeMergeSystemInstruction(array $prompt, string $systemInstruction): array
+    public function exposePrepareMessagesParamWithSystemInstruction(array $prompt, string $systemInstruction): array
     {
-        return $this->mergeSystemInstruction($prompt, $systemInstruction);
+        return $this->prepareMessagesParam($prompt, $systemInstruction);
     }
 
     public function exposePrepareMessagesParam(array $messages): array

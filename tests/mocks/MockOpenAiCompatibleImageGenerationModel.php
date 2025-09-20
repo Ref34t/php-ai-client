@@ -14,6 +14,9 @@ use WordPress\AiClient\Results\DTO\GenerativeAiResult;
 
 /**
  * Mock class for AbstractOpenAiCompatibleImageGenerationModel to expose protected methods for testing.
+ *
+ * This mock represents an image generation model that implements OpenAI's API format,
+ * which can be used by any AI provider offering OpenAI-compatible endpoints.
  */
 class MockOpenAiCompatibleImageGenerationModel extends AbstractOpenAiCompatibleImageGenerationModel
 {
