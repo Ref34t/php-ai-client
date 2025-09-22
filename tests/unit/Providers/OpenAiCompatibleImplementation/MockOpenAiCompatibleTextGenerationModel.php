@@ -20,9 +20,6 @@ use WordPress\AiClient\Results\DTO\GenerativeAiResult;
 
 /**
  * Mock class for testing AbstractOpenAiCompatibleTextGenerationModel.
- *
- * This mock represents a text generation model that implements OpenAI's API format,
- * which can be used by any AI provider offering OpenAI-compatible endpoints.
  */
 class MockOpenAiCompatibleTextGenerationModel extends AbstractOpenAiCompatibleTextGenerationModel
 {
