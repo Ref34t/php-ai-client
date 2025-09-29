@@ -24,16 +24,11 @@ class ResponseException extends RuntimeException
      *
      * @param string $apiName The name of the API/provider.
      * @param string $fieldName The field that was expected but missing.
-     * @param string $context Additional context about where the field was expected.
      * @return self
      */
-    public static function fromMissingData(string $apiName, string $fieldName, string $context = ''): self
+    public static function fromMissingData(string $apiName, string $fieldName): self
     {
-        $message = sprintf('Unexpected %s API response: Missing the "%s" key', $apiName, $fieldName);
-        if ($context !== '') {
-            $message .= ' in ' . $context;
-        }
-        $message .= '.';
+        $message = sprintf('Unexpected %s API response: Missing the "%s" key.', $apiName, $fieldName);
 
         return new self($message);
     }

@@ -566,7 +566,7 @@ abstract class AbstractOpenAiCompatibleTextGenerationModel extends AbstractApiBa
         }
 
         $candidates = [];
-        foreach ($responseData['choices'] as $choiceData) {
+        foreach ($responseData['choices'] as $index => $choiceData) {
             if (!is_array($choiceData) || array_is_list($choiceData)) {
                 throw ResponseException::fromInvalidData(
                     $this->providerMetadata()->getName(),
@@ -574,7 +574,7 @@ abstract class AbstractOpenAiCompatibleTextGenerationModel extends AbstractApiBa
                 );
             }
 
-            $candidates[] = $this->parseResponseChoiceToCandidate($choiceData);
+            $candidates[] = $this->parseResponseChoiceToCandidate($choiceData, $index);
         }
 
         $id = isset($responseData['id']) && is_string($responseData['id']) ? $responseData['id'] : '';
@@ -611,10 +611,11 @@ abstract class AbstractOpenAiCompatibleTextGenerationModel extends AbstractApiBa
      * @since 0.1.0
      *
      * @param ChoiceData $choiceData The choice data from the API response.
+     * @param int $index The index of the choice in the choices array.
      * @return Candidate The parsed candidate.
      * @throws RuntimeException If the choice data is invalid.
      */
-    protected function parseResponseChoiceToCandidate(array $choiceData): Candidate
+    protected function parseResponseChoiceToCandidate(array $choiceData, int $index): Candidate
     {
         if (
             !isset($choiceData['message']) ||
@@ -623,16 +624,14 @@ abstract class AbstractOpenAiCompatibleTextGenerationModel extends AbstractApiBa
         ) {
             throw ResponseException::fromMissingData(
                 $this->providerMetadata()->getName(),
-                'message',
-                'choice data'
+                "choices[{$index}].message"
             );
         }
 
         if (!isset($choiceData['finish_reason']) || !is_string($choiceData['finish_reason'])) {
             throw ResponseException::fromMissingData(
                 $this->providerMetadata()->getName(),
-                'finish_reason',
-                'choice data'
+                "choices[{$index}].finish_reason"
             );
         }
 

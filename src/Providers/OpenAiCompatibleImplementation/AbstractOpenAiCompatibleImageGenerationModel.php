@@ -361,10 +361,9 @@ abstract class AbstractOpenAiCompatibleImageGenerationModel extends AbstractApiB
         } elseif (isset($choiceData['b64_json']) && is_string($choiceData['b64_json'])) {
             $imageFile = new File($choiceData['b64_json'], $expectedMimeType);
         } else {
-            throw ResponseException::fromMissingData(
+            throw ResponseException::fromInvalidData(
                 $this->providerMetadata()->getName(),
-                'url or b64_json',
-                'choice data'
+                'Each choice must contain either a url or b64_json key with a string value.'
             );
         }
 
