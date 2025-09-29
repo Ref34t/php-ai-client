@@ -1033,7 +1033,7 @@ class AbstractOpenAiCompatibleTextGenerationModelTest extends TestCase
 
         $this->expectException(ResponseException::class);
         $this->expectExceptionMessage(
-            'Unexpected TestProvider API response: Missing the "message" key in choice data.'
+            'Unexpected TestProvider API response: Missing the "choices[0].message" key.'
         );
 
         $model->exposeParseResponseChoiceToCandidate($choiceData);
@@ -1054,7 +1054,7 @@ class AbstractOpenAiCompatibleTextGenerationModelTest extends TestCase
 
         $this->expectException(ResponseException::class);
         $this->expectExceptionMessage(
-            'Unexpected TestProvider API response: Missing the "message" key in choice data.'
+            'Unexpected TestProvider API response: Missing the "choices[0].message" key.'
         );
 
         $model->exposeParseResponseChoiceToCandidate($choiceData);
@@ -1077,7 +1077,7 @@ class AbstractOpenAiCompatibleTextGenerationModelTest extends TestCase
 
         $this->expectException(ResponseException::class);
         $this->expectExceptionMessage(
-            'Unexpected TestProvider API response: Missing the "finish_reason" key in choice data.'
+            'Unexpected TestProvider API response: Missing the "choices[0].finish_reason" key.'
         );
 
         $model->exposeParseResponseChoiceToCandidate($choiceData);

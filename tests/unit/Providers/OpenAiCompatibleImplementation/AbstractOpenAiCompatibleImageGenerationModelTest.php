@@ -826,7 +826,8 @@ class AbstractOpenAiCompatibleImageGenerationModelTest extends TestCase
 
         $this->expectException(ResponseException::class);
         $this->expectExceptionMessage(
-            'Unexpected TestProvider API response: Missing the "url or b64_json" key in choice data.'
+            'Unexpected TestProvider API response: Each choice must contain either a url or b64_json key with a ' .
+            'string value.'
         );
 
         $model->exposeParseResponseChoiceToCandidate($choiceData);
