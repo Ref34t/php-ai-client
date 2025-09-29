@@ -117,7 +117,8 @@ class ResponseUtilTest extends TestCase
         $this->expectException(ServerException::class);
         $this->expectExceptionCode($statusCode);
         $this->expectExceptionMessageMatches(
-            "/^Server error \\({$statusCode}\\): Request failed due to server-side issue( - {$expectedMessagePart})?$/"
+            "/^Server error \\({$statusCode} [^)]+\\): Request failed due to " .
+            "server-side issue( - {$expectedMessagePart})?$/"
         );
 
         ResponseUtil::throwIfNotSuccessful($response);

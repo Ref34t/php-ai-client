@@ -29,11 +29,23 @@ class ServerException extends RuntimeException
      * @param Response $response The HTTP response that failed.
      * @return self
      */
-    public static function fromServerError(Response $response): self
+    public static function fromServerErrorResponse(Response $response): self
     {
+        $statusCode = $response->getStatusCode();
+        $statusTexts = [
+            500 => 'Internal Server Error',
+            502 => 'Bad Gateway',
+            503 => 'Service Unavailable',
+            504 => 'Gateway Timeout',
+            507 => 'Insufficient Storage',
+        ];
+
+        $statusText = $statusTexts[$statusCode] ?? 'Server Error';
+
         $errorMessage = sprintf(
-            'Server error (%d): Request failed due to server-side issue',
-            $response->getStatusCode()
+            'Server error (%d %s): Request failed due to server-side issue',
+            $statusCode,
+            $statusText
         );
 
         // Extract error message from response data using centralized utility
