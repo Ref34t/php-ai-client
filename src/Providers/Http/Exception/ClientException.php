@@ -48,57 +48,6 @@ class ClientException extends InvalidArgumentException
     }
 
     /**
-     * Creates a ClientException from a 400 Bad Request response.
-     *
-     * @since n.e.x.t
-     *
-     * @param string $errorDetail Details about what made the request bad.
-     * @return self
-     */
-    public static function fromBadRequestResponse(string $errorDetail = 'Invalid request parameters'): self
-    {
-        $message = sprintf('Bad request (400): %s', $errorDetail);
-        return new self($message, 400);
-    }
-
-    /**
-     * Creates a ClientException from a bad request.
-     *
-     * @since n.e.x.t
-     *
-     * @param RequestInterface $psrRequest The PSR-7 request that failed.
-     * @param string $errorDetail Details about what made the request bad.
-     * @return self
-     */
-    public static function fromBadRequest(
-        RequestInterface $psrRequest,
-        string $errorDetail = 'Invalid request parameters'
-    ): self {
-        $request = Request::fromPsrRequest($psrRequest);
-        $message = sprintf('Bad request to %s (400): %s', $request->getUri(), $errorDetail);
-
-        $exception = new self($message, 400);
-        $exception->request = $request;
-        return $exception;
-    }
-
-    /**
-     * Creates a ClientException from a bad request to a specific URI.
-     *
-     * @since n.e.x.t
-     *
-     * @param string $uri The URI that was requested.
-     * @param string $errorDetail Details about what made the request bad.
-     * @return self
-     *
-     * @deprecated Use fromBadRequest() with RequestInterface for better type safety
-     */
-    public static function fromBadRequestToUri(string $uri, string $errorDetail = 'Invalid request parameters'): self
-    {
-        return new self(sprintf('Bad request to %s (400): %s', $uri, $errorDetail), 400);
-    }
-
-    /**
      * Creates a ClientException from a client error response (4xx).
      *
      * This method extracts error details from common API response formats
@@ -111,9 +60,22 @@ class ClientException extends InvalidArgumentException
      */
     public static function fromClientErrorResponse(Response $response): self
     {
+        $statusCode = $response->getStatusCode();
+        $statusTexts = [
+            400 => 'Bad Request',
+            401 => 'Unauthorized',
+            403 => 'Forbidden',
+            404 => 'Not Found',
+            422 => 'Unprocessable Entity',
+            429 => 'Too Many Requests',
+        ];
+
+        $statusText = $statusTexts[$statusCode] ?? 'Client Error';
+
         $errorMessage = sprintf(
-            'Client error (%d): Request was rejected due to client-side issue',
-            $response->getStatusCode()
+            'Client error (%d %s): Request was rejected due to client-side issue',
+            $statusCode,
+            $statusText
         );
 
         // Extract error message from response data using centralized utility
