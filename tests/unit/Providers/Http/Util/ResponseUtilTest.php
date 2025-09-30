@@ -61,7 +61,7 @@ class ResponseUtilTest extends TestCase
 
         $this->expectException(ClientException::class);
         $this->expectExceptionCode(400);
-        $this->expectExceptionMessage('Client error (400 Bad Request): Request was rejected due to client-side issue');
+        $this->expectExceptionMessage('Bad Request (400)');
 
         ResponseUtil::throwIfNotSuccessful($response);
     }
@@ -88,8 +88,7 @@ class ResponseUtilTest extends TestCase
         $this->expectException(ClientException::class);
         $this->expectExceptionCode($statusCode);
         $this->expectExceptionMessageMatches(
-            "/^Client error \\({$statusCode} [^)]+\\): Request was rejected due to " .
-            "client-side issue( - {$expectedMessagePart})?$/"
+            "/^[A-Za-z ]+ \\({$statusCode}\\)( - {$expectedMessagePart})?$/"
         );
 
         ResponseUtil::throwIfNotSuccessful($response);
@@ -117,8 +116,7 @@ class ResponseUtilTest extends TestCase
         $this->expectException(ServerException::class);
         $this->expectExceptionCode($statusCode);
         $this->expectExceptionMessageMatches(
-            "/^Server error \\({$statusCode} [^)]+\\): Request failed due to " .
-            "server-side issue( - {$expectedMessagePart})?$/"
+            "/^[A-Za-z ]+ \\({$statusCode}\\)( - {$expectedMessagePart})?$/"
         );
 
         ResponseUtil::throwIfNotSuccessful($response);

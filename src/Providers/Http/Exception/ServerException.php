@@ -40,13 +40,14 @@ class ServerException extends RuntimeException
             507 => 'Insufficient Storage',
         ];
 
-        $statusText = $statusTexts[$statusCode] ?? 'Server Error';
-
-        $errorMessage = sprintf(
-            'Server error (%d %s): Request failed due to server-side issue',
-            $statusCode,
-            $statusText
-        );
+        if (isset($statusTexts[$statusCode])) {
+            $errorMessage = sprintf('%s (%d)', $statusTexts[$statusCode], $statusCode);
+        } else {
+            $errorMessage = sprintf(
+                'Server error (%d): Request was rejected due to server-side issue',
+                $statusCode
+            );
+        }
 
         // Extract error message from response data using centralized utility
         $extractedError = ErrorMessageExtractor::extractFromResponseData($response->getData());

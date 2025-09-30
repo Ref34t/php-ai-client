@@ -42,13 +42,14 @@ class RedirectException extends RuntimeException
             308 => 'Permanent Redirect',
         ];
 
-        $statusText = $statusTexts[$statusCode] ?? 'Redirect';
-
-        $errorMessage = sprintf(
-            'Redirect response (%d %s): Request needs to be retried at a different location',
-            $statusCode,
-            $statusText
-        );
+        if (isset($statusTexts[$statusCode])) {
+            $errorMessage = sprintf('%s (%d)', $statusTexts[$statusCode], $statusCode);
+        } else {
+            $errorMessage = sprintf(
+                'Redirect error (%d): Request needs to be retried at a different location',
+                $statusCode
+            );
+        }
 
         // Try to extract the redirect location from headers
         $locationValues = $response->getHeader('Location');

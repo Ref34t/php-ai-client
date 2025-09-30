@@ -206,7 +206,7 @@ class AbstractOpenAiCompatibleImageGenerationModelTest extends TestCase
     public function testGenerateImageResultApiFailure(): void
     {
         $prompt = [new Message(MessageRoleEnum::user(), [new MessagePart('A tree')])];
-        $response = new Response(400, [], '{"error": "Bad Request"}');
+        $response = new Response(400, [], '{"error": "Invalid parameter."}');
 
         $this->mockRequestAuthentication
             ->expects($this->once())
@@ -221,9 +221,7 @@ class AbstractOpenAiCompatibleImageGenerationModelTest extends TestCase
         $model = $this->createModel();
 
         $this->expectException(ClientException::class);
-        $this->expectExceptionMessage(
-            'Client error (400 Bad Request): Request was rejected due to client-side issue - Bad Request'
-        );
+        $this->expectExceptionMessage('Bad Request (400) - Invalid parameter.');
 
         $model->generateImageResult($prompt);
     }
@@ -612,13 +610,11 @@ class AbstractOpenAiCompatibleImageGenerationModelTest extends TestCase
      */
     public function testThrowIfNotSuccessfulFailure(): void
     {
-        $response = new Response(404, [], '{"error":"Not Found"}');
+        $response = new Response(404, [], '{"error":"The resource does not exist."}');
         $model = $this->createModel();
 
         $this->expectException(ClientException::class);
-        $this->expectExceptionMessage(
-            'Client error (404 Not Found): Request was rejected due to client-side issue - Not Found'
-        );
+        $this->expectExceptionMessage('Not Found (404) - The resource does not exist.');
 
         $model->exposeThrowIfNotSuccessful($response);
     }

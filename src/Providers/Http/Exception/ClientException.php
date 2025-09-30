@@ -69,13 +69,14 @@ class ClientException extends InvalidArgumentException
             429 => 'Too Many Requests',
         ];
 
-        $statusText = $statusTexts[$statusCode] ?? 'Client Error';
-
-        $errorMessage = sprintf(
-            'Client error (%d %s): Request was rejected due to client-side issue',
-            $statusCode,
-            $statusText
-        );
+        if (isset($statusTexts[$statusCode])) {
+            $errorMessage = sprintf('%s (%d)', $statusTexts[$statusCode], $statusCode);
+        } else {
+            $errorMessage = sprintf(
+                'Client error (%d): Request was rejected due to client-side issue',
+                $statusCode
+            );
+        }
 
         // Extract error message from response data using centralized utility
         $extractedError = ErrorMessageExtractor::extractFromResponseData($response->getData());
@@ -83,6 +84,6 @@ class ClientException extends InvalidArgumentException
             $errorMessage .= ' - ' . $extractedError;
         }
 
-        return new self($errorMessage, $response->getStatusCode());
+        return new self($errorMessage, $statusCode);
     }
 }

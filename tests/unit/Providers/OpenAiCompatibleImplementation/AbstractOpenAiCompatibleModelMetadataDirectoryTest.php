@@ -88,7 +88,7 @@ class AbstractOpenAiCompatibleModelMetadataDirectoryTest extends TestCase
      */
     public function testSendListModelsRequestFailure(): void
     {
-        $response = new Response(400, [], '{"error": "Bad Request"}');
+        $response = new Response(400, [], '{"error": "Invalid parameter provided."}');
 
         $this->mockRequestAuthentication
             ->expects($this->once())
@@ -109,9 +109,7 @@ class AbstractOpenAiCompatibleModelMetadataDirectoryTest extends TestCase
         );
 
         $this->expectException(ClientException::class);
-        $this->expectExceptionMessage(
-            'Client error (400 Bad Request): Request was rejected due to client-side issue - Bad Request'
-        );
+        $this->expectExceptionMessage('Bad Request (400) - Invalid parameter provided.');
 
         $directory->listModelMetadata();
     }

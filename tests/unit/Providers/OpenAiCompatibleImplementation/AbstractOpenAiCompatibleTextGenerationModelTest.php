@@ -146,7 +146,7 @@ class AbstractOpenAiCompatibleTextGenerationModelTest extends TestCase
     public function testGenerateTextResultApiFailure(): void
     {
         $prompt = [new Message(MessageRoleEnum::user(), [new MessagePart('Hello')])];
-        $response = new Response(400, [], '{"error": "Bad Request"}');
+        $response = new Response(400, [], '{"error": "Invalid parameter."}');
 
         $this->mockRequestAuthentication
             ->expects($this->once())
@@ -161,9 +161,7 @@ class AbstractOpenAiCompatibleTextGenerationModelTest extends TestCase
         $model = $this->createModel();
 
         $this->expectException(ClientException::class);
-        $this->expectExceptionMessage(
-            'Client error (400 Bad Request): Request was rejected due to client-side issue - Bad Request'
-        );
+        $this->expectExceptionMessage('Bad Request (400) - Invalid parameter.');
 
         $model->generateTextResult($prompt);
     }
