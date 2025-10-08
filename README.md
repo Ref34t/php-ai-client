@@ -78,6 +78,22 @@ $imageFile = AiClient::prompt('Generate an illustration of the PHP elephant in t
 
 See the [`PromptBuilder` class](https://github.com/WordPress/php-ai-client/blob/trunk/src/Builders/PromptBuilder.php) and its public methods for all the ways you can configure the prompt.
 
+### Configuring request options
+
+You can configure HTTP transport options like timeout and maximum redirects using the `RequestOptions` DTO:
+
+```php
+use WordPress\AiClient\Providers\Http\DTO\RequestOptions;
+
+// Set custom timeout for long-running requests
+$options = new RequestOptions(120, 10);
+
+// Or use defaults and modify
+$options = RequestOptions::defaults()->withTimeout(60);
+```
+
+For implementation ideas in different environments (WordPress, Guzzle, cURL), check the transporter-specific examples in the SDK source and tests.
+
 **More documentation is coming soon.**
 
 ## Further reading

@@ -71,6 +71,8 @@ class HttpTransporter implements HttpTransporterInterface
     {
         $psr7Request = $this->convertToPsr7Request($request);
 
+        // PSR-18 clients ignore per-request RequestOptions; custom transporters must apply them.
+
         try {
             $psr7Response = $this->client->sendRequest($psr7Request);
         } catch (\Psr\Http\Client\NetworkExceptionInterface $e) {

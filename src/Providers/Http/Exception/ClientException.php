@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace WordPress\AiClient\Providers\Http\Exception;
 
 use WordPress\AiClient\Common\Exception\InvalidArgumentException;
+use WordPress\AiClient\Common\Exception\RuntimeException;
 use WordPress\AiClient\Providers\Http\DTO\Request;
 use WordPress\AiClient\Providers\Http\DTO\Response;
 use WordPress\AiClient\Providers\Http\Utilities\ErrorMessageExtractor;
@@ -32,12 +33,12 @@ class ClientException extends InvalidArgumentException
      * @since n.e.x.t
      *
      * @return Request
-     * @throws \RuntimeException If no request is available
+     * @throws RuntimeException If no request is available
      */
     public function getRequest(): Request
     {
         if ($this->request === null) {
-            throw new \RuntimeException(
+            throw new RuntimeException(
                 'Request object not available. This exception was directly instantiated. ' .
                 'Use a factory method that provides request context.'
             );
@@ -55,9 +56,10 @@ class ClientException extends InvalidArgumentException
      * @since n.e.x.t
      *
      * @param Response $response The HTTP response that failed.
+     * @param Request|null $request The originating HTTP request, if available.
      * @return self
      */
-    public static function fromClientErrorResponse(Response $response): self
+    public static function fromClientErrorResponse(Response $response, ?Request $request = null): self
     {
         $statusCode = $response->getStatusCode();
         $statusTexts = [
@@ -69,21 +71,25 @@ class ClientException extends InvalidArgumentException
             429 => 'Too Many Requests',
         ];
 
-        if (isset($statusTexts[$statusCode])) {
-            $errorMessage = sprintf('%s (%d)', $statusTexts[$statusCode], $statusCode);
-        } else {
-            $errorMessage = sprintf(
-                'Client error (%d): Request was rejected due to client-side issue',
-                $statusCode
-            );
-        }
+        $statusText = $statusTexts[$statusCode] ?? 'Client Error';
 
-        // Extract error message from response data using centralized utility
+        $errorMessage = sprintf(
+            'Client error (%d %s): Request was rejected due to client-side issue',
+            $statusCode,
+            $statusText
+        );
+
         $extractedError = ErrorMessageExtractor::extractFromResponseData($response->getData());
         if ($extractedError !== null) {
             $errorMessage .= ' - ' . $extractedError;
         }
 
-        return new self($errorMessage, $statusCode);
+        $exception = new self($errorMessage, $statusCode);
+
+        if ($request !== null) {
+            $exception->request = $request;
+        }
+
+        return $exception;
     }
 }

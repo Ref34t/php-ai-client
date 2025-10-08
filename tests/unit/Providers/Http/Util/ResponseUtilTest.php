@@ -61,7 +61,9 @@ class ResponseUtilTest extends TestCase
 
         $this->expectException(ClientException::class);
         $this->expectExceptionCode(400);
-        $this->expectExceptionMessage('Bad Request (400)');
+        $this->expectExceptionMessageMatches(
+            '/^Client error \(400 Bad Request\): Request was rejected due to client-side issue$/'
+        );
 
         ResponseUtil::throwIfNotSuccessful($response);
     }
@@ -88,7 +90,12 @@ class ResponseUtilTest extends TestCase
         $this->expectException(ClientException::class);
         $this->expectExceptionCode($statusCode);
         $this->expectExceptionMessageMatches(
-            "/^[A-Za-z ]+ \\({$statusCode}\\)( - {$expectedMessagePart})?$/"
+            sprintf(
+                '/^Client error \(%d %s\): Request was rejected due to client-side issue( - %s)?$/',
+                $statusCode,
+                $this->getClientStatusText($statusCode),
+                $expectedMessagePart
+            )
         );
 
         ResponseUtil::throwIfNotSuccessful($response);
@@ -115,9 +122,17 @@ class ResponseUtilTest extends TestCase
 
         $this->expectException(ServerException::class);
         $this->expectExceptionCode($statusCode);
-        $this->expectExceptionMessageMatches(
-            "/^[A-Za-z ]+ \\({$statusCode}\\)( - {$expectedMessagePart})?$/"
-        );
+        $statusText = $this->getServerStatusText($statusCode);
+        $messagePattern = $expectedMessagePart === ''
+            ? sprintf('/^%s \(%d\)$/', preg_quote($statusText, '/'), $statusCode)
+            : sprintf(
+                '/^%s \(%d\) - %s$/',
+                preg_quote($statusText, '/'),
+                $statusCode,
+                $expectedMessagePart
+            );
+
+        $this->expectExceptionMessageMatches($messagePattern);
 
         ResponseUtil::throwIfNotSuccessful($response);
     }
@@ -167,5 +182,44 @@ class ResponseUtilTest extends TestCase
                 'Service is temporarily unavailable\\. Please try again later\\.',
             ],
         ];
+    }
+
+    /**
+     * Maps known client status codes to the message text used in exceptions.
+     *
+     * @param int $statusCode
+     * @return string
+     */
+    private function getClientStatusText(int $statusCode): string
+    {
+        $map = [
+            400 => 'Bad Request',
+            401 => 'Unauthorized',
+            403 => 'Forbidden',
+            404 => 'Not Found',
+            422 => 'Unprocessable Entity',
+            429 => 'Too Many Requests',
+        ];
+
+        return $map[$statusCode] ?? 'Client Error';
+    }
+
+    /**
+     * Maps known server status codes to the message text used in exceptions.
+     *
+     * @param int $statusCode
+     * @return string
+     */
+    private function getServerStatusText(int $statusCode): string
+    {
+        $map = [
+            500 => 'Internal Server Error',
+            502 => 'Bad Gateway',
+            503 => 'Service Unavailable',
+            504 => 'Gateway Timeout',
+            507 => 'Insufficient Storage',
+        ];
+
+        return $map[$statusCode] ?? 'Server Error';
     }
 }

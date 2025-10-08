@@ -221,7 +221,9 @@ class AbstractOpenAiCompatibleImageGenerationModelTest extends TestCase
         $model = $this->createModel();
 
         $this->expectException(ClientException::class);
-        $this->expectExceptionMessage('Bad Request (400) - Invalid parameter.');
+        $this->expectExceptionMessage(
+            'Client error (400 Bad Request): Request was rejected due to client-side issue - Invalid parameter.'
+        );
 
         $model->generateImageResult($prompt);
     }
@@ -614,7 +616,9 @@ class AbstractOpenAiCompatibleImageGenerationModelTest extends TestCase
         $model = $this->createModel();
 
         $this->expectException(ClientException::class);
-        $this->expectExceptionMessage('Not Found (404) - The resource does not exist.');
+        $this->expectExceptionMessage(
+            'Client error (404 Not Found): Request was rejected due to client-side issue - The resource does not exist.'
+        );
 
         $model->exposeThrowIfNotSuccessful($response);
     }

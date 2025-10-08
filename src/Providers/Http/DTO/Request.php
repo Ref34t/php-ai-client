@@ -23,7 +23,8 @@ use WordPress\AiClient\Providers\Http\Enums\HttpMethodEnum;
  *     method: string,
  *     uri: string,
  *     headers: array<string, list<string>>,
- *     body?: string|null
+ *     body?: string|null,
+ *     options?: array<string, mixed>
  * }
  *
  * @extends AbstractDataTransferObject<RequestArrayShape>
@@ -34,6 +35,7 @@ class Request extends AbstractDataTransferObject
     public const KEY_URI = 'uri';
     public const KEY_HEADERS = 'headers';
     public const KEY_BODY = 'body';
+    public const KEY_OPTIONS = 'options';
 
     /**
      * @var HttpMethodEnum The HTTP method.
@@ -61,6 +63,11 @@ class Request extends AbstractDataTransferObject
     protected ?string $body = null;
 
     /**
+     * @var RequestOptions|null The request options.
+     */
+    protected ?RequestOptions $options = null;
+
+    /**
      * Constructor.
      *
      * @since 0.1.0
@@ -69,11 +76,17 @@ class Request extends AbstractDataTransferObject
      * @param string $uri The request URI.
      * @param array<string, string|list<string>> $headers The request headers.
      * @param string|array<string, mixed>|null $data The request data.
+     * @param RequestOptions|null $options The request options.
      *
      * @throws InvalidArgumentException If the URI is empty.
      */
-    public function __construct(HttpMethodEnum $method, string $uri, array $headers = [], $data = null)
-    {
+    public function __construct(
+        HttpMethodEnum $method,
+        string $uri,
+        array $headers = [],
+        $data = null,
+        ?RequestOptions $options = null
+    ) {
         if (empty($uri)) {
             throw new InvalidArgumentException('URI cannot be empty.');
         }
@@ -81,6 +94,7 @@ class Request extends AbstractDataTransferObject
         $this->method = $method;
         $this->uri = $uri;
         $this->headers = new HeadersCollection($headers);
+        $this->options = $options;
 
         // Separate data and body based on type
         if (is_string($data)) {
@@ -282,6 +296,33 @@ class Request extends AbstractDataTransferObject
     }
 
     /**
+     * Gets the request options.
+     *
+     * @since n.e.x.t
+     *
+     * @return RequestOptions|null The request options or null if not set.
+     */
+    public function getOptions(): ?RequestOptions
+    {
+        return $this->options;
+    }
+
+    /**
+     * Returns a new instance with the specified options.
+     *
+     * @since n.e.x.t
+     *
+     * @param RequestOptions|null $options The request options.
+     * @return self A new instance with the options.
+     */
+    public function withOptions(?RequestOptions $options): self
+    {
+        $new = clone $this;
+        $new->options = $options;
+        return $new;
+    }
+
+    /**
      * {@inheritDoc}
      *
      * @since 0.1.0
@@ -311,6 +352,10 @@ class Request extends AbstractDataTransferObject
                     'type' => ['string'],
                     'description' => 'The request body.',
                 ],
+                self::KEY_OPTIONS => [
+                    'type' => 'object',
+                    'description' => 'The request options.',
+                ],
             ],
             'required' => [self::KEY_METHOD, self::KEY_URI, self::KEY_HEADERS],
         ];
@@ -337,6 +382,11 @@ class Request extends AbstractDataTransferObject
             $array[self::KEY_BODY] = $body;
         }
 
+        // Include options if present
+        if ($this->options !== null) {
+            $array[self::KEY_OPTIONS] = $this->options->toArray();
+        }
+
         return $array;
     }
 
@@ -349,11 +399,19 @@ class Request extends AbstractDataTransferObject
     {
         static::validateFromArrayData($array, [self::KEY_METHOD, self::KEY_URI, self::KEY_HEADERS]);
 
+        $options = null;
+        if (isset($array[self::KEY_OPTIONS]) && is_array($array[self::KEY_OPTIONS])) {
+            /** @var array{timeout?: int|null, max_redirects?: int|null} $optionsArray */
+            $optionsArray = $array[self::KEY_OPTIONS];
+            $options = RequestOptions::fromArray($optionsArray);
+        }
+
         return new self(
             HttpMethodEnum::from($array[self::KEY_METHOD]),
             $array[self::KEY_URI],
             $array[self::KEY_HEADERS] ?? [],
-            $array[self::KEY_BODY] ?? null
+            $array[self::KEY_BODY] ?? null,
+            $options
         );
     }
 

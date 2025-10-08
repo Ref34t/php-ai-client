@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace WordPress\AiClient\Providers\Http\Util;
 
+use WordPress\AiClient\Common\Exception\RuntimeException;
+use WordPress\AiClient\Providers\Http\DTO\Request;
 use WordPress\AiClient\Providers\Http\DTO\Response;
 use WordPress\AiClient\Providers\Http\Exception\ClientException;
 use WordPress\AiClient\Providers\Http\Exception\RedirectException;
@@ -29,12 +31,13 @@ class ResponseUtil
      * @since 0.1.0
      *
      * @param Response $response The HTTP response to check.
+     * @param Request|null $request The originating HTTP request, if available.
      * @throws RedirectException If the response indicates a redirect (3xx).
      * @throws ClientException If the response indicates a client error (4xx).
      * @throws ServerException If the response indicates a server error (5xx).
-     * @throws \RuntimeException If the response has an invalid status code.
+     * @throws RuntimeException If the response has an invalid status code.
      */
-    public static function throwIfNotSuccessful(Response $response): void
+    public static function throwIfNotSuccessful(Response $response, ?Request $request = null): void
     {
         if ($response->isSuccessful()) {
             return;
@@ -49,7 +52,7 @@ class ResponseUtil
 
         // 4xx Client Errors
         if ($statusCode >= 400 && $statusCode < 500) {
-            throw ClientException::fromClientErrorResponse($response);
+            throw ClientException::fromClientErrorResponse($response, $request);
         }
 
         // 5xx Server Errors
@@ -57,7 +60,7 @@ class ResponseUtil
             throw ServerException::fromServerErrorResponse($response);
         }
 
-        throw new \RuntimeException(
+        throw new RuntimeException(
             sprintf('Response returned invalid status code: %s', $response->getStatusCode())
         );
     }

@@ -161,7 +161,9 @@ class AbstractOpenAiCompatibleTextGenerationModelTest extends TestCase
         $model = $this->createModel();
 
         $this->expectException(ClientException::class);
-        $this->expectExceptionMessage('Bad Request (400) - Invalid parameter.');
+        $this->expectExceptionMessage(
+            'Client error (400 Bad Request): Request was rejected due to client-side issue - Invalid parameter.'
+        );
 
         $model->generateTextResult($prompt);
     }
