@@ -6,7 +6,6 @@ namespace WordPress\AiClient\Tests\unit\Providers\OpenAiCompatibleImplementation
 
 use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
-use RuntimeException;
 use WordPress\AiClient\Files\DTO\File;
 use WordPress\AiClient\Messages\DTO\Message;
 use WordPress\AiClient\Messages\DTO\MessagePart;
@@ -17,6 +16,7 @@ use WordPress\AiClient\Providers\DTO\ProviderMetadata;
 use WordPress\AiClient\Providers\Http\Contracts\HttpTransporterInterface;
 use WordPress\AiClient\Providers\Http\Contracts\RequestAuthenticationInterface;
 use WordPress\AiClient\Providers\Http\DTO\Response;
+use WordPress\AiClient\Providers\Http\Exception\ClientException;
 use WordPress\AiClient\Providers\Http\Exception\ResponseException;
 use WordPress\AiClient\Providers\Models\DTO\ModelConfig;
 use WordPress\AiClient\Providers\Models\DTO\ModelMetadata;
@@ -59,6 +59,7 @@ class AbstractOpenAiCompatibleTextGenerationModelTest extends TestCase
         $this->modelMetadata = $this->createStub(ModelMetadata::class);
         $this->modelMetadata->method('getId')->willReturn('test-model');
         $this->providerMetadata = $this->createStub(ProviderMetadata::class);
+        $this->providerMetadata->method('getName')->willReturn('TestProvider');
         $this->mockHttpTransporter = $this->createMock(HttpTransporterInterface::class);
         $this->mockRequestAuthentication = $this->createMock(RequestAuthenticationInterface::class);
     }
@@ -144,7 +145,7 @@ class AbstractOpenAiCompatibleTextGenerationModelTest extends TestCase
     public function testGenerateTextResultApiFailure(): void
     {
         $prompt = [new Message(MessageRoleEnum::user(), [new MessagePart('Hello')])];
-        $response = new Response(400, [], '{"error": "Bad Request"}');
+        $response = new Response(400, [], '{"error": "Invalid parameter."}');
 
         $this->mockRequestAuthentication
             ->expects($this->once())
@@ -158,27 +159,10 @@ class AbstractOpenAiCompatibleTextGenerationModelTest extends TestCase
 
         $model = $this->createModel();
 
-        $this->expectException(ResponseException::class);
-        $this->expectExceptionMessage('Bad status code: 400. Bad Request');
+        $this->expectException(ClientException::class);
+        $this->expectExceptionMessage('Bad Request (400) - Invalid parameter.');
 
         $model->generateTextResult($prompt);
-    }
-
-    /**
-     * Tests streamGenerateTextResult() method.
-     *
-     * @return void
-     */
-    public function testStreamGenerateTextResult(): void
-    {
-        $prompt = [new Message(MessageRoleEnum::user(), [new MessagePart('Hello')])];
-        $model = $this->createModel();
-
-        $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessage('Streaming is not yet implemented.');
-
-        $generator = $model->streamGenerateTextResult($prompt);
-        $generator->current(); // Attempt to get the first value to trigger the exception.
     }
 
     /**
@@ -519,6 +503,26 @@ class AbstractOpenAiCompatibleTextGenerationModelTest extends TestCase
     }
 
     /**
+     * Tests prepareMessagesParam with message having no function calls (tool_calls should not be included).
+     *
+     * @return void
+     */
+    public function testPrepareMessagesParamNoToolCalls(): void
+    {
+        $message = new Message(
+            MessageRoleEnum::model(),
+            [new MessagePart('Hello, I am a simple text response.')]
+        );
+
+        $model = $this->createModel();
+        $prepared = $model->exposePrepareMessagesParam([$message], null);
+
+        $this->assertCount(1, $prepared);
+        $this->assertEquals('assistant', $prepared[0]['role']);
+        $this->assertArrayNotHasKey('tool_calls', $prepared[0]); // Should not have tool_calls field at all
+    }
+
+    /**
      * Tests prepareMessagesParam() with function response.
      *
      * @return void
@@ -620,7 +624,7 @@ class AbstractOpenAiCompatibleTextGenerationModelTest extends TestCase
             [
                 'type' => 'image_url',
                 'image_url' => [
-                    'url' => $base64Image
+                    'url' => 'data:image/png;base64,' . $base64Image
                 ]
             ],
             $data
@@ -738,6 +742,59 @@ class AbstractOpenAiCompatibleTextGenerationModelTest extends TestCase
             'function' => [
                 'name' => 'my_function',
                 'arguments' => json_encode(['arg1' => 'value1']),
+            ],
+        ], $data);
+    }
+
+    /**
+     * Tests getMessagePartToolCallData() with empty arguments (should encode as empty object).
+     *
+     * @return void
+     */
+    public function testGetMessagePartToolCallDataEmptyArguments(): void
+    {
+        // Note: FunctionCall normalizes [] to null, so this tests the null-handling path.
+        $functionCall = new FunctionCall(
+            'call_1',
+            'list_capabilities',
+            [] // Empty arguments array (normalized to null by FunctionCall)
+        );
+        $part = new MessagePart($functionCall);
+        $model = $this->createModel();
+        $data = $model->exposeGetMessagePartToolCallData($part);
+
+        $this->assertEquals([
+            'type' => 'function',
+            'id' => 'call_1',
+            'function' => [
+                'name' => 'list_capabilities',
+                'arguments' => '{}', // Should be empty object, not empty array
+            ],
+        ], $data);
+    }
+
+    /**
+     * Tests getMessagePartToolCallData() with null arguments (should encode as empty object).
+     *
+     * @return void
+     */
+    public function testGetMessagePartToolCallDataNullArguments(): void
+    {
+        $functionCall = new FunctionCall(
+            'call_1',
+            'list_capabilities',
+            null
+        );
+        $part = new MessagePart($functionCall);
+        $model = $this->createModel();
+        $data = $model->exposeGetMessagePartToolCallData($part);
+
+        $this->assertEquals([
+            'type' => 'function',
+            'id' => 'call_1',
+            'function' => [
+                'name' => 'list_capabilities',
+                'arguments' => '{}', // null args should be encoded as empty object
             ],
         ], $data);
     }
@@ -949,8 +1006,8 @@ class AbstractOpenAiCompatibleTextGenerationModelTest extends TestCase
         $response = new Response(200, [], json_encode(['id' => 'test-id']));
         $model = $this->createModel();
 
-        $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessage('Unexpected API response: Missing the choices key.');
+        $this->expectException(ResponseException::class);
+        $this->expectExceptionMessage('Unexpected TestProvider API response: Missing the "choices" key.');
 
         $model->parseResponseToGenerativeAiResult($response);
     }
@@ -969,8 +1026,10 @@ class AbstractOpenAiCompatibleTextGenerationModelTest extends TestCase
         );
         $model = $this->createModel();
 
-        $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessage('Unexpected API response: The choices key must contain an array.');
+        $this->expectException(ResponseException::class);
+        $this->expectExceptionMessage(
+            'Unexpected TestProvider API response: Invalid "choices" key: The value must be an array.'
+        );
 
         $model->parseResponseToGenerativeAiResult($response);
     }
@@ -985,9 +1044,9 @@ class AbstractOpenAiCompatibleTextGenerationModelTest extends TestCase
         $response = new Response(200, [], json_encode(['choices' => ['invalid']]));
         $model = $this->createModel();
 
-        $this->expectException(RuntimeException::class);
+        $this->expectException(ResponseException::class);
         $this->expectExceptionMessage(
-            'Unexpected API response: Each element in the choices key must be an associative array.'
+            'Unexpected TestProvider API response: Invalid "choices[0]" key: The value must be an associative array.'
         );
 
         $model->parseResponseToGenerativeAiResult($response);
@@ -1027,9 +1086,9 @@ class AbstractOpenAiCompatibleTextGenerationModelTest extends TestCase
         ];
         $model = $this->createModel();
 
-        $this->expectException(RuntimeException::class);
+        $this->expectException(ResponseException::class);
         $this->expectExceptionMessage(
-            'Unexpected API response: Each choice must contain a message key with an associative array.'
+            'Unexpected TestProvider API response: Missing the "choices[0].message" key.'
         );
 
         $model->exposeParseResponseChoiceToCandidate($choiceData);
@@ -1048,9 +1107,9 @@ class AbstractOpenAiCompatibleTextGenerationModelTest extends TestCase
         ];
         $model = $this->createModel();
 
-        $this->expectException(RuntimeException::class);
+        $this->expectException(ResponseException::class);
         $this->expectExceptionMessage(
-            'Unexpected API response: Each choice must contain a message key with an associative array.'
+            'Unexpected TestProvider API response: Missing the "choices[0].message" key.'
         );
 
         $model->exposeParseResponseChoiceToCandidate($choiceData);
@@ -1071,9 +1130,9 @@ class AbstractOpenAiCompatibleTextGenerationModelTest extends TestCase
         ];
         $model = $this->createModel();
 
-        $this->expectException(RuntimeException::class);
+        $this->expectException(ResponseException::class);
         $this->expectExceptionMessage(
-            'Unexpected API response: Each choice must contain a finish_reason key with a string value.'
+            'Unexpected TestProvider API response: Missing the "choices[0].finish_reason" key.'
         );
 
         $model->exposeParseResponseChoiceToCandidate($choiceData);
@@ -1095,8 +1154,13 @@ class AbstractOpenAiCompatibleTextGenerationModelTest extends TestCase
         ];
         $model = $this->createModel();
 
-        $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessage('Unexpected API response: Invalid finish reason "unknown".');
+        $this->expectException(ResponseException::class);
+        $this->expectExceptionMessage(
+            sprintf(
+                'Unexpected TestProvider API response: Invalid "%s" key: Invalid finish reason "unknown".',
+                'choices[0].finish_reason'
+            )
+        );
 
         $model->exposeParseResponseChoiceToCandidate($choiceData);
     }
@@ -1113,7 +1177,7 @@ class AbstractOpenAiCompatibleTextGenerationModelTest extends TestCase
             'content' => 'Assistant response',
         ];
         $model = $this->createModel();
-        $message = $model->exposeParseResponseChoiceMessage($messageData);
+        $message = $model->exposeParseResponseChoiceMessage($messageData, 0);
 
         $this->assertEquals(MessageRoleEnum::model(), $message->getRole());
         $this->assertCount(1, $message->getParts());
@@ -1132,7 +1196,7 @@ class AbstractOpenAiCompatibleTextGenerationModelTest extends TestCase
             'content' => 'User response',
         ];
         $model = $this->createModel();
-        $message = $model->exposeParseResponseChoiceMessage($messageData);
+        $message = $model->exposeParseResponseChoiceMessage($messageData, 0);
 
         $this->assertEquals(MessageRoleEnum::user(), $message->getRole());
         $this->assertCount(1, $message->getParts());
@@ -1151,7 +1215,7 @@ class AbstractOpenAiCompatibleTextGenerationModelTest extends TestCase
             'content' => 'Final answer',
         ];
         $model = $this->createModel();
-        $parts = $model->exposeParseResponseChoiceMessageParts($messageData);
+        $parts = $model->exposeParseResponseChoiceMessageParts($messageData, 0);
 
         $this->assertCount(2, $parts);
         $this->assertEquals('Thinking process', $parts[0]->getText());
@@ -1180,7 +1244,7 @@ class AbstractOpenAiCompatibleTextGenerationModelTest extends TestCase
             ],
         ];
         $model = $this->createModel();
-        $parts = $model->exposeParseResponseChoiceMessageParts($messageData);
+        $parts = $model->exposeParseResponseChoiceMessageParts($messageData, 0);
 
         $this->assertCount(1, $parts);
         $this->assertInstanceOf(FunctionCall::class, $parts[0]->getFunctionCall());
@@ -1248,5 +1312,20 @@ class AbstractOpenAiCompatibleTextGenerationModelTest extends TestCase
         $part = $model->exposeParseResponseChoiceMessageToolCallPart($toolCallData);
 
         $this->assertNull($part);
+    }
+
+    /**
+     * Tests getMessagePartContentData() with text part in thought channel.
+     *
+     * @return void
+     */
+    public function testGetMessagePartContentDataThoughtPart(): void
+    {
+        $part = new MessagePart('Thinking...', MessagePartChannelEnum::thought());
+        $model = $this->createModel();
+        $data = $model->exposeGetMessagePartContentData($part);
+
+        // Should be skipped because OpenAI API doesn't support receiving thoughts.
+        $this->assertNull($data);
     }
 }

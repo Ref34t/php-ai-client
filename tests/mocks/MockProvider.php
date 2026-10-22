@@ -9,6 +9,7 @@ use WordPress\AiClient\Providers\Contracts\ProviderAvailabilityInterface;
 use WordPress\AiClient\Providers\Contracts\ProviderInterface;
 use WordPress\AiClient\Providers\DTO\ProviderMetadata;
 use WordPress\AiClient\Providers\Enums\ProviderTypeEnum;
+use WordPress\AiClient\Providers\Http\Enums\RequestAuthenticationMethod;
 use WordPress\AiClient\Providers\Models\Contracts\ModelInterface;
 use WordPress\AiClient\Providers\Models\DTO\ModelConfig;
 use WordPress\AiClient\Providers\Models\DTO\ModelMetadata;
@@ -16,8 +17,6 @@ use WordPress\AiClient\Providers\Models\Enums\CapabilityEnum;
 
 /**
  * Mock provider for testing purposes.
- *
- * @since n.e.x.t
  */
 class MockProvider implements ProviderInterface
 {
@@ -39,7 +38,9 @@ class MockProvider implements ProviderInterface
         return new ProviderMetadata(
             'mock',
             'Mock Provider',
-            ProviderTypeEnum::cloud()
+            ProviderTypeEnum::cloud(),
+            null,
+            RequestAuthenticationMethod::apiKey()
         );
     }
 

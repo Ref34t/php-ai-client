@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace WordPress\AiClient\Tests\unit\Providers\Models\DTO;
 
+use InvalidArgumentException;
 use JsonSerializable;
 use PHPUnit\Framework\TestCase;
 use WordPress\AiClient\Common\Contracts\WithArrayTransformationInterface;
@@ -73,6 +74,7 @@ class ModelConfigTest extends TestCase
         $this->assertNull($config->getOutputMediaOrientation());
         $this->assertNull($config->getOutputMediaAspectRatio());
         $this->assertNull($config->getOutputSpeechVoice());
+        $this->assertNull($config->getDimensions());
         $this->assertEquals([], $config->getCustomOptions());
     }
 
@@ -176,6 +178,10 @@ class ModelConfigTest extends TestCase
         $config->setOutputSpeechVoice('alloy');
         $this->assertEquals('alloy', $config->getOutputSpeechVoice());
 
+        // Test embedding dimensions
+        $config->setDimensions(1536);
+        $this->assertEquals(1536, $config->getDimensions());
+
         // Test custom options
         $customOptions = ['custom_param' => 'value', 'another_param' => 123];
         $config->setCustomOptions($customOptions);
@@ -218,6 +224,7 @@ class ModelConfigTest extends TestCase
             ModelConfig::KEY_OUTPUT_MEDIA_ORIENTATION,
             ModelConfig::KEY_OUTPUT_MEDIA_ASPECT_RATIO,
             ModelConfig::KEY_OUTPUT_SPEECH_VOICE,
+            ModelConfig::KEY_DIMENSIONS,
             ModelConfig::KEY_CUSTOM_OPTIONS
         ];
 
@@ -237,6 +244,7 @@ class ModelConfigTest extends TestCase
         $this->assertEquals('string', $schema['properties'][ModelConfig::KEY_OUTPUT_MEDIA_ORIENTATION]['type']);
         $this->assertEquals('string', $schema['properties'][ModelConfig::KEY_OUTPUT_MEDIA_ASPECT_RATIO]['type']);
         $this->assertEquals('string', $schema['properties'][ModelConfig::KEY_OUTPUT_SPEECH_VOICE]['type']);
+        $this->assertEquals('integer', $schema['properties'][ModelConfig::KEY_DIMENSIONS]['type']);
         $this->assertEquals('object', $schema['properties'][ModelConfig::KEY_CUSTOM_OPTIONS]['type']);
 
         // Check constraints
@@ -276,6 +284,7 @@ class ModelConfigTest extends TestCase
         $config->setOutputMediaOrientation(MediaOrientationEnum::portrait());
         $config->setOutputMediaAspectRatio('9:16');
         $config->setOutputSpeechVoice('onyx');
+        $config->setDimensions(768);
         $config->setCustomOptions(['key' => 'value']);
 
         $array = $config->toArray();
@@ -301,6 +310,7 @@ class ModelConfigTest extends TestCase
         $this->assertEquals('portrait', $array[ModelConfig::KEY_OUTPUT_MEDIA_ORIENTATION]);
         $this->assertEquals('9:16', $array[ModelConfig::KEY_OUTPUT_MEDIA_ASPECT_RATIO]);
         $this->assertEquals('onyx', $array[ModelConfig::KEY_OUTPUT_SPEECH_VOICE]);
+        $this->assertEquals(768, $array[ModelConfig::KEY_DIMENSIONS]);
         $this->assertEquals(['key' => 'value'], $array[ModelConfig::KEY_CUSTOM_OPTIONS]);
     }
 
@@ -413,6 +423,7 @@ class ModelConfigTest extends TestCase
             ModelConfig::KEY_OUTPUT_MEDIA_ORIENTATION => 'landscape',
             ModelConfig::KEY_OUTPUT_MEDIA_ASPECT_RATIO => '16:9',
             ModelConfig::KEY_OUTPUT_SPEECH_VOICE => 'fable',
+            ModelConfig::KEY_DIMENSIONS => 1024,
             ModelConfig::KEY_CUSTOM_OPTIONS => ['custom' => true]
         ];
 
@@ -443,6 +454,7 @@ class ModelConfigTest extends TestCase
         $this->assertEquals(MediaOrientationEnum::landscape(), $config->getOutputMediaOrientation());
         $this->assertEquals('16:9', $config->getOutputMediaAspectRatio());
         $this->assertEquals('fable', $config->getOutputSpeechVoice());
+        $this->assertEquals(1024, $config->getDimensions());
         $this->assertEquals(['custom' => true], $config->getCustomOptions());
     }
 
@@ -478,6 +490,7 @@ class ModelConfigTest extends TestCase
         $original->setOutputMediaOrientation(MediaOrientationEnum::square());
         $original->setOutputMediaAspectRatio('1:1');
         $original->setOutputSpeechVoice('shimmer');
+        $original->setDimensions(256);
         $original->setCustomOptions(['test' => 'value']);
 
         $array = $original->toArray();
@@ -492,6 +505,7 @@ class ModelConfigTest extends TestCase
         $this->assertEquals($original->getOutputMediaOrientation(), $restored->getOutputMediaOrientation());
         $this->assertEquals($original->getOutputMediaAspectRatio(), $restored->getOutputMediaAspectRatio());
         $this->assertEquals($original->getOutputSpeechVoice(), $restored->getOutputSpeechVoice());
+        $this->assertEquals($original->getDimensions(), $restored->getDimensions());
         $this->assertEquals($original->getCustomOptions(), $restored->getCustomOptions());
     }
 
@@ -702,5 +716,114 @@ class ModelConfigTest extends TestCase
         // Test round-trip with custom options set via setCustomOption
         $restored = ModelConfig::fromArray($array);
         $this->assertEquals($customOptions, $restored->getCustomOptions());
+    }
+
+    public function testMediaOrientationAspectRatioCompatibilitySquare(): void
+    {
+        $config = new ModelConfig();
+        $config->setOutputMediaAspectRatio('3:2');
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('The aspect ratio "3:2" is not compatible with the square orientation.');
+        $config->setOutputMediaOrientation(MediaOrientationEnum::square());
+    }
+
+    public function testMediaOrientationAspectRatioCompatibilitySquareNonNormalized(): void
+    {
+        $config = new ModelConfig();
+        $config->setOutputMediaOrientation(MediaOrientationEnum::square());
+        $config->setOutputMediaAspectRatio('16:16');
+
+        $this->assertSame('16:16', $config->getOutputMediaAspectRatio());
+    }
+
+    public function testMediaOrientationAspectRatioCompatibilityLandscape(): void
+    {
+        $config = new ModelConfig();
+        $config->setOutputMediaOrientation(MediaOrientationEnum::landscape());
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('The aspect ratio "2:3" is not compatible with the landscape orientation.');
+        $config->setOutputMediaAspectRatio('2:3');
+    }
+
+    public function testMediaOrientationAspectRatioCompatibilityPortrait(): void
+    {
+        $config = new ModelConfig();
+        $config->setOutputMediaOrientation(MediaOrientationEnum::portrait());
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('The aspect ratio "3:2" is not compatible with the portrait orientation.');
+        $config->setOutputMediaAspectRatio('3:2');
+    }
+
+    /**
+     * Tests that cloning creates independent function declarations array.
+     *
+     * @return void
+     */
+    public function testCloneCreatesDifferentFunctionDeclarationsReferences(): void
+    {
+        $original = new ModelConfig();
+        $declaration = $this->createSampleFunctionDeclaration();
+        $original->setFunctionDeclarations([$declaration]);
+
+        $cloned = clone $original;
+
+        // The cloned config should have different FunctionDeclaration instances
+        $originalDeclarations = $original->getFunctionDeclarations();
+        $clonedDeclarations = $cloned->getFunctionDeclarations();
+
+        $this->assertNotNull($originalDeclarations);
+        $this->assertNotNull($clonedDeclarations);
+        $this->assertCount(1, $clonedDeclarations);
+        $this->assertNotSame($originalDeclarations[0], $clonedDeclarations[0]);
+
+        // But the values should be equivalent
+        $this->assertEquals(
+            $originalDeclarations[0]->getName(),
+            $clonedDeclarations[0]->getName()
+        );
+    }
+
+    /**
+     * Tests that cloning creates an independent web search reference.
+     *
+     * @return void
+     */
+    public function testCloneCreatesDifferentWebSearchReference(): void
+    {
+        $original = new ModelConfig();
+        $webSearch = $this->createSampleWebSearch();
+        $original->setWebSearch($webSearch);
+
+        $cloned = clone $original;
+
+        // The cloned config should have a different WebSearch instance
+        $this->assertNotSame($original->getWebSearch(), $cloned->getWebSearch());
+
+        // But the values should be equivalent
+        $this->assertEquals(
+            $original->getWebSearch()->getAllowedDomains(),
+            $cloned->getWebSearch()->getAllowedDomains()
+        );
+    }
+
+    /**
+     * Tests that cloning works correctly when optional objects are null.
+     *
+     * @return void
+     */
+    public function testCloneWorksWithNullOptionalObjects(): void
+    {
+        $original = new ModelConfig();
+        $original->setTemperature(0.7);
+        // Don't set functionDeclarations or webSearch
+
+        $cloned = clone $original;
+
+        $this->assertNull($cloned->getFunctionDeclarations());
+        $this->assertNull($cloned->getWebSearch());
+        $this->assertEquals(0.7, $cloned->getTemperature());
     }
 }

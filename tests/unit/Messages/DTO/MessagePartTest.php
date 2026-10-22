@@ -440,4 +440,194 @@ class MessagePartTest extends TestCase
 
         MessagePart::fromArray($json);
     }
+
+    /**
+     * Tests that cloning MessagePart with File creates an independent File copy.
+     *
+     * @return void
+     */
+    public function testCloneClonesFile(): void
+    {
+        $file = new File('https://example.com/image.png', 'image/png');
+        $original = new MessagePart($file);
+        $cloned = clone $original;
+
+        $this->assertNotSame($original->getFile(), $cloned->getFile());
+
+        // Type and channel enums should be the same instance
+        $this->assertSame($original->getType(), $cloned->getType());
+        $this->assertSame($original->getChannel(), $cloned->getChannel());
+    }
+
+    /**
+     * Tests that cloning MessagePart with FunctionCall creates an independent copy.
+     *
+     * @return void
+     */
+    public function testCloneClonesFunctionCall(): void
+    {
+        $functionCall = new FunctionCall('call_123', 'testFunction', ['param' => 'value']);
+        $original = new MessagePart($functionCall);
+        $cloned = clone $original;
+
+        $this->assertNotSame($original->getFunctionCall(), $cloned->getFunctionCall());
+    }
+
+    /**
+     * Tests that cloning MessagePart with FunctionResponse creates an independent copy.
+     *
+     * @return void
+     */
+    public function testCloneClonesFunctionResponse(): void
+    {
+        $functionResponse = new FunctionResponse('resp_123', 'testFunction', ['result' => 42]);
+        $original = new MessagePart($functionResponse);
+        $cloned = clone $original;
+
+        $this->assertNotSame($original->getFunctionResponse(), $cloned->getFunctionResponse());
+    }
+
+    /**
+     * Tests creating MessagePart with a thought signature.
+     *
+     * @return void
+     */
+    public function testCreateWithThoughtSignature(): void
+    {
+        $part = new MessagePart(
+            'Some thought',
+            MessagePartChannelEnum::thought(),
+            'sig_abc123'
+        );
+
+        $this->assertEquals('sig_abc123', $part->getThoughtSignature());
+        $this->assertEquals('Some thought', $part->getText());
+        $this->assertEquals(MessagePartChannelEnum::thought(), $part->getChannel());
+    }
+
+    /**
+     * Tests that thought signature is null by default.
+     *
+     * @return void
+     */
+    public function testCreateWithoutThoughtSignature(): void
+    {
+        $part = new MessagePart('Hello');
+
+        $this->assertNull($part->getThoughtSignature());
+    }
+
+    /**
+     * Tests toArray includes thought signature when set.
+     *
+     * @return void
+     */
+    public function testToArrayIncludesThoughtSignature(): void
+    {
+        $part = new MessagePart(
+            'Thinking...',
+            MessagePartChannelEnum::thought(),
+            'sig_xyz789'
+        );
+        $array = $part->toArray();
+
+        $this->assertArrayHasKey(MessagePart::KEY_THOUGHT_SIGNATURE, $array);
+        $this->assertEquals('sig_xyz789', $array[MessagePart::KEY_THOUGHT_SIGNATURE]);
+    }
+
+    /**
+     * Tests toArray excludes thought signature when not set.
+     *
+     * @return void
+     */
+    public function testToArrayExcludesThoughtSignature(): void
+    {
+        $part = new MessagePart('Hello');
+        $array = $part->toArray();
+
+        $this->assertArrayNotHasKey(MessagePart::KEY_THOUGHT_SIGNATURE, $array);
+    }
+
+    /**
+     * Tests fromArray with thought signature.
+     *
+     * @return void
+     */
+    public function testFromArrayWithThoughtSignature(): void
+    {
+        $array = [
+            MessagePart::KEY_CHANNEL => MessagePartChannelEnum::thought()->value,
+            MessagePart::KEY_TYPE => MessagePartTypeEnum::text()->value,
+            MessagePart::KEY_TEXT => 'A thought',
+            MessagePart::KEY_THOUGHT_SIGNATURE => 'sig_fromarray',
+        ];
+
+        $part = MessagePart::fromArray($array);
+
+        $this->assertEquals('A thought', $part->getText());
+        $this->assertEquals('sig_fromarray', $part->getThoughtSignature());
+    }
+
+    /**
+     * Tests fromArray without thought signature still works.
+     *
+     * @return void
+     */
+    public function testFromArrayWithoutThoughtSignature(): void
+    {
+        $array = [
+            MessagePart::KEY_CHANNEL => MessagePartChannelEnum::content()->value,
+            MessagePart::KEY_TYPE => MessagePartTypeEnum::text()->value,
+            MessagePart::KEY_TEXT => 'No signature',
+        ];
+
+        $part = MessagePart::fromArray($array);
+
+        $this->assertNull($part->getThoughtSignature());
+    }
+
+    /**
+     * Tests round-trip array transformation with thought signature.
+     *
+     * @return void
+     */
+    public function testArrayRoundTripWithThoughtSignature(): void
+    {
+        $original = new MessagePart(
+            'Thought content',
+            MessagePartChannelEnum::thought(),
+            'sig_roundtrip'
+        );
+        $array = $original->toArray();
+        $restored = MessagePart::fromArray($array);
+
+        $this->assertEquals($original->getText(), $restored->getText());
+        $this->assertEquals($original->getChannel(), $restored->getChannel());
+        $this->assertEquals($original->getThoughtSignature(), $restored->getThoughtSignature());
+    }
+
+    /**
+     * Tests JSON schema includes thought signature property.
+     *
+     * @return void
+     */
+    public function testJsonSchemaIncludesThoughtSignature(): void
+    {
+        $schema = MessagePart::getJsonSchema();
+
+        foreach ($schema['oneOf'] as $variant) {
+            $this->assertArrayHasKey(
+                MessagePart::KEY_THOUGHT_SIGNATURE,
+                $variant['properties']
+            );
+            $this->assertEquals(
+                'string',
+                $variant['properties'][MessagePart::KEY_THOUGHT_SIGNATURE]['type']
+            );
+            $this->assertNotContains(
+                MessagePart::KEY_THOUGHT_SIGNATURE,
+                $variant['required']
+            );
+        }
+    }
 }

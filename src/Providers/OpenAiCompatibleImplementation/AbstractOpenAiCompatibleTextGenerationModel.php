@@ -4,9 +4,8 @@ declare(strict_types=1);
 
 namespace WordPress\AiClient\Providers\OpenAiCompatibleImplementation;
 
-use Generator;
-use InvalidArgumentException;
-use RuntimeException;
+use WordPress\AiClient\Common\Exception\InvalidArgumentException;
+use WordPress\AiClient\Common\Exception\RuntimeException;
 use WordPress\AiClient\Messages\DTO\Message;
 use WordPress\AiClient\Messages\DTO\MessagePart;
 use WordPress\AiClient\Messages\Enums\MessagePartChannelEnum;
@@ -27,9 +26,13 @@ use WordPress\AiClient\Tools\DTO\FunctionCall;
 use WordPress\AiClient\Tools\DTO\FunctionDeclaration;
 
 /**
- * Base class for a text generation model for an OpenAI compatible provider.
+ * Base class for a text generation model for providers that implement OpenAI's API format.
  *
- * @since n.e.x.t
+ * This abstract class is designed to work with any AI provider that offers an OpenAI-compatible
+ * API endpoint, including but not limited to Anthropic, Google, and other providers
+ * that have adopted OpenAI's API specification as a standard interface.
+ *
+ * @since 0.1.0
  *
  * @phpstan-type ToolCallData array{
  *     type?: string,
@@ -66,7 +69,7 @@ abstract class AbstractOpenAiCompatibleTextGenerationModel extends AbstractApiBa
     /**
      * {@inheritDoc}
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      */
     final public function generateTextResult(array $prompt): GenerativeAiResult
     {
@@ -91,24 +94,9 @@ abstract class AbstractOpenAiCompatibleTextGenerationModel extends AbstractApiBa
     }
 
     /**
-     * {@inheritDoc}
-     *
-     * @since n.e.x.t
-     */
-    final public function streamGenerateTextResult(array $prompt): Generator
-    {
-        $params = $this->prepareGenerateTextParams($prompt);
-
-        // TODO: Implement streaming support.
-        throw new RuntimeException(
-            'Streaming is not yet implemented.'
-        );
-    }
-
-    /**
      * Prepares the given prompt and the model configuration into parameters for the API request.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param list<Message> $prompt The prompt to generate text for. Either a single message or a list of messages
      *                              from a chat.
@@ -210,7 +198,7 @@ abstract class AbstractOpenAiCompatibleTextGenerationModel extends AbstractApiBa
     /**
      * Prepares the messages parameter for the API request.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param list<Message> $messages The messages to prepare.
      * @param string|null $systemInstruction An optional system instruction to prepend to the messages.
@@ -236,17 +224,24 @@ abstract class AbstractOpenAiCompatibleTextGenerationModel extends AbstractApiBa
                         'tool_call_id' => $functionResponse->getId(),
                     ];
                 }
-                return [
+                $messageData = [
                     'role' => $this->getMessageRoleString($message->getRole()),
                     'content' => array_values(array_filter(array_map(
                         [$this, 'getMessagePartContentData'],
                         $messageParts
                     ))),
-                    'tool_calls' => array_values(array_filter(array_map(
-                        [$this, 'getMessagePartToolCallData'],
-                        $messageParts
-                    ))),
                 ];
+
+                // Only include tool_calls if there are any (OpenAI rejects empty arrays).
+                $toolCalls = array_values(array_filter(array_map(
+                    [$this, 'getMessagePartToolCallData'],
+                    $messageParts
+                )));
+                if (!empty($toolCalls)) {
+                    $messageData['tool_calls'] = $toolCalls;
+                }
+
+                return $messageData;
             },
             $messages
         );
@@ -276,7 +271,7 @@ abstract class AbstractOpenAiCompatibleTextGenerationModel extends AbstractApiBa
     /**
      * Returns the OpenAI API specific role string for the given message role.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param MessageRoleEnum $role The message role.
      * @return string The role for the API request.
@@ -292,7 +287,7 @@ abstract class AbstractOpenAiCompatibleTextGenerationModel extends AbstractApiBa
     /**
      * Returns the OpenAI API specific content data for a message part.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param MessagePart $part The message part to get the data for.
      * @return ?array<string, mixed> The data for the message content part, or null if not applicable.
@@ -302,6 +297,13 @@ abstract class AbstractOpenAiCompatibleTextGenerationModel extends AbstractApiBa
     {
         $type = $part->getType();
         if ($type->isText()) {
+            /*
+             * The OpenAI Chat Completions API spec does not support annotating thought parts as input,
+             * so we instead skip them.
+             */
+            if ($part->getChannel()->isThought()) {
+                return null;
+            }
             return [
                 'type' => 'text',
                 'text' => $part->getText(),
@@ -336,7 +338,7 @@ abstract class AbstractOpenAiCompatibleTextGenerationModel extends AbstractApiBa
                 return [
                     'type' => 'image_url',
                     'image_url' => [
-                        'url' => $file->getBase64Data(),
+                        'url' => $file->getDataUri(),
                     ],
                 ];
             }
@@ -377,7 +379,7 @@ abstract class AbstractOpenAiCompatibleTextGenerationModel extends AbstractApiBa
     /**
      * Returns the OpenAI API specific tool calls data for a message part.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param MessagePart $part The message part to get the data for.
      * @return ?array<string, mixed> The data for the message tool call part, or null if not applicable.
@@ -394,12 +396,27 @@ abstract class AbstractOpenAiCompatibleTextGenerationModel extends AbstractApiBa
                     'The function call typed message part must contain a function call.'
                 );
             }
+            $args = $functionCall->getArgs();
+
+            /*
+             * Ensure null or empty arrays become empty objects for JSON encoding.
+             * While in theory the JSON schema could also dictate a type of
+             * 'array', in practice function arguments are typically of type
+             * 'object'. More importantly, the OpenAI API specification seems
+             * to expect that, and does not support passing arrays as the root
+             * value. The null check handles the case where FunctionCall normalizes
+             * empty arrays to null.
+             */
+            if ($args === null || (is_array($args) && count($args) === 0)) {
+                $args = new \stdClass();
+            }
+
             return [
                 'type' => 'function',
                 'id' => $functionCall->getId(),
                 'function' => [
                     'name' => $functionCall->getName(),
-                    'arguments' => json_encode($functionCall->getArgs()),
+                    'arguments' => json_encode($args),
                 ],
             ];
         }
@@ -410,7 +427,7 @@ abstract class AbstractOpenAiCompatibleTextGenerationModel extends AbstractApiBa
     /**
      * Validates that the given output modalities to ensure that at least one output modality is text.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param array<ModalityEnum> $outputModalities The output modalities to validate.
      * @throws InvalidArgumentException If no text output modality is present.
@@ -436,7 +453,7 @@ abstract class AbstractOpenAiCompatibleTextGenerationModel extends AbstractApiBa
     /**
      * Prepares the output modalities parameter for the API request.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param array<ModalityEnum> $modalities The modalities to prepare.
      * @return list<string> The prepared modalities parameter.
@@ -466,7 +483,7 @@ abstract class AbstractOpenAiCompatibleTextGenerationModel extends AbstractApiBa
     /**
      * Prepares the tools parameter for the API request.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param list<FunctionDeclaration> $functionDeclarations The function declarations.
      * @return list<array<string, mixed>> The prepared tools parameter.
@@ -489,7 +506,7 @@ abstract class AbstractOpenAiCompatibleTextGenerationModel extends AbstractApiBa
      *
      * This is only called if the output MIME type is `application/json`.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param array<string, mixed>|null $outputSchema The output schema.
      * @return array<string, mixed> The prepared response format parameter.
@@ -511,7 +528,10 @@ abstract class AbstractOpenAiCompatibleTextGenerationModel extends AbstractApiBa
     /**
      * Creates a request object for the provider's API.
      *
-     * @since n.e.x.t
+     * Implementations should use $this->getRequestOptions() to attach any
+     * configured request options to the Request.
+     *
+     * @since 0.1.0
      *
      * @param HttpMethodEnum $method The HTTP method.
      * @param string $path The API endpoint path, relative to the base URI.
@@ -529,7 +549,7 @@ abstract class AbstractOpenAiCompatibleTextGenerationModel extends AbstractApiBa
     /**
      * Throws an exception if the response is not successful.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param Response $response The HTTP response to check.
      * @throws ResponseException If the response is not successful.
@@ -546,7 +566,7 @@ abstract class AbstractOpenAiCompatibleTextGenerationModel extends AbstractApiBa
     /**
      * Parses the response from the API endpoint to a generative AI result.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param Response $response The response from the API endpoint.
      * @return GenerativeAiResult The parsed generative AI result.
@@ -556,25 +576,27 @@ abstract class AbstractOpenAiCompatibleTextGenerationModel extends AbstractApiBa
         /** @var ResponseData $responseData */
         $responseData = $response->getData();
         if (!isset($responseData['choices']) || !$responseData['choices']) {
-            throw new RuntimeException(
-                'Unexpected API response: Missing the choices key.'
-            );
+            throw ResponseException::fromMissingData($this->providerMetadata()->getName(), 'choices');
         }
         if (!is_array($responseData['choices'])) {
-            throw new RuntimeException(
-                'Unexpected API response: The choices key must contain an array.'
+            throw ResponseException::fromInvalidData(
+                $this->providerMetadata()->getName(),
+                'choices',
+                'The value must be an array.'
             );
         }
 
         $candidates = [];
-        foreach ($responseData['choices'] as $choiceData) {
+        foreach ($responseData['choices'] as $index => $choiceData) {
             if (!is_array($choiceData) || array_is_list($choiceData)) {
-                throw new RuntimeException(
-                    'Unexpected API response: Each element in the choices key must be an associative array.'
+                throw ResponseException::fromInvalidData(
+                    $this->providerMetadata()->getName(),
+                    "choices[{$index}]",
+                    'The value must be an associative array.'
                 );
             }
 
-            $candidates[] = $this->parseResponseChoiceToCandidate($choiceData);
+            $candidates[] = $this->parseResponseChoiceToCandidate($choiceData, $index);
         }
 
         $id = isset($responseData['id']) && is_string($responseData['id']) ? $responseData['id'] : '';
@@ -591,7 +613,7 @@ abstract class AbstractOpenAiCompatibleTextGenerationModel extends AbstractApiBa
             $tokenUsage = new TokenUsage(0, 0, 0);
         }
 
-        // Use any other data from the response as provider metadata.
+        // Use any other data from the response as provider-specific response metadata.
         $additionalData = $responseData;
         unset($additionalData['id'], $additionalData['choices'], $additionalData['usage']);
 
@@ -608,32 +630,35 @@ abstract class AbstractOpenAiCompatibleTextGenerationModel extends AbstractApiBa
     /**
      * Parses a single choice from the API response into a Candidate object.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param ChoiceData $choiceData The choice data from the API response.
+     * @param int $index The index of the choice in the choices array.
      * @return Candidate The parsed candidate.
      * @throws RuntimeException If the choice data is invalid.
      */
-    protected function parseResponseChoiceToCandidate(array $choiceData): Candidate
+    protected function parseResponseChoiceToCandidate(array $choiceData, int $index): Candidate
     {
         if (
             !isset($choiceData['message']) ||
             !is_array($choiceData['message']) ||
             array_is_list($choiceData['message'])
         ) {
-            throw new RuntimeException(
-                'Unexpected API response: Each choice must contain a message key with an associative array.'
+            throw ResponseException::fromMissingData(
+                $this->providerMetadata()->getName(),
+                "choices[{$index}].message"
             );
         }
 
         if (!isset($choiceData['finish_reason']) || !is_string($choiceData['finish_reason'])) {
-            throw new RuntimeException(
-                'Unexpected API response: Each choice must contain a finish_reason key with a string value.'
+            throw ResponseException::fromMissingData(
+                $this->providerMetadata()->getName(),
+                "choices[{$index}].finish_reason"
             );
         }
 
         $messageData = $choiceData['message'];
-        $message = $this->parseResponseChoiceMessage($messageData);
+        $message = $this->parseResponseChoiceMessage($messageData, $index);
 
         switch ($choiceData['finish_reason']) {
             case 'stop':
@@ -649,11 +674,10 @@ abstract class AbstractOpenAiCompatibleTextGenerationModel extends AbstractApiBa
                 $finishReason = FinishReasonEnum::toolCalls();
                 break;
             default:
-                throw new RuntimeException(
-                    sprintf(
-                        'Unexpected API response: Invalid finish reason "%s".',
-                        $choiceData['finish_reason']
-                    )
+                throw ResponseException::fromInvalidData(
+                    $this->providerMetadata()->getName(),
+                    "choices[{$index}].finish_reason",
+                    sprintf('Invalid finish reason "%s".', $choiceData['finish_reason'])
                 );
         }
 
@@ -663,18 +687,19 @@ abstract class AbstractOpenAiCompatibleTextGenerationModel extends AbstractApiBa
     /**
      * Parses the message from a choice in the API response.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param MessageData $messageData The message data from the API response.
+     * @param int $index The index of the choice in the choices array.
      * @return Message The parsed message.
      */
-    protected function parseResponseChoiceMessage(array $messageData): Message
+    protected function parseResponseChoiceMessage(array $messageData, int $index): Message
     {
         $role = isset($messageData['role']) && 'user' === $messageData['role']
             ? MessageRoleEnum::user()
             : MessageRoleEnum::model();
 
-        $parts = $this->parseResponseChoiceMessageParts($messageData);
+        $parts = $this->parseResponseChoiceMessageParts($messageData, $index);
 
         return new Message($role, $parts);
     }
@@ -682,12 +707,13 @@ abstract class AbstractOpenAiCompatibleTextGenerationModel extends AbstractApiBa
     /**
      * Parses the message parts from a choice in the API response.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param MessageData $messageData The message data from the API response.
+     * @param int $index The index of the choice in the choices array.
      * @return MessagePart[] The parsed message parts.
      */
-    protected function parseResponseChoiceMessageParts(array $messageData): array
+    protected function parseResponseChoiceMessageParts(array $messageData, int $index): array
     {
         $parts = [];
 
@@ -700,11 +726,13 @@ abstract class AbstractOpenAiCompatibleTextGenerationModel extends AbstractApiBa
         }
 
         if (isset($messageData['tool_calls']) && is_array($messageData['tool_calls'])) {
-            foreach ($messageData['tool_calls'] as $toolCallData) {
+            foreach ($messageData['tool_calls'] as $toolCallIndex => $toolCallData) {
                 $toolCallPart = $this->parseResponseChoiceMessageToolCallPart($toolCallData);
                 if (!$toolCallPart) {
-                    throw new RuntimeException(
-                        'Unexpected API response: The response includes a tool call of an unexpected type.'
+                    throw ResponseException::fromInvalidData(
+                        $this->providerMetadata()->getName(),
+                        "choices[{$index}].message.tool_calls[{$toolCallIndex}]",
+                        'The response includes a tool call of an unexpected type.'
                     );
                 }
                 $parts[] = $toolCallPart;
@@ -717,7 +745,7 @@ abstract class AbstractOpenAiCompatibleTextGenerationModel extends AbstractApiBa
     /**
      * Parses a tool call part from the API response.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param ToolCallData $toolCallData The tool call data from the API response.
      * @return MessagePart|null The parsed message part for the tool call, or null if not applicable.

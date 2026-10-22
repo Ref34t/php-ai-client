@@ -10,14 +10,15 @@ use WordPress\AiClient\Common\AbstractDataTransferObject;
  * Represents a function declaration for AI models.
  *
  * This DTO describes a function that can be called by the AI model,
- * including its name, description, and parameter schema.
+ * including its name, description, parameter schema, and optional annotations.
  *
- * @since n.e.x.t
+ * @since 0.1.0
  *
  * @phpstan-type FunctionDeclarationArrayShape array{
  *     name: string,
  *     description: string,
- *     parameters?: array<string, mixed>
+ *     parameters?: array<string, mixed>,
+ *     annotations?: array<string, mixed>
  * }
  *
  * @extends AbstractDataTransferObject<FunctionDeclarationArrayShape>
@@ -27,6 +28,7 @@ class FunctionDeclaration extends AbstractDataTransferObject
     public const KEY_NAME = 'name';
     public const KEY_DESCRIPTION = 'description';
     public const KEY_PARAMETERS = 'parameters';
+    public const KEY_ANNOTATIONS = 'annotations';
     /**
      * @var string The name of the function.
      */
@@ -43,25 +45,37 @@ class FunctionDeclaration extends AbstractDataTransferObject
     private ?array $parameters;
 
     /**
+     * @var array<string, mixed> Open-ended annotations which may be consumed by Providers.
+     */
+    private array $annotations;
+
+    /**
      * Constructor.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
+     * @since 1.5.0 Adds the optional $annotations parameter.
      *
      * @param string $name The name of the function.
      * @param string $description A description of what the function does.
      * @param array<string, mixed>|null $parameters The JSON schema for the function parameters.
+     * @param array<string, mixed> $annotations Optional annotations with JSON-serializable values.
      */
-    public function __construct(string $name, string $description, ?array $parameters = null)
-    {
+    public function __construct(
+        string $name,
+        string $description,
+        ?array $parameters = null,
+        array $annotations = []
+    ) {
         $this->name = $name;
         $this->description = $description;
         $this->parameters = $parameters;
+        $this->annotations = $annotations;
     }
 
     /**
      * Gets the function name.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return string The function name.
      */
@@ -73,7 +87,7 @@ class FunctionDeclaration extends AbstractDataTransferObject
     /**
      * Gets the function description.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return string The function description.
      */
@@ -85,7 +99,7 @@ class FunctionDeclaration extends AbstractDataTransferObject
     /**
      * Gets the function parameters schema.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return array<string, mixed>|null The parameters schema.
      */
@@ -95,9 +109,21 @@ class FunctionDeclaration extends AbstractDataTransferObject
     }
 
     /**
+     * Gets the function annotations.
+     *
+     * @since 1.5.0
+     *
+     * @return array<string, mixed> The annotations, or an empty array if none were provided.
+     */
+    public function getAnnotations(): array
+    {
+        return $this->annotations;
+    }
+
+    /**
      * {@inheritDoc}
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      */
     public static function getJsonSchema(): array
     {
@@ -117,6 +143,11 @@ class FunctionDeclaration extends AbstractDataTransferObject
                     'description' => 'The JSON schema for the function parameters.',
                     'additionalProperties' => true,
                 ],
+                self::KEY_ANNOTATIONS => [
+                    'type' => 'object',
+                    'description' => 'Optional annotations interpreted by consumers.',
+                    'additionalProperties' => true,
+                ],
             ],
             'required' => [self::KEY_NAME, self::KEY_DESCRIPTION],
         ];
@@ -125,7 +156,7 @@ class FunctionDeclaration extends AbstractDataTransferObject
     /**
      * {@inheritDoc}
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return FunctionDeclarationArrayShape
      */
@@ -140,13 +171,17 @@ class FunctionDeclaration extends AbstractDataTransferObject
             $data[self::KEY_PARAMETERS] = $this->parameters;
         }
 
+        if ($this->annotations !== []) {
+            $data[self::KEY_ANNOTATIONS] = $this->annotations;
+        }
+
         return $data;
     }
 
     /**
      * {@inheritDoc}
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      */
     public static function fromArray(array $array): self
     {
@@ -155,7 +190,8 @@ class FunctionDeclaration extends AbstractDataTransferObject
         return new self(
             $array[self::KEY_NAME],
             $array[self::KEY_DESCRIPTION],
-            $array[self::KEY_PARAMETERS] ?? null
+            $array[self::KEY_PARAMETERS] ?? null,
+            $array[self::KEY_ANNOTATIONS] ?? []
         );
     }
 }

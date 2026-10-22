@@ -8,8 +8,15 @@ use JsonSerializable;
 use PHPUnit\Framework\TestCase;
 use WordPress\AiClient\Common\Contracts\WithArrayTransformationInterface;
 use WordPress\AiClient\Common\Contracts\WithJsonSchemaInterface;
+use WordPress\AiClient\Files\DTO\File;
+use WordPress\AiClient\Messages\DTO\MessagePart;
+use WordPress\AiClient\Messages\DTO\UserMessage;
+use WordPress\AiClient\Messages\Enums\ModalityEnum;
+use WordPress\AiClient\Providers\Models\DTO\ModelConfig;
+use WordPress\AiClient\Providers\Models\DTO\ModelMetadata;
 use WordPress\AiClient\Providers\Models\DTO\ModelRequirements;
 use WordPress\AiClient\Providers\Models\DTO\RequiredOption;
+use WordPress\AiClient\Providers\Models\DTO\SupportedOption;
 use WordPress\AiClient\Providers\Models\Enums\CapabilityEnum;
 use WordPress\AiClient\Providers\Models\Enums\OptionEnum;
 
@@ -391,5 +398,438 @@ class ModelRequirementsTest extends TestCase
             JsonSerializable::class,
             $requirements
         );
+    }
+
+    /**
+     * Tests areMetBy method with matching capabilities and options.
+     *
+     * @return void
+     */
+    public function testAreMetByWithMatchingRequirements(): void
+    {
+        $requirements = new ModelRequirements(
+            [CapabilityEnum::textGeneration(), CapabilityEnum::chatHistory()],
+            [
+                new RequiredOption(OptionEnum::temperature(), 0.7),
+                new RequiredOption(OptionEnum::maxTokens(), 1000)
+            ]
+        );
+
+        $metadata = $this->createMock(ModelMetadata::class);
+        $metadata->method('getSupportedCapabilities')->willReturn([
+            CapabilityEnum::textGeneration(),
+            CapabilityEnum::chatHistory(),
+            CapabilityEnum::imageGeneration()
+        ]);
+        $metadata->method('getSupportedOptions')->willReturn([
+            new SupportedOption(OptionEnum::temperature(), [0.1, 0.7, 1.0]),
+            new SupportedOption(OptionEnum::maxTokens(), [500, 1000, 2000])
+        ]);
+
+        $this->assertTrue($requirements->areMetBy($metadata));
+    }
+
+    /**
+     * Tests areMetBy method with missing required capability.
+     *
+     * @return void
+     */
+    public function testAreMetByWithMissingCapability(): void
+    {
+        $requirements = new ModelRequirements(
+            [CapabilityEnum::textGeneration(), CapabilityEnum::imageGeneration()],
+            []
+        );
+
+        $metadata = $this->createMock(ModelMetadata::class);
+        $metadata->method('getSupportedCapabilities')->willReturn([
+            CapabilityEnum::textGeneration()
+        ]);
+        $metadata->method('getSupportedOptions')->willReturn([]);
+
+        $this->assertFalse($requirements->areMetBy($metadata));
+    }
+
+    /**
+     * Tests areMetBy method with unsupported option value.
+     *
+     * @return void
+     */
+    public function testAreMetByWithUnsupportedOptionValue(): void
+    {
+        $requirements = new ModelRequirements(
+            [CapabilityEnum::textGeneration()],
+            [new RequiredOption(OptionEnum::temperature(), 0.5)]
+        );
+
+        $metadata = $this->createMock(ModelMetadata::class);
+        $metadata->method('getSupportedCapabilities')->willReturn([
+            CapabilityEnum::textGeneration()
+        ]);
+        $metadata->method('getSupportedOptions')->willReturn([
+            new SupportedOption(OptionEnum::temperature(), [0.1, 0.7, 1.0])
+        ]);
+
+        $this->assertFalse($requirements->areMetBy($metadata));
+    }
+
+    /**
+     * Tests areMetBy method with no requirements.
+     *
+     * @return void
+     */
+    public function testAreMetByWithNoRequirements(): void
+    {
+        $requirements = new ModelRequirements([], []);
+
+        $metadata = $this->createMock(ModelMetadata::class);
+        $metadata->method('getSupportedCapabilities')->willReturn([
+            CapabilityEnum::textGeneration()
+        ]);
+        $metadata->method('getSupportedOptions')->willReturn([
+            new SupportedOption(OptionEnum::temperature(), [0.7])
+        ]);
+
+        $this->assertTrue($requirements->areMetBy($metadata));
+    }
+
+    /**
+     * Tests areMetBy method with an option the model does not support at all.
+     *
+     * @return void
+     */
+    public function testAreMetByWithUnsupportedOptionName(): void
+    {
+        $requirements = new ModelRequirements(
+            [CapabilityEnum::embeddingGeneration()],
+            [new RequiredOption(OptionEnum::dimensions(), 256)]
+        );
+
+        $metadata = $this->createMock(ModelMetadata::class);
+        $metadata->method('getSupportedCapabilities')->willReturn([
+            CapabilityEnum::embeddingGeneration()
+        ]);
+        $metadata->method('getSupportedOptions')->willReturn([]);
+
+        $this->assertFalse($requirements->areMetBy($metadata));
+    }
+
+    /**
+     * Tests getUnmetRequirements method with matching capabilities and options.
+     *
+     * @return void
+     */
+    public function testGetUnmetRequirementsWithMatchingRequirements(): void
+    {
+        $requirements = new ModelRequirements(
+            [CapabilityEnum::textGeneration(), CapabilityEnum::chatHistory()],
+            [new RequiredOption(OptionEnum::temperature(), 0.7)]
+        );
+
+        $metadata = $this->createMock(ModelMetadata::class);
+        $metadata->method('getSupportedCapabilities')->willReturn([
+            CapabilityEnum::textGeneration(),
+            CapabilityEnum::chatHistory()
+        ]);
+        $metadata->method('getSupportedOptions')->willReturn([
+            new SupportedOption(OptionEnum::temperature(), [0.1, 0.7, 1.0])
+        ]);
+
+        $unmetRequirements = $requirements->getUnmetRequirements($metadata);
+
+        $this->assertSame([], $unmetRequirements['capabilities']);
+        $this->assertSame([], $unmetRequirements['options']);
+        $this->assertTrue($requirements->areMetBy($metadata));
+    }
+
+    /**
+     * Tests getUnmetRequirements method with no requirements.
+     *
+     * @return void
+     */
+    public function testGetUnmetRequirementsWithNoRequirements(): void
+    {
+        $requirements = new ModelRequirements([], []);
+
+        $metadata = $this->createMock(ModelMetadata::class);
+        $metadata->method('getSupportedCapabilities')->willReturn([]);
+        $metadata->method('getSupportedOptions')->willReturn([]);
+
+        $unmetRequirements = $requirements->getUnmetRequirements($metadata);
+
+        $this->assertSame([], $unmetRequirements['capabilities']);
+        $this->assertSame([], $unmetRequirements['options']);
+    }
+
+    /**
+     * Tests getUnmetRequirements method reports a capability the model does not support.
+     *
+     * @return void
+     */
+    public function testGetUnmetRequirementsWithMissingCapability(): void
+    {
+        $requirements = new ModelRequirements(
+            [CapabilityEnum::textGeneration(), CapabilityEnum::imageGeneration()],
+            []
+        );
+
+        $metadata = $this->createMock(ModelMetadata::class);
+        $metadata->method('getSupportedCapabilities')->willReturn([
+            CapabilityEnum::textGeneration()
+        ]);
+        $metadata->method('getSupportedOptions')->willReturn([]);
+
+        $unmetRequirements = $requirements->getUnmetRequirements($metadata);
+
+        $this->assertCount(1, $unmetRequirements['capabilities']);
+        $this->assertSame(
+            CapabilityEnum::IMAGE_GENERATION,
+            $unmetRequirements['capabilities'][0]->value
+        );
+        $this->assertSame([], $unmetRequirements['options']);
+        $this->assertFalse($requirements->areMetBy($metadata));
+    }
+
+    /**
+     * Tests getUnmetRequirements method reports an option the model does not support at all.
+     *
+     * @return void
+     */
+    public function testGetUnmetRequirementsWithUnsupportedOptionName(): void
+    {
+        $requirements = new ModelRequirements(
+            [CapabilityEnum::embeddingGeneration()],
+            [new RequiredOption(OptionEnum::dimensions(), 256)]
+        );
+
+        $metadata = $this->createMock(ModelMetadata::class);
+        $metadata->method('getSupportedCapabilities')->willReturn([
+            CapabilityEnum::embeddingGeneration()
+        ]);
+        $metadata->method('getSupportedOptions')->willReturn([]);
+
+        $unmetRequirements = $requirements->getUnmetRequirements($metadata);
+
+        $this->assertSame([], $unmetRequirements['capabilities']);
+        $this->assertCount(1, $unmetRequirements['options']);
+        $this->assertTrue($unmetRequirements['options'][0]->getName()->isDimensions());
+        $this->assertSame(256, $unmetRequirements['options'][0]->getValue());
+        $this->assertFalse($requirements->areMetBy($metadata));
+    }
+
+    /**
+     * Tests getUnmetRequirements method reports an option the model does not support with the required value.
+     *
+     * @return void
+     */
+    public function testGetUnmetRequirementsWithUnsupportedOptionValue(): void
+    {
+        $requirements = new ModelRequirements(
+            [CapabilityEnum::textGeneration()],
+            [new RequiredOption(OptionEnum::temperature(), 0.5)]
+        );
+
+        $metadata = $this->createMock(ModelMetadata::class);
+        $metadata->method('getSupportedCapabilities')->willReturn([
+            CapabilityEnum::textGeneration()
+        ]);
+        $metadata->method('getSupportedOptions')->willReturn([
+            new SupportedOption(OptionEnum::temperature(), [0.1, 0.7, 1.0])
+        ]);
+
+        $unmetRequirements = $requirements->getUnmetRequirements($metadata);
+
+        $this->assertSame([], $unmetRequirements['capabilities']);
+        $this->assertCount(1, $unmetRequirements['options']);
+        $this->assertTrue($unmetRequirements['options'][0]->getName()->isTemperature());
+        $this->assertSame(0.5, $unmetRequirements['options'][0]->getValue());
+        $this->assertFalse($requirements->areMetBy($metadata));
+    }
+
+    /**
+     * Tests getUnmetRequirements method reports every unmet requirement rather than stopping at the first.
+     *
+     * @return void
+     */
+    public function testGetUnmetRequirementsReportsAllUnmetRequirements(): void
+    {
+        $requirements = new ModelRequirements(
+            [CapabilityEnum::embeddingGeneration(), CapabilityEnum::chatHistory()],
+            [
+                new RequiredOption(OptionEnum::dimensions(), 256),
+                new RequiredOption(OptionEnum::temperature(), 0.5),
+                new RequiredOption(OptionEnum::maxTokens(), 1000)
+            ]
+        );
+
+        $metadata = $this->createMock(ModelMetadata::class);
+        $metadata->method('getSupportedCapabilities')->willReturn([]);
+        $metadata->method('getSupportedOptions')->willReturn([
+            new SupportedOption(OptionEnum::maxTokens(), null)
+        ]);
+
+        $unmetRequirements = $requirements->getUnmetRequirements($metadata);
+
+        $this->assertCount(2, $unmetRequirements['capabilities']);
+        $this->assertSame(
+            [CapabilityEnum::EMBEDDING_GENERATION, CapabilityEnum::CHAT_HISTORY],
+            array_map(
+                fn($capability) => $capability->value,
+                $unmetRequirements['capabilities']
+            )
+        );
+
+        // maxTokens is supported with any value, so only dimensions and temperature are reported.
+        $this->assertCount(2, $unmetRequirements['options']);
+        $this->assertTrue($unmetRequirements['options'][0]->getName()->isDimensions());
+        $this->assertTrue($unmetRequirements['options'][1]->getName()->isTemperature());
+        $this->assertFalse($requirements->areMetBy($metadata));
+    }
+
+    /**
+     * Tests fromPromptData method with simple text generation.
+     *
+     * @return void
+     */
+    public function testFromPromptDataWithSimpleTextGeneration(): void
+    {
+        $messages = [new UserMessage([new MessagePart('Hello, world!')])];
+        $modelConfig = new ModelConfig();
+        $modelConfig->setTemperature(0.7);
+        $modelConfig->setMaxTokens(1000);
+
+        $requirements = ModelRequirements::fromPromptData(
+            CapabilityEnum::textGeneration(),
+            $messages,
+            $modelConfig
+        );
+
+        $capabilities = $requirements->getRequiredCapabilities();
+        $this->assertContains(CapabilityEnum::textGeneration(), $capabilities);
+
+        // Check for input modalities option containing text
+        $inputModalityOptions = array_filter(
+            $requirements->getRequiredOptions(),
+            fn($opt) => $opt->getName()->isInputModalities()
+        );
+        $this->assertNotEmpty($inputModalityOptions);
+
+        $modalityValues = array_values($inputModalityOptions)[0]->getValue();
+
+        // The array contains ModalityEnum objects, not strings
+        $this->assertContains(ModalityEnum::text(), $modalityValues);
+    }
+
+    /**
+     * Tests fromPromptData method with chat history.
+     *
+     * @return void
+     */
+    public function testFromPromptDataWithChatHistory(): void
+    {
+        $messages = [
+            new UserMessage([new MessagePart('First message')]),
+            new UserMessage([new MessagePart('Second message')])
+        ];
+        $modelConfig = new ModelConfig();
+
+        $requirements = ModelRequirements::fromPromptData(
+            CapabilityEnum::textGeneration(),
+            $messages,
+            $modelConfig
+        );
+
+        $capabilities = $requirements->getRequiredCapabilities();
+        $this->assertContains(CapabilityEnum::textGeneration(), $capabilities);
+        $this->assertContains(CapabilityEnum::chatHistory(), $capabilities);
+    }
+
+    /**
+     * Tests fromPromptData method with image input.
+     *
+     * @return void
+     */
+    public function testFromPromptDataWithImageInput(): void
+    {
+        $b64 = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==';
+        $imageFile = new File('data:image/png;base64,' . $b64);
+        $messages = [
+            new UserMessage([
+                new MessagePart('Describe this image'),
+                new MessagePart($imageFile)
+            ])
+        ];
+        $modelConfig = new ModelConfig();
+
+        $requirements = ModelRequirements::fromPromptData(
+            CapabilityEnum::textGeneration(),
+            $messages,
+            $modelConfig
+        );
+
+        $inputModalityOptions = array_filter(
+            $requirements->getRequiredOptions(),
+            fn($opt) => $opt->getName()->isInputModalities()
+        );
+        $this->assertNotEmpty($inputModalityOptions);
+
+        $modalityValues = array_values($inputModalityOptions)[0]->getValue();
+        $this->assertContains(ModalityEnum::text(), $modalityValues);
+        $this->assertContains(ModalityEnum::image(), $modalityValues);
+    }
+
+    /**
+     * Tests fromPromptData method with model configuration options.
+     *
+     * @return void
+     */
+    public function testFromPromptDataWithModelConfigOptions(): void
+    {
+        $messages = [new UserMessage([new MessagePart('Test')])];
+        $modelConfig = new ModelConfig();
+        $modelConfig->setTemperature(0.9);
+        $modelConfig->setMaxTokens(2000);
+        $modelConfig->setTopP(0.95);
+        $modelConfig->setStopSequences(['END']);
+        $modelConfig->setDimensions(1536);
+
+        $requirements = ModelRequirements::fromPromptData(
+            CapabilityEnum::textGeneration(),
+            $messages,
+            $modelConfig
+        );
+
+        $options = $requirements->getRequiredOptions();
+        $this->assertNotEmpty($options);
+
+        // Check that we have the expected options based on ModelConfig settings
+        $hasTemperature = false;
+        $hasMaxTokens = false;
+        $hasTopP = false;
+        $hasDimensions = false;
+
+        foreach ($options as $option) {
+            if ($option->getName()->isTemperature()) {
+                $hasTemperature = true;
+                $this->assertEquals(0.9, $option->getValue());
+            }
+            if ($option->getName()->isMaxTokens()) {
+                $hasMaxTokens = true;
+                $this->assertEquals(2000, $option->getValue());
+            }
+            if ($option->getName()->isTopP()) {
+                $hasTopP = true;
+                $this->assertEquals(0.95, $option->getValue());
+            }
+            if ($option->getName()->isDimensions()) {
+                $hasDimensions = true;
+                $this->assertEquals(1536, $option->getValue());
+            }
+        }
+
+        $this->assertTrue($hasTemperature, 'Temperature option should be present');
+        $this->assertTrue($hasMaxTokens, 'Max tokens option should be present');
+        $this->assertTrue($hasTopP, 'Top P option should be present');
+        $this->assertTrue($hasDimensions, 'Dimensions option should be present');
     }
 }

@@ -4,12 +4,13 @@ declare(strict_types=1);
 
 namespace WordPress\AiClient\Tests\unit\Builders;
 
-use Generator;
 use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
 use WordPress\AiClient\Builders\PromptBuilder;
 use WordPress\AiClient\Files\DTO\File;
+use WordPress\AiClient\Files\Enums\FileTypeEnum;
+use WordPress\AiClient\Files\Enums\MediaOrientationEnum;
 use WordPress\AiClient\Messages\DTO\Message;
 use WordPress\AiClient\Messages\DTO\MessagePart;
 use WordPress\AiClient\Messages\DTO\ModelMessage;
@@ -17,21 +18,28 @@ use WordPress\AiClient\Messages\DTO\UserMessage;
 use WordPress\AiClient\Messages\Enums\MessageRoleEnum;
 use WordPress\AiClient\Messages\Enums\ModalityEnum;
 use WordPress\AiClient\Providers\DTO\ProviderMetadata;
+use WordPress\AiClient\Providers\DTO\ProviderModelsMetadata;
 use WordPress\AiClient\Providers\Enums\ProviderTypeEnum;
 use WordPress\AiClient\Providers\Models\Contracts\ModelInterface;
 use WordPress\AiClient\Providers\Models\DTO\ModelConfig;
 use WordPress\AiClient\Providers\Models\DTO\ModelMetadata;
 use WordPress\AiClient\Providers\Models\DTO\ModelRequirements;
+use WordPress\AiClient\Providers\Models\DTO\SupportedOption;
+use WordPress\AiClient\Providers\Models\Enums\CapabilityEnum;
+use WordPress\AiClient\Providers\Models\Enums\OptionEnum;
 use WordPress\AiClient\Providers\Models\SpeechGeneration\Contracts\SpeechGenerationModelInterface;
 use WordPress\AiClient\Providers\Models\TextGeneration\Contracts\TextGenerationModelInterface;
 use WordPress\AiClient\Providers\Models\TextToSpeechConversion\Contracts\TextToSpeechConversionModelInterface;
+use WordPress\AiClient\Providers\Models\VideoGeneration\Contracts\VideoGenerationModelInterface;
 use WordPress\AiClient\Providers\ProviderRegistry;
 use WordPress\AiClient\Results\DTO\Candidate;
 use WordPress\AiClient\Results\DTO\GenerativeAiResult;
 use WordPress\AiClient\Results\DTO\TokenUsage;
 use WordPress\AiClient\Results\Enums\FinishReasonEnum;
 use WordPress\AiClient\Tests\traits\MockModelCreationTrait;
+use WordPress\AiClient\Tools\DTO\FunctionDeclaration;
 use WordPress\AiClient\Tools\DTO\FunctionResponse;
+use WordPress\AiClient\Tools\DTO\WebSearch;
 
 /**
  * @covers \WordPress\AiClient\Builders\PromptBuilder
@@ -46,6 +54,30 @@ class PromptBuilderTest extends TestCase
     private ProviderRegistry $registry;
 
     /**
+     * Reads a model-selection property from a builder's underlying ModelResolver.
+     *
+     * Model-selection state (model, provider, request options, preferences) lives on
+     * the ModelResolver owned by the builder, so tests must reach through it.
+     *
+     * @param PromptBuilder $builder The builder to inspect.
+     * @param string $propertyName The ModelResolver property name.
+     * @return mixed The property value.
+     */
+    private function getResolverProperty(PromptBuilder $builder, string $propertyName)
+    {
+        $builderReflection = new \ReflectionClass($builder);
+        $resolverProperty = $builderReflection->getProperty('modelResolver');
+        $resolverProperty->setAccessible(true);
+        $resolver = $resolverProperty->getValue($builder);
+
+        $resolverReflection = new \ReflectionClass($resolver);
+        $property = $resolverReflection->getProperty($propertyName);
+        $property->setAccessible(true);
+
+        return $property->getValue($resolver);
+    }
+
+    /**
      * Creates a test provider metadata instance.
      *
      * @return ProviderMetadata
@@ -53,6 +85,25 @@ class PromptBuilderTest extends TestCase
     private function createTestProviderMetadata(): ProviderMetadata
     {
         return new ProviderMetadata('test-provider', 'Test Provider', ProviderTypeEnum::cloud());
+    }
+
+    /**
+     * Creates text model metadata supporting any input modalities.
+     *
+     * @param string $id The model identifier.
+     * @return ModelMetadata
+     */
+    private function createTextModelMetadataWithInputSupport(string $id): ModelMetadata
+    {
+        return new ModelMetadata(
+            $id,
+            'Test Text Model',
+            [CapabilityEnum::textGeneration()],
+            [
+                new SupportedOption(OptionEnum::inputModalities()),
+                new SupportedOption(OptionEnum::outputModalities()),
+            ]
+        );
     }
 
     /**
@@ -112,6 +163,69 @@ class PromptBuilderTest extends TestCase
             }
 
             public function generateSpeechResult(array $prompt): GenerativeAiResult
+            {
+                return $this->result;
+            }
+        };
+    }
+
+    /**
+     * Creates a mock model that implements both ModelInterface and VideoGenerationModelInterface.
+     *
+     * @param ModelMetadata      $metadata The metadata for the model.
+     * @param GenerativeAiResult $result   The result to return from generation.
+     * @return ModelInterface&VideoGenerationModelInterface The mock model.
+     */
+    private function createVideoGenerationModel(ModelMetadata $metadata, GenerativeAiResult $result): ModelInterface
+    {
+        $providerMetadata = new ProviderMetadata(
+            'mock-provider',
+            'Mock Provider',
+            ProviderTypeEnum::cloud()
+        );
+
+        return new class (
+            $metadata,
+            $providerMetadata,
+            $result
+        ) implements ModelInterface, VideoGenerationModelInterface {
+            private ModelMetadata $metadata;
+            private ProviderMetadata $providerMetadata;
+            private GenerativeAiResult $result;
+            private ModelConfig $config;
+
+            public function __construct(
+                ModelMetadata $metadata,
+                ProviderMetadata $providerMetadata,
+                GenerativeAiResult $result
+            ) {
+                $this->metadata = $metadata;
+                $this->providerMetadata = $providerMetadata;
+                $this->result = $result;
+                $this->config = new ModelConfig();
+            }
+
+            public function metadata(): ModelMetadata
+            {
+                return $this->metadata;
+            }
+
+            public function providerMetadata(): ProviderMetadata
+            {
+                return $this->providerMetadata;
+            }
+
+            public function setConfig(ModelConfig $config): void
+            {
+                $this->config = $config;
+            }
+
+            public function getConfig(): ModelConfig
+            {
+                return $this->config;
+            }
+
+            public function generateVideoResult(array $prompt): GenerativeAiResult
             {
                 return $this->result;
             }
@@ -572,13 +686,377 @@ class PromptBuilderTest extends TestCase
 
         $this->assertSame($builder, $result);
 
-        $reflection = new \ReflectionClass($builder);
-        $modelProperty = $reflection->getProperty('model');
-        $modelProperty->setAccessible(true);
-
         /** @var ModelInterface $actualModel */
-        $actualModel = $modelProperty->getValue($builder);
+        $actualModel = $this->getResolverProperty($builder, 'model');
         $this->assertSame($model, $actualModel);
+    }
+
+    /**
+     * Tests usingModelPreference selects provided model instance when requirements are met.
+     *
+     * @return void
+     */
+    public function testUsingModelPreferenceWithModelInstance(): void
+    {
+        $result = $this->createTestResult('Preferred model result');
+        $metadata = $this->createTextModelMetadataWithInputSupport('preferred-model');
+        $model = $this->createMockTextGenerationModel($result, $metadata);
+        $providerMetadata = $model->providerMetadata();
+
+        $this->registry->expects($this->once())
+            ->method('findModelsMetadataForSupport')
+            ->with($this->isInstanceOf(ModelRequirements::class))
+            ->willReturn([new ProviderModelsMetadata($providerMetadata, [$metadata])]);
+
+        $this->registry->expects($this->once())
+            ->method('getProviderModel')
+            ->with($providerMetadata->getId(), 'preferred-model', $this->isInstanceOf(ModelConfig::class))
+            ->willReturn($model);
+
+        $this->registry->expects($this->never())
+            ->method('findProviderModelsMetadataForSupport');
+
+        $builder = new PromptBuilder($this->registry, 'Test prompt');
+        $builder->usingModelPreference($model);
+
+        $actualResult = $builder->generateTextResult();
+
+        $this->assertSame($result, $actualResult);
+
+        $this->assertNull($this->getResolverProperty($builder, 'model'));
+    }
+
+    /**
+     * Tests usingModelPreference supports provider/model tuple with string identifier.
+     *
+     * @return void
+     */
+    public function testUsingModelPreferenceWithProviderTupleSelectsModel(): void
+    {
+        $result = $this->createTestResult('Tuple preferred result');
+        $firstMetadata = $this->createTextModelMetadataWithInputSupport('first-model');
+        $preferredMetadata = $this->createTextModelMetadataWithInputSupport('preferred-model');
+        $otherMetadata = $this->createTextModelMetadataWithInputSupport('other-model');
+        $model = $this->createMockTextGenerationModel($result, $preferredMetadata);
+
+        $firstProviderMetadata = new ProviderMetadata(
+            'first-provider',
+            'First Provider',
+            ProviderTypeEnum::cloud()
+        );
+
+        $preferredProviderMetadata = new ProviderMetadata(
+            'preferred-provider',
+            'Preferred Provider',
+            ProviderTypeEnum::cloud()
+        );
+
+        $otherProviderMetadata = new ProviderMetadata(
+            'other-provider',
+            'Other Provider',
+            ProviderTypeEnum::cloud()
+        );
+
+        $this->registry->expects($this->once())
+            ->method('findModelsMetadataForSupport')
+            ->with($this->isInstanceOf(ModelRequirements::class))
+            ->willReturn([
+                new ProviderModelsMetadata($firstProviderMetadata, [$firstMetadata]),
+                new ProviderModelsMetadata($preferredProviderMetadata, [$preferredMetadata]),
+                new ProviderModelsMetadata($otherProviderMetadata, [$otherMetadata]),
+            ]);
+
+        $this->registry->expects($this->once())
+            ->method('getProviderModel')
+            ->with('preferred-provider', 'preferred-model', $this->isInstanceOf(ModelConfig::class))
+            ->willReturn($model);
+
+        $this->registry->expects($this->never())
+            ->method('findProviderModelsMetadataForSupport');
+
+        $builder = new PromptBuilder($this->registry, 'Test prompt');
+        $builder->usingModelPreference(['preferred-provider', 'preferred-model']);
+
+        $actualResult = $builder->generateTextResult();
+
+        $this->assertSame($result, $actualResult);
+    }
+
+    /**
+     * Tests usingModelPreference rejects provider/model tuples that contain a model instance.
+     *
+     * @return void
+     */
+    public function testUsingModelPreferenceWithProviderTupleModelInstanceThrowsException(): void
+    {
+        $metadata = $this->createTextModelMetadataWithInputSupport('preferred-model');
+        $model = $this->createMockTextGenerationModel($this->createTestResult(), $metadata);
+
+        $builder = new PromptBuilder($this->registry, 'Test prompt');
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Model preference identifiers cannot be empty.');
+
+        $builder->usingModelPreference(['mock', $model]);
+    }
+
+    /**
+     * Tests usingModelPreference selects the first available model ID for the configured provider.
+     *
+     * @return void
+     */
+    public function testUsingModelPreferencePrefersFirstAvailableModelId(): void
+    {
+        $result = $this->createTestResult('Preferred by ID');
+        $secondaryMetadata = $this->createTextModelMetadataWithInputSupport('secondary-id');
+        $preferredMetadata = $this->createTextModelMetadataWithInputSupport('preferred-id');
+        $model = $this->createMockTextGenerationModel($result, $preferredMetadata);
+
+        $this->registry->expects($this->once())
+            ->method('getProviderId')
+            ->with('test-provider')
+            ->willReturn('test-provider');
+
+        $this->registry->expects($this->once())
+            ->method('findProviderModelsMetadataForSupport')
+            ->with('test-provider', $this->isInstanceOf(ModelRequirements::class))
+            ->willReturn([$secondaryMetadata, $preferredMetadata]);
+
+        $this->registry->expects($this->once())
+            ->method('getProviderModel')
+            ->with('test-provider', 'preferred-id', $this->isInstanceOf(ModelConfig::class))
+            ->willReturn($model);
+
+        $this->registry->expects($this->never())
+            ->method('findModelsMetadataForSupport');
+
+        $builder = new PromptBuilder($this->registry, 'Test prompt');
+        $builder->usingProvider('test-provider');
+        $builder->usingModelPreference('preferred-id', 'secondary-id');
+
+        $actualResult = $builder->generateTextResult();
+
+        $this->assertSame($result, $actualResult);
+    }
+
+    /**
+     * Tests usingModelPreference with provider class name instead of ID.
+     *
+     * @return void
+     */
+    public function testUsingModelPreferenceWithProviderClassName(): void
+    {
+        $result = $this->createTestResult('Preferred with class name');
+        $secondaryMetadata = $this->createTextModelMetadataWithInputSupport('secondary-id');
+        $preferredMetadata = $this->createTextModelMetadataWithInputSupport('preferred-id');
+        $model = $this->createMockTextGenerationModel($result, $preferredMetadata);
+
+        $this->registry->expects($this->once())
+            ->method('getProviderId')
+            ->with('WordPress\AiClient\TestProvider')
+            ->willReturn('test-provider');
+
+        $this->registry->expects($this->once())
+            ->method('findProviderModelsMetadataForSupport')
+            ->with('WordPress\AiClient\TestProvider', $this->isInstanceOf(ModelRequirements::class))
+            ->willReturn([$secondaryMetadata, $preferredMetadata]);
+
+        $this->registry->expects($this->once())
+            ->method('getProviderModel')
+            ->with('test-provider', 'preferred-id', $this->isInstanceOf(ModelConfig::class))
+            ->willReturn($model);
+
+        $this->registry->expects($this->never())
+            ->method('findModelsMetadataForSupport');
+
+        $builder = new PromptBuilder($this->registry, 'Test prompt');
+        $builder->usingProvider('WordPress\AiClient\TestProvider');
+        $builder->usingModelPreference('preferred-id', 'secondary-id');
+
+        $actualResult = $builder->generateTextResult();
+
+        $this->assertSame($result, $actualResult);
+    }
+
+    /**
+     * Tests usingModelPreference skips unavailable model IDs and falls back to the next preference.
+     *
+     * @return void
+     */
+    public function testUsingModelPreferenceSkipsUnavailableModelId(): void
+    {
+        $result = $this->createTestResult('Fallback model result');
+        $otherMetadata = $this->createTextModelMetadataWithInputSupport('other-id');
+        $fallbackMetadata = $this->createTextModelMetadataWithInputSupport('fallback-id');
+        $model = $this->createMockTextGenerationModel($result, $fallbackMetadata);
+
+        $this->registry->expects($this->once())
+            ->method('getProviderId')
+            ->with('test-provider')
+            ->willReturn('test-provider');
+
+        $this->registry->expects($this->once())
+            ->method('findProviderModelsMetadataForSupport')
+            ->with('test-provider', $this->isInstanceOf(ModelRequirements::class))
+            ->willReturn([$otherMetadata, $fallbackMetadata]);
+
+        $this->registry->expects($this->once())
+            ->method('getProviderModel')
+            ->with('test-provider', 'fallback-id', $this->isInstanceOf(ModelConfig::class))
+            ->willReturn($model);
+
+        $this->registry->expects($this->never())
+            ->method('findModelsMetadataForSupport');
+
+        $builder = new PromptBuilder($this->registry, 'Test prompt');
+        $builder->usingProvider('test-provider');
+        $builder->usingModelPreference('missing-id', 'fallback-id');
+
+        $actualResult = $builder->generateTextResult();
+
+        $this->assertSame($result, $actualResult);
+    }
+
+    /**
+     * Tests usingModelPreference falls back to discovery when no preferences are available.
+     *
+     * @return void
+     */
+    public function testUsingModelPreferenceFallsBackToDiscovery(): void
+    {
+        $result = $this->createTestResult('Discovered model result');
+        $metadata = $this->createTextModelMetadataWithInputSupport('discovered-id');
+        $providerMetadata = $this->createTestProviderMetadata();
+        $providerModelsMetadata = new ProviderModelsMetadata($providerMetadata, [$metadata]);
+
+        $model = $this->createMockTextGenerationModel($result, $metadata);
+
+        $this->registry->expects($this->once())
+            ->method('findModelsMetadataForSupport')
+            ->with($this->isInstanceOf(ModelRequirements::class))
+            ->willReturn([$providerModelsMetadata]);
+
+        $this->registry->expects($this->once())
+            ->method('getProviderModel')
+            ->with($providerMetadata->getId(), 'discovered-id', $this->isInstanceOf(ModelConfig::class))
+            ->willReturn($model);
+
+        $this->registry->expects($this->never())
+            ->method('findProviderModelsMetadataForSupport');
+
+        $builder = new PromptBuilder($this->registry, 'Test prompt');
+        $builder->usingModelPreference('unavailable-model');
+
+        $actualResult = $builder->generateTextResult();
+
+        $this->assertSame($result, $actualResult);
+    }
+
+    /**
+     * Tests usingModelPreference respects priority order when multiple preferred models are available.
+     *
+     * @return void
+     */
+    public function testUsingModelPreferenceRespectsOrderWhenMultipleAvailable(): void
+    {
+        $result = $this->createTestResult('Second choice result');
+        $secondChoiceMetadata = $this->createTextModelMetadataWithInputSupport('second-choice');
+        $thirdChoiceMetadata = $this->createTextModelMetadataWithInputSupport('third-choice');
+        $providerMetadata = $this->createTestProviderMetadata();
+
+        $model = $this->createMockTextGenerationModel($result, $secondChoiceMetadata);
+
+        // Make both second-choice and third-choice available (but not first-choice)
+        $providerModelsMetadata = new ProviderModelsMetadata(
+            $providerMetadata,
+            [$thirdChoiceMetadata, $secondChoiceMetadata]  // Order shouldn't matter
+        );
+
+        $this->registry->expects($this->once())
+            ->method('findModelsMetadataForSupport')
+            ->with($this->isInstanceOf(ModelRequirements::class))
+            ->willReturn([$providerModelsMetadata]);
+
+        // Should select 'second-choice' (respecting preference order), not 'third-choice'
+        $this->registry->expects($this->once())
+            ->method('getProviderModel')
+            ->with($providerMetadata->getId(), 'second-choice', $this->isInstanceOf(ModelConfig::class))
+            ->willReturn($model);
+
+        $this->registry->expects($this->never())
+            ->method('findProviderModelsMetadataForSupport');
+
+        $builder = new PromptBuilder($this->registry, 'Test prompt');
+        // Preferences in order: first-choice, second-choice, third-choice
+        // Available: second-choice, third-choice
+        // Expected: second-choice (respects priority)
+        $builder->usingModelPreference('first-choice', 'second-choice', 'third-choice');
+
+        $actualResult = $builder->generateTextResult();
+
+        $this->assertSame($result, $actualResult);
+    }
+
+    /**
+     * Tests usingModelPreference rejects invalid preference types.
+     *
+     * @return void
+     */
+    public function testUsingModelPreferenceWithInvalidTypeThrowsException(): void
+    {
+        $builder = new PromptBuilder($this->registry);
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage(
+            'Model preferences must be model identifiers, instances of ModelInterface, or provider/model tuples.'
+        );
+
+        $builder->usingModelPreference(123);
+    }
+
+    /**
+     * Tests usingModelPreference rejects malformed preference tuples.
+     *
+     * @return void
+     */
+    public function testUsingModelPreferenceWithInvalidTupleThrowsException(): void
+    {
+        $builder = new PromptBuilder($this->registry);
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Model preference tuple must contain model identifier and provider ID.');
+
+        $builder->usingModelPreference(['provider' => 'test', 'model' => 'id']);
+    }
+
+    /**
+     * Tests usingModelPreference rejects empty preference identifier strings.
+     *
+     * @return void
+     */
+    public function testUsingModelPreferenceWithEmptyIdentifierThrowsException(): void
+    {
+        $builder = new PromptBuilder($this->registry);
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Model preference identifiers cannot be empty.');
+
+        $builder->usingModelPreference('   ');
+    }
+
+    /**
+     * Tests usingModelPreference rejects calls without preferences.
+     *
+     * @return void
+     */
+    public function testUsingModelPreferenceWithoutArgumentsThrowsException(): void
+    {
+        $builder = new PromptBuilder($this->registry);
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('At least one model preference must be provided.');
+
+        $builder->usingModelPreference();
     }
 
     /**
@@ -658,19 +1136,17 @@ class PromptBuilderTest extends TestCase
         $this->assertArrayHasKey('otherOption', $customOptions);
         $this->assertEquals('value', $customOptions['otherOption']);
 
-        // Now set a builder value that overrides one of the custom options
+        // Now set stop sequences via the dedicated method
         $builder->usingStopSequences('STOP');
 
         // Get the config again
         $mergedConfig = $configProperty->getValue($builder);
+
+        // Assert builder's stop sequences are set on the dedicated property
+        $this->assertEquals(['STOP'], $mergedConfig->getStopSequences());
+
+        // Assert custom options are still preserved
         $customOptions = $mergedConfig->getCustomOptions();
-
-        // Assert builder's stop sequences override the config's
-        $this->assertArrayHasKey('stopSequences', $customOptions);
-        $this->assertIsArray($customOptions['stopSequences']);
-        $this->assertEquals(['STOP'], $customOptions['stopSequences']);
-
-        // Assert other custom options are still preserved
         $this->assertArrayHasKey('otherOption', $customOptions);
         $this->assertEquals('value', $customOptions['otherOption']);
     }
@@ -687,11 +1163,7 @@ class PromptBuilderTest extends TestCase
 
         $this->assertSame($builder, $result);
 
-        $reflection = new \ReflectionClass($builder);
-        $providerProperty = $reflection->getProperty('providerIdOrClassName');
-        $providerProperty->setAccessible(true);
-
-        $actualProvider = $providerProperty->getValue($builder);
+        $actualProvider = $this->getResolverProperty($builder, 'providerIdOrClassName');
         $this->assertEquals('test-provider', $actualProvider);
     }
 
@@ -818,9 +1290,7 @@ class PromptBuilderTest extends TestCase
         /** @var ModelConfig $config */
         $config = $configProperty->getValue($builder);
 
-        $customOptions = $config->getCustomOptions();
-        $this->assertArrayHasKey('stopSequences', $customOptions);
-        $this->assertEquals(['STOP', 'END', '###'], $customOptions['stopSequences']);
+        $this->assertEquals(['STOP', 'END', '###'], $config->getStopSequences());
     }
 
     /**
@@ -1101,10 +1571,8 @@ class PromptBuilderTest extends TestCase
         $this->assertCount(1, $messages);
         $this->assertCount(2, $messages[0]->getParts()); // Text and image
 
-        $modelProperty = $reflection->getProperty('model');
-        $modelProperty->setAccessible(true);
         /** @var ModelInterface $actualModel */
-        $actualModel = $modelProperty->getValue($builder);
+        $actualModel = $this->getResolverProperty($builder, 'model');
         $this->assertSame($model, $actualModel);
 
         $configProperty = $reflection->getProperty('modelConfig');
@@ -1132,7 +1600,6 @@ class PromptBuilderTest extends TestCase
 
         $metadata = $this->createMock(ModelMetadata::class);
         $metadata->method('getId')->willReturn('test-model');
-        $metadata->method('meetsRequirements')->willReturn(true);
 
         $model = $this->createMockTextGenerationModel($result, $metadata);
 
@@ -1163,7 +1630,6 @@ class PromptBuilderTest extends TestCase
 
         $metadata = $this->createMock(ModelMetadata::class);
         $metadata->method('getId')->willReturn('test-model');
-        $metadata->method('meetsRequirements')->willReturn(true);
 
         $model = $this->createMockImageGenerationModel($result, $metadata);
 
@@ -1195,7 +1661,6 @@ class PromptBuilderTest extends TestCase
 
         $metadata = $this->createMock(ModelMetadata::class);
         $metadata->method('getId')->willReturn('test-model');
-        $metadata->method('meetsRequirements')->willReturn(true);
 
         $model = $this->createSpeechGenerationModel($metadata, $result);
 
@@ -1224,7 +1689,6 @@ class PromptBuilderTest extends TestCase
 
         $metadata = $this->createMock(ModelMetadata::class);
         $metadata->method('getId')->willReturn('test-model');
-        $metadata->method('meetsRequirements')->willReturn(true);
 
         $model = $this->createMockTextGenerationModel($result, $metadata);
 
@@ -1245,7 +1709,6 @@ class PromptBuilderTest extends TestCase
     {
         $metadata = $this->createMock(ModelMetadata::class);
         $metadata->method('getId')->willReturn('test-model');
-        $metadata->method('meetsRequirements')->willReturn(true);
 
         // Model that only implements ModelInterface, not TextGenerationModelInterface
         $model = $this->createMock(ModelInterface::class);
@@ -1269,17 +1732,16 @@ class PromptBuilderTest extends TestCase
     {
         $metadata = $this->createMock(ModelMetadata::class);
         $metadata->method('getId')->willReturn('test-model');
-        $metadata->method('meetsRequirements')->willReturn(true);
 
         $model = $this->createMock(ModelInterface::class);
         $model->method('metadata')->willReturn($metadata);
 
         $builder = new PromptBuilder($this->registry, 'Test prompt');
         $builder->usingModel($model);
-        $builder->asOutputModalities(ModalityEnum::video());
+        $builder->asOutputModalities(ModalityEnum::document());
 
         $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessage('Output modality "video" is not yet supported');
+        $this->expectExceptionMessage('Output modality "document" is not yet supported');
 
         $builder->generateResult();
     }
@@ -1301,7 +1763,6 @@ class PromptBuilderTest extends TestCase
 
         $metadata = $this->createMock(ModelMetadata::class);
         $metadata->method('getId')->willReturn('test-model');
-        $metadata->method('meetsRequirements')->willReturn(true);
 
         $model = $this->createMockTextGenerationModel($result, $metadata);
 
@@ -1343,7 +1804,6 @@ class PromptBuilderTest extends TestCase
 
         $metadata = $this->createMock(ModelMetadata::class);
         $metadata->method('getId')->willReturn('test-model');
-        $metadata->method('meetsRequirements')->willReturn(true);
 
         $model = $this->createMockImageGenerationModel($result, $metadata);
 
@@ -1366,6 +1826,130 @@ class PromptBuilderTest extends TestCase
     }
 
     /**
+     * Tests generateVideoResult method.
+     *
+     * @return void
+     */
+    public function testGenerateVideoResult(): void
+    {
+        $result = new GenerativeAiResult(
+            'test-result',
+            [new Candidate(
+                new ModelMessage([new MessagePart(new File('data:video/mp4;base64,AAAAIGZ0eXA=', 'video/mp4'))]),
+                FinishReasonEnum::stop()
+            )],
+            new TokenUsage(100, 50, 150),
+            $this->createTestProviderMetadata(),
+            $this->createTestTextModelMetadata()
+        );
+
+        $metadata = $this->createMock(ModelMetadata::class);
+        $metadata->method('getId')->willReturn('test-model');
+
+        $model = $this->createVideoGenerationModel($metadata, $result);
+
+        $builder = new PromptBuilder($this->registry, 'Generate video');
+        $builder->usingModel($model);
+
+        $actualResult = $builder->generateVideoResult();
+        $this->assertSame($result, $actualResult);
+
+        // Verify video modality was included
+        $reflection = new \ReflectionClass($builder);
+        $configProperty = $reflection->getProperty('modelConfig');
+        $configProperty->setAccessible(true);
+        /** @var ModelConfig $config */
+        $config = $configProperty->getValue($builder);
+
+        $modalities = $config->getOutputModalities();
+        $this->assertNotNull($modalities);
+        $this->assertTrue($modalities[0]->isVideo());
+    }
+
+    /**
+     * Tests generateVideoResult throws exception for unsupported model.
+     *
+     * @return void
+     */
+    public function testGenerateVideoResultThrowsExceptionForUnsupportedModel(): void
+    {
+        $metadata = $this->createMock(ModelMetadata::class);
+        $metadata->method('getId')->willReturn('test-model');
+
+        $model = $this->createMock(ModelInterface::class);
+        $model->method('metadata')->willReturn($metadata);
+
+        $builder = new PromptBuilder($this->registry, 'Generate video');
+        $builder->usingModel($model);
+
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('Model "test-model" does not support video generation');
+
+        $builder->generateVideoResult();
+    }
+
+    /**
+     * Tests generateResult infers video capability from model interface.
+     *
+     * @return void
+     */
+    public function testGenerateResultInfersVideoCapabilityFromModel(): void
+    {
+        $result = new GenerativeAiResult(
+            'test-result',
+            [new Candidate(
+                new ModelMessage([new MessagePart(new File('data:video/mp4;base64,AAAAIGZ0eXA=', 'video/mp4'))]),
+                FinishReasonEnum::stop()
+            )],
+            new TokenUsage(100, 50, 150),
+            $this->createTestProviderMetadata(),
+            $this->createTestTextModelMetadata()
+        );
+
+        $metadata = $this->createMock(ModelMetadata::class);
+        $metadata->method('getId')->willReturn('test-model');
+
+        $model = $this->createVideoGenerationModel($metadata, $result);
+
+        $builder = new PromptBuilder($this->registry, 'Generate video');
+        $builder->usingModel($model);
+
+        $actualResult = $builder->generateResult();
+        $this->assertSame($result, $actualResult);
+    }
+
+    /**
+     * Tests generateResult infers video capability from video output modality.
+     *
+     * @return void
+     */
+    public function testGenerateResultInfersVideoCapabilityFromOutputModality(): void
+    {
+        $result = new GenerativeAiResult(
+            'test-result',
+            [new Candidate(
+                new ModelMessage([new MessagePart(new File('data:video/mp4;base64,AAAAIGZ0eXA=', 'video/mp4'))]),
+                FinishReasonEnum::stop()
+            )],
+            new TokenUsage(100, 50, 150),
+            $this->createTestProviderMetadata(),
+            $this->createTestTextModelMetadata()
+        );
+
+        $metadata = $this->createMock(ModelMetadata::class);
+        $metadata->method('getId')->willReturn('test-model');
+
+        $model = $this->createVideoGenerationModel($metadata, $result);
+
+        $builder = new PromptBuilder($this->registry, 'Generate video');
+        $builder->usingModel($model);
+        $builder->asOutputModalities(ModalityEnum::video());
+
+        $actualResult = $builder->generateResult();
+        $this->assertSame($result, $actualResult);
+    }
+
+    /**
      * Tests generateSpeechResult method.
      *
      * @return void
@@ -1385,7 +1969,6 @@ class PromptBuilderTest extends TestCase
 
         $metadata = $this->createMock(ModelMetadata::class);
         $metadata->method('getId')->willReturn('test-model');
-        $metadata->method('meetsRequirements')->willReturn(true);
 
         $model = $this->createSpeechGenerationModel($metadata, $result);
 
@@ -1427,7 +2010,6 @@ class PromptBuilderTest extends TestCase
 
         $metadata = $this->createMock(ModelMetadata::class);
         $metadata->method('getId')->willReturn('test-model');
-        $metadata->method('meetsRequirements')->willReturn(true);
 
         $model = $this->createTextToSpeechModel($metadata, $result);
 
@@ -1458,7 +2040,6 @@ class PromptBuilderTest extends TestCase
     {
         $metadata = $this->createMock(ModelMetadata::class);
         $metadata->method('getId')->willReturn('test-model');
-        $metadata->method('meetsRequirements')->willReturn(true);
 
         // Model that doesn't implement TextToSpeechConversionModelInterface
         $model = $this->createMock(ModelInterface::class);
@@ -1494,7 +2075,6 @@ class PromptBuilderTest extends TestCase
 
         $metadata = $this->createMock(ModelMetadata::class);
         $metadata->method('getId')->willReturn('test-model');
-        $metadata->method('meetsRequirements')->willReturn(true);
 
         $model = $this->createMockTextGenerationModel($result, $metadata);
 
@@ -1516,7 +2096,6 @@ class PromptBuilderTest extends TestCase
         // we need to create a mock that throws an exception or test a different scenario
         $metadata = $this->createMock(ModelMetadata::class);
         $metadata->method('getId')->willReturn('test-model');
-        $metadata->method('meetsRequirements')->willReturn(true);
 
         $providerMetadata = new ProviderMetadata(
             'mock-provider',
@@ -1565,11 +2144,6 @@ class PromptBuilderTest extends TestCase
             {
                 throw new RuntimeException('No candidates were generated');
             }
-
-            public function streamGenerateTextResult(array $prompt): Generator
-            {
-                yield from [];
-            }
         };
 
         $builder = new PromptBuilder($this->registry, 'Generate text');
@@ -1601,7 +2175,6 @@ class PromptBuilderTest extends TestCase
 
         $metadata = $this->createMock(ModelMetadata::class);
         $metadata->method('getId')->willReturn('test-model');
-        $metadata->method('meetsRequirements')->willReturn(true);
 
         $model = $this->createMockTextGenerationModel($result, $metadata);
 
@@ -1636,7 +2209,6 @@ class PromptBuilderTest extends TestCase
 
         $metadata = $this->createMock(ModelMetadata::class);
         $metadata->method('getId')->willReturn('test-model');
-        $metadata->method('meetsRequirements')->willReturn(true);
 
         $model = $this->createMockTextGenerationModel($result, $metadata);
 
@@ -1681,7 +2253,6 @@ class PromptBuilderTest extends TestCase
 
         $metadata = $this->createMock(ModelMetadata::class);
         $metadata->method('getId')->willReturn('test-model');
-        $metadata->method('meetsRequirements')->willReturn(true);
 
         $model = $this->createMockTextGenerationModel($result, $metadata);
 
@@ -1714,7 +2285,6 @@ class PromptBuilderTest extends TestCase
     {
         $metadata = $this->createMock(ModelMetadata::class);
         $metadata->method('getId')->willReturn('test-model');
-        $metadata->method('meetsRequirements')->willReturn(true);
 
         $providerMetadata = new ProviderMetadata(
             'mock-provider',
@@ -1763,11 +2333,6 @@ class PromptBuilderTest extends TestCase
             {
                 throw new RuntimeException('No text was generated from any candidates');
             }
-
-            public function streamGenerateTextResult(array $prompt): Generator
-            {
-                yield from [];
-            }
         };
 
         $builder = new PromptBuilder($this->registry, 'Generate texts');
@@ -1801,7 +2366,6 @@ class PromptBuilderTest extends TestCase
 
         $metadata = $this->createMock(ModelMetadata::class);
         $metadata->method('getId')->willReturn('test-model');
-        $metadata->method('meetsRequirements')->willReturn(true);
 
         $model = $this->createMockImageGenerationModel($result, $metadata);
 
@@ -1833,7 +2397,6 @@ class PromptBuilderTest extends TestCase
 
         $metadata = $this->createMock(ModelMetadata::class);
         $metadata->method('getId')->willReturn('test-model');
-        $metadata->method('meetsRequirements')->willReturn(true);
 
         $model = $this->createMockImageGenerationModel($result, $metadata);
 
@@ -1876,7 +2439,6 @@ class PromptBuilderTest extends TestCase
 
         $metadata = $this->createMock(ModelMetadata::class);
         $metadata->method('getId')->willReturn('test-model');
-        $metadata->method('meetsRequirements')->willReturn(true);
 
         $model = $this->createMockImageGenerationModel($result, $metadata);
 
@@ -1888,6 +2450,148 @@ class PromptBuilderTest extends TestCase
         $this->assertCount(2, $generatedFiles);
         $this->assertSame($files[0], $generatedFiles[0]);
         $this->assertSame($files[1], $generatedFiles[1]);
+    }
+
+    /**
+     * Tests generateVideo method.
+     *
+     * @return void
+     */
+    public function testGenerateVideo(): void
+    {
+        $file = new File('https://example.com/generated.mp4', 'video/mp4');
+        $messagePart = new MessagePart($file);
+        $message = new ModelMessage([$messagePart]);
+        $candidate = new Candidate($message, FinishReasonEnum::stop());
+
+        $result = new GenerativeAiResult(
+            'test-result',
+            [$candidate],
+            new TokenUsage(100, 50, 150),
+            $this->createTestProviderMetadata(),
+            $this->createTestTextModelMetadata()
+        );
+
+        $metadata = $this->createMock(ModelMetadata::class);
+        $metadata->method('getId')->willReturn('test-model');
+
+        $model = $this->createVideoGenerationModel($metadata, $result);
+
+        $builder = new PromptBuilder($this->registry, 'Generate video');
+        $builder->usingModel($model);
+
+        $generatedFile = $builder->generateVideo();
+        $this->assertSame($file, $generatedFile);
+    }
+
+    /**
+     * Tests generateVideo throws exception when no video file.
+     *
+     * @return void
+     */
+    public function testGenerateVideoThrowsExceptionWhenNoFile(): void
+    {
+        $messagePart = new MessagePart('Text instead of video');
+        $message = new ModelMessage([$messagePart]);
+        $candidate = new Candidate($message, FinishReasonEnum::stop());
+
+        $result = new GenerativeAiResult(
+            'test-result',
+            [$candidate],
+            new TokenUsage(100, 50, 150),
+            $this->createTestProviderMetadata(),
+            $this->createTestTextModelMetadata()
+        );
+
+        $metadata = $this->createMock(ModelMetadata::class);
+        $metadata->method('getId')->willReturn('test-model');
+
+        $model = $this->createVideoGenerationModel($metadata, $result);
+
+        $builder = new PromptBuilder($this->registry, 'Generate video');
+        $builder->usingModel($model);
+
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('No file content found in first candidate');
+
+        $builder->generateVideo();
+    }
+
+    /**
+     * Tests generateVideos method.
+     *
+     * @return void
+     */
+    public function testGenerateVideos(): void
+    {
+        $files = [
+            new File('https://example.com/vid1.mp4', 'video/mp4'),
+            new File('https://example.com/vid2.mp4', 'video/mp4'),
+        ];
+
+        $candidates = [];
+        foreach ($files as $file) {
+            $candidates[] = new Candidate(
+                new Message(MessageRoleEnum::model(), [new MessagePart($file)]),
+                FinishReasonEnum::stop()
+            );
+        }
+
+        $result = new GenerativeAiResult(
+            'test-result-id',
+            $candidates,
+            new TokenUsage(100, 50, 150),
+            $this->createTestProviderMetadata(),
+            $this->createTestTextModelMetadata()
+        );
+
+        $metadata = $this->createMock(ModelMetadata::class);
+        $metadata->method('getId')->willReturn('test-model');
+
+        $model = $this->createVideoGenerationModel($metadata, $result);
+
+        $builder = new PromptBuilder($this->registry, 'Generate videos');
+        $builder->usingModel($model);
+
+        $generatedFiles = $builder->generateVideos(2);
+
+        $this->assertCount(2, $generatedFiles);
+        $this->assertSame($files[0], $generatedFiles[0]);
+        $this->assertSame($files[1], $generatedFiles[1]);
+    }
+
+    /**
+     * Tests generateVideos method without candidate count.
+     *
+     * @return void
+     */
+    public function testGenerateVideosWithoutCandidateCount(): void
+    {
+        $file = new File('https://example.com/vid1.mp4', 'video/mp4');
+
+        $result = new GenerativeAiResult(
+            'test-result-id',
+            [new Candidate(
+                new Message(MessageRoleEnum::model(), [new MessagePart($file)]),
+                FinishReasonEnum::stop()
+            )],
+            new TokenUsage(100, 50, 150),
+            $this->createTestProviderMetadata(),
+            $this->createTestTextModelMetadata()
+        );
+
+        $metadata = $this->createMock(ModelMetadata::class);
+        $metadata->method('getId')->willReturn('test-model');
+
+        $model = $this->createVideoGenerationModel($metadata, $result);
+
+        $builder = new PromptBuilder($this->registry, 'Generate videos');
+        $builder->usingModel($model);
+
+        $generatedFiles = $builder->generateVideos();
+
+        $this->assertCount(1, $generatedFiles);
+        $this->assertSame($file, $generatedFiles[0]);
     }
 
     /**
@@ -1912,7 +2616,6 @@ class PromptBuilderTest extends TestCase
 
         $metadata = $this->createMock(ModelMetadata::class);
         $metadata->method('getId')->willReturn('test-model');
-        $metadata->method('meetsRequirements')->willReturn(true);
 
         $model = $this->createTextToSpeechModel($metadata, $result);
 
@@ -1953,7 +2656,6 @@ class PromptBuilderTest extends TestCase
 
         $metadata = $this->createMock(ModelMetadata::class);
         $metadata->method('getId')->willReturn('test-model');
-        $metadata->method('meetsRequirements')->willReturn(true);
 
         $model = $this->createTextToSpeechModel($metadata, $result);
 
@@ -1989,7 +2691,6 @@ class PromptBuilderTest extends TestCase
 
         $metadata = $this->createMock(ModelMetadata::class);
         $metadata->method('getId')->willReturn('test-model');
-        $metadata->method('meetsRequirements')->willReturn(true);
 
         $model = $this->createSpeechGenerationModel($metadata, $result);
 
@@ -2032,7 +2733,6 @@ class PromptBuilderTest extends TestCase
 
         $metadata = $this->createMock(ModelMetadata::class);
         $metadata->method('getId')->willReturn('test-model');
-        $metadata->method('meetsRequirements')->willReturn(true);
 
         $model = $this->createSpeechGenerationModel($metadata, $result);
 
@@ -2140,14 +2840,12 @@ class PromptBuilderTest extends TestCase
     {
         $file1 = new File('https://example.com/img1.jpg', 'image/jpeg');
         $file2 = new File('https://example.com/audio.mp3', 'audio/mp3');
-        $functionResponse = new FunctionResponse('func1', 'getData', ['result' => 'data']);
 
         $builder = new PromptBuilder($this->registry);
         $builder->withText('Analyze this data:')
                 ->withFile($file1)
                 ->withText(' and this audio:')
                 ->withFile($file2)
-                ->withFunctionResponse($functionResponse)
                 ->withHistory(
                     new UserMessage([new MessagePart('Previous question')]),
                     new ModelMessage([new MessagePart('Previous answer')])
@@ -2169,13 +2867,12 @@ class PromptBuilderTest extends TestCase
 
         // Check current message being built (now at the end)
         $currentParts = $messages[2]->getParts();
-        $this->assertCount(6, $currentParts); // text, image, text, audio, function response, final text
+        $this->assertCount(5, $currentParts); // text, image, text, audio, final text
         $this->assertEquals('Analyze this data:', $currentParts[0]->getText());
         $this->assertSame($file1, $currentParts[1]->getFile());
         $this->assertEquals(' and this audio:', $currentParts[2]->getText());
         $this->assertSame($file2, $currentParts[3]->getFile());
-        $this->assertSame($functionResponse, $currentParts[4]->getFunctionResponse());
-        $this->assertEquals(' Final instruction', $currentParts[5]->getText());
+        $this->assertEquals(' Final instruction', $currentParts[4]->getText());
     }
 
     /**
@@ -2240,7 +2937,6 @@ class PromptBuilderTest extends TestCase
 
         $metadata = $this->createMock(ModelMetadata::class);
         $metadata->method('getId')->willReturn('test-model');
-        $metadata->method('meetsRequirements')->willReturn(true);
 
         $model = $this->createMockTextGenerationModel($result, $metadata);
 
@@ -2384,7 +3080,6 @@ class PromptBuilderTest extends TestCase
 
         $metadata = $this->createMock(ModelMetadata::class);
         $metadata->method('getId')->willReturn('test-model');
-        $metadata->method('meetsRequirements')->willReturn(true);
 
         $model = $this->createMockImageGenerationModel($result, $metadata);
 
@@ -2406,25 +3101,6 @@ class PromptBuilderTest extends TestCase
         $this->assertTrue($outputModalities[0]->isImage());
     }
 
-    /**
-     * Tests generateAudioResult method creates proper operation.
-     *
-     * @return void
-     */
-    public function testGenerateAudioResultCreatesProperOperation(): void
-    {
-        $this->markTestSkipped('generateAudioResult method does not exist yet');
-    }
-
-    /**
-     * Tests generateVideoResult method creates proper operation.
-     *
-     * @return void
-     */
-    public function testGenerateVideoResultCreatesProperOperation(): void
-    {
-        $this->markTestSkipped('generateVideoResult method does not exist yet');
-    }
 
     /**
      * Tests generateImage shorthand method returns file directly.
@@ -2449,7 +3125,6 @@ class PromptBuilderTest extends TestCase
 
         $metadata = $this->createMock(ModelMetadata::class);
         $metadata->method('getId')->willReturn('test-model');
-        $metadata->method('meetsRequirements')->willReturn(true);
 
         $model = $this->createMockImageGenerationModel($result, $metadata);
 
@@ -2461,14 +3136,46 @@ class PromptBuilderTest extends TestCase
     }
 
     /**
-     * Tests generateAudio shorthand method returns file directly.
+     * Tests generateVideoResult method creates proper operation.
      *
      * @return void
      */
-    public function testGenerateAudioReturnsFileDirectly(): void
+    public function testGenerateVideoResultCreatesProperOperation(): void
     {
-        $this->markTestSkipped('generateAudio method does not exist yet');
+        $result = new GenerativeAiResult(
+            'test-result',
+            [new Candidate(
+                new ModelMessage([new MessagePart(new File('data:video/mp4;base64,AAAAIGZ0eXA=', 'video/mp4'))]),
+                FinishReasonEnum::stop()
+            )],
+            new TokenUsage(100, 50, 150),
+            $this->createTestProviderMetadata(),
+            $this->createTestTextModelMetadata()
+        );
+
+        $metadata = $this->createMock(ModelMetadata::class);
+        $metadata->method('getId')->willReturn('test-model');
+
+        $model = $this->createVideoGenerationModel($metadata, $result);
+
+        $builder = new PromptBuilder($this->registry, 'Generate a video');
+        $builder->usingModel($model);
+
+        $actualResult = $builder->generateVideoResult();
+        $this->assertSame($result, $actualResult);
+
+        // Verify that video modality was included in the model config
+        $reflection = new \ReflectionClass($builder);
+        $configProperty = $reflection->getProperty('modelConfig');
+        $configProperty->setAccessible(true);
+        /** @var ModelConfig $config */
+        $config = $configProperty->getValue($builder);
+
+        $outputModalities = $config->getOutputModalities();
+        $this->assertCount(1, $outputModalities);
+        $this->assertTrue($outputModalities[0]->isVideo());
     }
+
 
     /**
      * Tests generateVideo shorthand method returns file directly.
@@ -2477,28 +3184,33 @@ class PromptBuilderTest extends TestCase
      */
     public function testGenerateVideoReturnsFileDirectly(): void
     {
-        $this->markTestSkipped('generateVideo method does not exist yet');
+        $file = new File('https://example.com/generated.mp4', 'video/mp4');
+        $candidate = new Candidate(
+            new Message(MessageRoleEnum::model(), [new MessagePart($file)]),
+            FinishReasonEnum::stop()
+        );
+
+        $result = new GenerativeAiResult(
+            'test-result',
+            [$candidate],
+            new TokenUsage(100, 50, 150),
+            $this->createTestProviderMetadata(),
+            $this->createTestTextModelMetadata()
+        );
+
+        $metadata = $this->createMock(ModelMetadata::class);
+        $metadata->method('getId')->willReturn('test-model');
+
+        $model = $this->createVideoGenerationModel($metadata, $result);
+
+        $builder = new PromptBuilder($this->registry, 'Generate a video');
+        $builder->usingModel($model);
+
+        $generatedFile = $builder->generateVideo();
+        $this->assertSame($file, $generatedFile);
     }
 
-    /**
-     * Tests generation method with multiple output modalities.
-     *
-     * @return void
-     */
-    public function testGenerationWithMultipleOutputModalities(): void
-    {
-        $this->markTestSkipped('Operations-based generation not implemented yet');
-    }
 
-    /**
-     * Tests streaming generation methods.
-     *
-     * @return void
-     */
-    public function testStreamingGenerationMethods(): void
-    {
-        $this->markTestSkipped('Streaming methods do not exist yet');
-    }
 
     /**
      * Tests generateText with no candidates throws exception.
@@ -2513,7 +3225,6 @@ class PromptBuilderTest extends TestCase
 
         $metadata = $this->createMock(ModelMetadata::class);
         $metadata->method('getId')->willReturn('test-model');
-        $metadata->method('meetsRequirements')->willReturn(true);
 
         $model = $this->createMockTextGenerationModel($result, $metadata);
 
@@ -2549,7 +3260,6 @@ class PromptBuilderTest extends TestCase
 
         $metadata = $this->createMock(ModelMetadata::class);
         $metadata->method('getId')->willReturn('test-model');
-        $metadata->method('meetsRequirements')->willReturn(true);
 
         $model = $this->createMockTextGenerationModel($result, $metadata);
 
@@ -2562,16 +3272,6 @@ class PromptBuilderTest extends TestCase
         $builder->generateText();
     }
 
-    /**
-     * Tests chain generation with multiple prompts.
-     *
-     * @return void
-     */
-    public function testChainGenerationWithMultiplePrompts(): void
-    {
-        $this->markTestSkipped('Complex chaining with model response methods not fully implemented yet');
-    }
-
 
     /**
      * Tests isSupportedForText convenience method.
@@ -2582,7 +3282,15 @@ class PromptBuilderTest extends TestCase
     {
         $metadata = $this->createMock(ModelMetadata::class);
         $metadata->method('getId')->willReturn('text-model');
-        $metadata->method('meetsRequirements')->willReturn(true);
+        $metadata->method('getSupportedCapabilities')->willReturn([
+            CapabilityEnum::textGeneration()
+        ]);
+        $metadata->method('getSupportedOptions')->willReturn([
+            new SupportedOption(OptionEnum::inputModalities(), [
+                [ModalityEnum::text()],
+                [ModalityEnum::text(), ModalityEnum::image()]
+            ])
+        ]);
 
         $result = new GenerativeAiResult('test-id', [
             new Candidate(
@@ -2613,6 +3321,22 @@ class PromptBuilderTest extends TestCase
             ->willReturn([]);
 
         $this->assertFalse($builder->isSupportedForImageGeneration());
+    }
+
+    /**
+     * Tests isSupportedForEmbeddingGeneration convenience method.
+     *
+     * @return void
+     */
+    public function testIsSupportedForEmbeddingGeneration(): void
+    {
+        $builder = new PromptBuilder($this->registry, 'Embed this');
+
+        // Mock registry to return no models for embedding generation
+        $this->registry->method('findModelsMetadataForSupport')
+            ->willReturn([]);
+
+        $this->assertFalse($builder->isSupportedForEmbeddingGeneration());
     }
 
     /**
@@ -2648,6 +3372,33 @@ class PromptBuilderTest extends TestCase
     }
 
     /**
+     * Tests isSupportedForVideoGeneration returns true when a video generation model is set.
+     *
+     * @return void
+     */
+    public function testIsSupportedForVideoGenerationWithModel(): void
+    {
+        $metadata = new ModelMetadata(
+            'video-model',
+            'Video Model',
+            [CapabilityEnum::videoGeneration()],
+            [
+                new SupportedOption(OptionEnum::inputModalities(), [
+                    [ModalityEnum::text()]
+                ]),
+            ]
+        );
+
+        $result = $this->createTestResult();
+        $model = $this->createVideoGenerationModel($metadata, $result);
+
+        $builder = new PromptBuilder($this->registry, 'Generate video');
+        $builder->usingModel($model);
+
+        $this->assertTrue($builder->isSupportedForVideoGeneration());
+    }
+
+    /**
      * Tests isSupportedForSpeechGeneration convenience method.
      *
      * @return void
@@ -2656,7 +3407,15 @@ class PromptBuilderTest extends TestCase
     {
         $metadata = $this->createMock(ModelMetadata::class);
         $metadata->method('getId')->willReturn('speech-model');
-        $metadata->method('meetsRequirements')->willReturn(true);
+        $metadata->method('getSupportedCapabilities')->willReturn([
+            CapabilityEnum::speechGeneration()
+        ]);
+        $metadata->method('getSupportedOptions')->willReturn([
+            new SupportedOption(OptionEnum::inputModalities(), [
+                [ModalityEnum::text()],
+                [ModalityEnum::text(), ModalityEnum::image()]
+            ])
+        ]);
 
         $result = new GenerativeAiResult('test-id', [
             new Candidate(
@@ -2684,11 +3443,15 @@ class PromptBuilderTest extends TestCase
 
         $modelMetadata = $this->createMock(ModelMetadata::class);
         $modelMetadata->method('getId')->willReturn('provider-model');
-        $modelMetadata->method('meetsRequirements')->willReturn(true);
 
         $model = $this->createMockTextGenerationModel($result, $modelMetadata);
 
         // Mock the registry to return the model when provider is specified
+        $this->registry->expects($this->once())
+            ->method('getProviderId')
+            ->with('test-provider')
+            ->willReturn('test-provider');
+
         $this->registry->expects($this->once())
             ->method('findProviderModelsMetadataForSupport')
             ->with('test-provider', $this->isInstanceOf(ModelRequirements::class))
@@ -2701,6 +3464,43 @@ class PromptBuilderTest extends TestCase
 
         $builder = new PromptBuilder($this->registry, 'Test prompt');
         $builder->usingProvider('test-provider');
+
+        $actualResult = $builder->generateResult();
+        $this->assertSame($result, $actualResult);
+    }
+
+    /**
+     * Tests generateResult with provider class name specified.
+     *
+     * @return void
+     */
+    public function testGenerateResultWithProviderClassName(): void
+    {
+        $result = $this->createMock(GenerativeAiResult::class);
+
+        $modelMetadata = $this->createMock(ModelMetadata::class);
+        $modelMetadata->method('getId')->willReturn('provider-model');
+
+        $model = $this->createMockTextGenerationModel($result, $modelMetadata);
+
+        // Mock the registry to return the provider ID when given a class name
+        $this->registry->expects($this->once())
+            ->method('getProviderId')
+            ->with('WordPress\AiClient\TestProvider')
+            ->willReturn('test-provider');
+
+        $this->registry->expects($this->once())
+            ->method('findProviderModelsMetadataForSupport')
+            ->with('WordPress\AiClient\TestProvider', $this->isInstanceOf(ModelRequirements::class))
+            ->willReturn([$modelMetadata]);
+
+        $this->registry->expects($this->once())
+            ->method('getProviderModel')
+            ->with('test-provider', 'provider-model', $this->isInstanceOf(ModelConfig::class))
+            ->willReturn($model);
+
+        $builder = new PromptBuilder($this->registry, 'Test prompt');
+        $builder->usingProvider('WordPress\AiClient\TestProvider');
 
         $actualResult = $builder->generateResult();
         $this->assertSame($result, $actualResult);
@@ -2723,7 +3523,9 @@ class PromptBuilderTest extends TestCase
         $builder->usingProvider('test-provider');
 
         $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('No models found for test-provider that support the required capabilities');
+        $this->expectExceptionMessage(
+            'No models found for provider "test-provider" that support text_generation for this prompt.'
+        );
 
         $builder->generateResult();
     }
@@ -2739,7 +3541,6 @@ class PromptBuilderTest extends TestCase
 
         $metadata = $this->createMock(ModelMetadata::class);
         $metadata->method('getId')->willReturn('explicit-model');
-        $metadata->method('meetsRequirements')->willReturn(true);
 
         $model = $this->createMockTextGenerationModel($result, $metadata);
 
@@ -2776,9 +3577,7 @@ class PromptBuilderTest extends TestCase
 
         $reflection = new \ReflectionClass($builder);
 
-        $providerProperty = $reflection->getProperty('providerIdOrClassName');
-        $providerProperty->setAccessible(true);
-        $this->assertEquals('my-provider', $providerProperty->getValue($builder));
+        $this->assertEquals('my-provider', $this->getResolverProperty($builder, 'providerIdOrClassName'));
 
         $configProperty = $reflection->getProperty('modelConfig');
         $configProperty->setAccessible(true);
@@ -2786,5 +3585,578 @@ class PromptBuilderTest extends TestCase
         $config = $configProperty->getValue($builder);
         $this->assertEquals(500, $config->getMaxTokens());
         $this->assertEquals(0.7, $config->getTemperature());
+    }
+
+    /**
+     * Tests usingFunctionDeclarations method.
+     *
+     * @return void
+     */
+    public function testUsingFunctionDeclarations(): void
+    {
+        $builder = new PromptBuilder($this->registry);
+
+        $functionDeclaration1 = new FunctionDeclaration(
+            'test_function',
+            'A test function',
+            ['param1' => ['type' => 'string']]
+        );
+        $functionDeclaration2 = new FunctionDeclaration(
+            'another_function',
+            'Another test function',
+            ['param2' => ['type' => 'integer']]
+        );
+
+        $result = $builder->usingFunctionDeclarations($functionDeclaration1, $functionDeclaration2);
+
+        $this->assertSame($builder, $result);
+
+        $reflection = new \ReflectionClass($builder);
+        $configProperty = $reflection->getProperty('modelConfig');
+        $configProperty->setAccessible(true);
+        /** @var ModelConfig $config */
+        $config = $configProperty->getValue($builder);
+
+        $functionDeclarations = $config->getFunctionDeclarations();
+        $this->assertIsArray($functionDeclarations);
+        $this->assertCount(2, $functionDeclarations);
+        $this->assertSame($functionDeclaration1, $functionDeclarations[0]);
+        $this->assertSame($functionDeclaration2, $functionDeclarations[1]);
+    }
+
+    /**
+     * Tests usingPresencePenalty method.
+     *
+     * @return void
+     */
+    public function testUsingPresencePenalty(): void
+    {
+        $builder = new PromptBuilder($this->registry);
+        $result = $builder->usingPresencePenalty(0.5);
+
+        $this->assertSame($builder, $result);
+
+        $reflection = new \ReflectionClass($builder);
+        $configProperty = $reflection->getProperty('modelConfig');
+        $configProperty->setAccessible(true);
+        /** @var ModelConfig $config */
+        $config = $configProperty->getValue($builder);
+
+        $this->assertEquals(0.5, $config->getPresencePenalty());
+    }
+
+    /**
+     * Tests usingFrequencyPenalty method.
+     *
+     * @return void
+     */
+    public function testUsingFrequencyPenalty(): void
+    {
+        $builder = new PromptBuilder($this->registry);
+        $result = $builder->usingFrequencyPenalty(0.8);
+
+        $this->assertSame($builder, $result);
+
+        $reflection = new \ReflectionClass($builder);
+        $configProperty = $reflection->getProperty('modelConfig');
+        $configProperty->setAccessible(true);
+        /** @var ModelConfig $config */
+        $config = $configProperty->getValue($builder);
+
+        $this->assertEquals(0.8, $config->getFrequencyPenalty());
+    }
+
+    /**
+     * Tests usingWebSearch method.
+     *
+     * @return void
+     */
+    public function testUsingWebSearch(): void
+    {
+        $builder = new PromptBuilder($this->registry);
+
+        $webSearch = new WebSearch(
+            ['allowed.com', 'trusted.org'],
+            ['blocked.com', 'spam.net']
+        );
+
+        $result = $builder->usingWebSearch($webSearch);
+
+        $this->assertSame($builder, $result);
+
+        $reflection = new \ReflectionClass($builder);
+        $configProperty = $reflection->getProperty('modelConfig');
+        $configProperty->setAccessible(true);
+        /** @var ModelConfig $config */
+        $config = $configProperty->getValue($builder);
+
+        $configWebSearch = $config->getWebSearch();
+        $this->assertNotNull($configWebSearch);
+        $this->assertSame($webSearch, $configWebSearch);
+        $this->assertEquals(['allowed.com', 'trusted.org'], $configWebSearch->getAllowedDomains());
+        $this->assertEquals(['blocked.com', 'spam.net'], $configWebSearch->getDisallowedDomains());
+    }
+
+    /**
+     * Tests asOutputFileType method.
+     *
+     * @return void
+     */
+    public function testAsOutputFileType(): void
+    {
+        $builder = new PromptBuilder($this->registry);
+        $result = $builder->asOutputFileType(FileTypeEnum::inline());
+
+        $this->assertSame($builder, $result);
+
+        $reflection = new \ReflectionClass($builder);
+        $configProperty = $reflection->getProperty('modelConfig');
+        $configProperty->setAccessible(true);
+        /** @var ModelConfig $config */
+        $config = $configProperty->getValue($builder);
+
+        $outputFileType = $config->getOutputFileType();
+        $this->assertNotNull($outputFileType);
+        $this->assertTrue($outputFileType->isInline());
+    }
+
+    /**
+     * Tests asOutputFileType method with remote file type.
+     *
+     * @return void
+     */
+    public function testAsOutputFileTypeWithRemote(): void
+    {
+        $builder = new PromptBuilder($this->registry);
+        $result = $builder->asOutputFileType(FileTypeEnum::remote());
+
+        $this->assertSame($builder, $result);
+
+        $reflection = new \ReflectionClass($builder);
+        $configProperty = $reflection->getProperty('modelConfig');
+        $configProperty->setAccessible(true);
+        /** @var ModelConfig $config */
+        $config = $configProperty->getValue($builder);
+
+        $outputFileType = $config->getOutputFileType();
+        $this->assertNotNull($outputFileType);
+        $this->assertTrue($outputFileType->isRemote());
+    }
+
+    /**
+     * Tests usingTopLogprobs method with null value (only enables logprobs).
+     *
+     * @return void
+     */
+    public function testUsingTopLogprobsWithNull(): void
+    {
+        $builder = new PromptBuilder($this->registry);
+        $result = $builder->usingTopLogprobs();
+
+        $this->assertSame($builder, $result);
+
+        $reflection = new \ReflectionClass($builder);
+        $configProperty = $reflection->getProperty('modelConfig');
+        $configProperty->setAccessible(true);
+        /** @var ModelConfig $config */
+        $config = $configProperty->getValue($builder);
+
+        $this->assertTrue($config->getLogprobs());
+        $this->assertNull($config->getTopLogprobs());
+    }
+
+    /**
+     * Tests usingTopLogprobs method with specific value.
+     *
+     * @return void
+     */
+    public function testUsingTopLogprobsWithValue(): void
+    {
+        $builder = new PromptBuilder($this->registry);
+        $result = $builder->usingTopLogprobs(5);
+
+        $this->assertSame($builder, $result);
+
+        $reflection = new \ReflectionClass($builder);
+        $configProperty = $reflection->getProperty('modelConfig');
+        $configProperty->setAccessible(true);
+        /** @var ModelConfig $config */
+        $config = $configProperty->getValue($builder);
+
+        $this->assertTrue($config->getLogprobs());
+        $this->assertEquals(5, $config->getTopLogprobs());
+    }
+
+    /**
+     * Tests method chaining with multiple new methods.
+     *
+     * @return void
+     */
+    public function testMethodChainingWithNewMethods(): void
+    {
+        $builder = new PromptBuilder($this->registry);
+
+        $functionDeclaration = new FunctionDeclaration(
+            'test_function',
+            'A test function',
+            ['param1' => ['type' => 'string']]
+        );
+
+        $webSearch = new WebSearch(['allowed.com'], ['blocked.com']);
+
+        $result = $builder
+            ->withText('Test prompt')
+            ->usingPresencePenalty(0.5)
+            ->usingFrequencyPenalty(0.7)
+            ->usingFunctionDeclarations($functionDeclaration)
+            ->usingWebSearch($webSearch)
+            ->asOutputFileType(FileTypeEnum::inline())
+            ->usingTopLogprobs(3);
+
+        $this->assertSame($builder, $result);
+
+        $reflection = new \ReflectionClass($builder);
+        $configProperty = $reflection->getProperty('modelConfig');
+        $configProperty->setAccessible(true);
+        /** @var ModelConfig $config */
+        $config = $configProperty->getValue($builder);
+
+        $this->assertEquals(0.5, $config->getPresencePenalty());
+        $this->assertEquals(0.7, $config->getFrequencyPenalty());
+        $this->assertCount(1, $config->getFunctionDeclarations());
+        $this->assertNotNull($config->getWebSearch());
+        $this->assertTrue($config->getOutputFileType()->isInline());
+        $this->assertTrue($config->getLogprobs());
+        $this->assertEquals(3, $config->getTopLogprobs());
+    }
+
+    /**
+     * Tests isSupported method with explicit capability.
+     *
+     * @return void
+     */
+    public function testIsSupportedWithExplicitCapability(): void
+    {
+        $builder = new PromptBuilder($this->registry, 'Test prompt');
+
+        // Mock registry to return a model supporting text generation
+        $this->registry->method('findModelsMetadataForSupport')
+            ->willReturn([$this->createMock(ProviderModelsMetadata::class)]);
+
+        $this->assertTrue($builder->isSupported(CapabilityEnum::textGeneration()));
+    }
+
+    /**
+     * Tests isSupported method with inferred capability from output modalities.
+     *
+     * @return void
+     */
+    public function testIsSupportedWithInferredCapability(): void
+    {
+        $builder = new PromptBuilder($this->registry, 'Test prompt');
+        $builder->asOutputModalities(ModalityEnum::image());
+
+        // Mock registry to return a model supporting image generation
+        $this->registry->method('findModelsMetadataForSupport')
+            ->willReturn([$this->createMock(ProviderModelsMetadata::class)]);
+
+        // Should infer image generation capability
+        $this->assertTrue($builder->isSupported());
+    }
+
+    /**
+     * Tests isSupported method with inferred capability from model interfaces.
+     *
+     * @return void
+     */
+    public function testIsSupportedWithInferredCapabilityFromModel(): void
+    {
+        $metadata = $this->createMock(ModelMetadata::class);
+        $metadata->method('getId')->willReturn('test-model');
+        $metadata->method('getSupportedCapabilities')->willReturn([
+            CapabilityEnum::textGeneration()
+        ]);
+        $metadata->method('getSupportedOptions')->willReturn([
+            new SupportedOption(OptionEnum::inputModalities(), [
+                [ModalityEnum::text()]
+            ])
+        ]);
+
+        $result = new GenerativeAiResult('test-id', [
+            new Candidate(
+                new ModelMessage([new MessagePart('Test')]),
+                FinishReasonEnum::stop()
+            )
+        ], new TokenUsage(10, 5, 15), $this->createTestProviderMetadata(), $this->createTestTextModelMetadata());
+
+        $model = $this->createMockTextGenerationModel($result, $metadata);
+
+        $builder = new PromptBuilder($this->registry, 'Test prompt');
+        $builder->usingModel($model);
+
+        // Should infer text generation capability from the model interface
+        $this->assertTrue($builder->isSupported());
+    }
+
+    /**
+     * Tests isSupported method when a model is explicitly set.
+     *
+     * @return void
+     */
+    public function testIsSupportedWithModelSet(): void
+    {
+        $metadata = $this->createMock(ModelMetadata::class);
+        $metadata->method('getId')->willReturn('text-model');
+        $metadata->method('getSupportedCapabilities')->willReturn([
+            CapabilityEnum::textGeneration()
+        ]);
+        // Mock getSupportedOptions to return required options
+        $metadata->method('getSupportedOptions')->willReturn([
+            new SupportedOption(OptionEnum::inputModalities(), [
+                [ModalityEnum::text()]
+            ])
+        ]);
+
+        $result = new GenerativeAiResult('test-id', [
+            new Candidate(
+                new ModelMessage([new MessagePart('Test')]),
+                FinishReasonEnum::stop()
+            )
+        ], new TokenUsage(10, 5, 15), $this->createTestProviderMetadata(), $this->createTestTextModelMetadata());
+
+        $model = $this->createMockTextGenerationModel($result, $metadata);
+
+        $builder = new PromptBuilder($this->registry, 'Test prompt');
+        $builder->usingModel($model);
+
+        $this->assertTrue($builder->isSupported(CapabilityEnum::textGeneration()));
+        $this->assertFalse($builder->isSupported(CapabilityEnum::imageGeneration()));
+    }
+
+    /**
+     * Tests isSupported method when no models support the requirements.
+     *
+     * @return void
+     */
+    public function testIsSupportedWithNoSupport(): void
+    {
+        $builder = new PromptBuilder($this->registry, 'Test prompt');
+
+        // Mock registry to return no models
+        $this->registry->method('findModelsMetadataForSupport')
+            ->willReturn([]);
+
+        $this->assertFalse($builder->isSupported(CapabilityEnum::textGeneration()));
+    }
+
+    /**
+     * Tests that cloning creates independent message references.
+     *
+     * @return void
+     */
+    public function testCloneCreatesDifferentMessagesReferences(): void
+    {
+        $original = new PromptBuilder($this->registry, 'First message');
+        $original->withText(' continued');
+
+        $cloned = clone $original;
+
+        // Add more content to the cloned builder
+        $cloned->withText(' and more');
+
+        // Use reflection to access the protected messages property
+        $originalReflection = new \ReflectionClass($original);
+        $messagesProperty = $originalReflection->getProperty('messages');
+        $messagesProperty->setAccessible(true);
+
+        $originalMessages = $messagesProperty->getValue($original);
+        $clonedMessages = $messagesProperty->getValue($cloned);
+
+        // Original should have 1 message, cloned should have different instances
+        $this->assertCount(1, $originalMessages);
+        $this->assertNotSame($originalMessages[0], $clonedMessages[0]);
+    }
+
+    /**
+     * Tests that cloning creates an independent model config reference.
+     *
+     * @return void
+     */
+    public function testCloneCreatesDifferentModelConfigReference(): void
+    {
+        $original = new PromptBuilder($this->registry, 'Test prompt');
+        $original->usingTemperature(0.7);
+        $original->usingMaxTokens(100);
+
+        $cloned = clone $original;
+
+        // Modify the cloned builder's config
+        $cloned->usingTemperature(0.9);
+
+        // Use reflection to access the protected modelConfig property
+        $originalReflection = new \ReflectionClass($original);
+        $configProperty = $originalReflection->getProperty('modelConfig');
+        $configProperty->setAccessible(true);
+
+        $originalConfig = $configProperty->getValue($original);
+        $clonedConfig = $configProperty->getValue($cloned);
+
+        // Should be different instances
+        $this->assertNotSame($originalConfig, $clonedConfig);
+
+        // Original should still have 0.7, cloned should have 0.9
+        $this->assertEquals(0.7, $originalConfig->getTemperature());
+        $this->assertEquals(0.9, $clonedConfig->getTemperature());
+    }
+
+    /**
+     * Tests that cloning creates an independent request options reference.
+     *
+     * @return void
+     */
+    public function testCloneCreatesDifferentRequestOptionsReference(): void
+    {
+        $requestOptions = new \WordPress\AiClient\Providers\Http\DTO\RequestOptions();
+        $requestOptions->setTimeout(30.0);
+
+        $original = new PromptBuilder($this->registry, 'Test prompt');
+        $original->usingRequestOptions($requestOptions);
+
+        $cloned = clone $original;
+
+        // Request options live on the builder's ModelResolver.
+        $originalOptions = $this->getResolverProperty($original, 'requestOptions');
+        $clonedOptions = $this->getResolverProperty($cloned, 'requestOptions');
+
+        // Should be different instances
+        $this->assertNotSame($originalOptions, $clonedOptions);
+
+        // But values should be equivalent
+        $this->assertEquals($originalOptions->getTimeout(), $clonedOptions->getTimeout());
+    }
+
+    /**
+     * Tests that cloning works correctly when request options are null.
+     *
+     * @return void
+     */
+    public function testCloneWorksWithNullRequestOptions(): void
+    {
+        $original = new PromptBuilder($this->registry, 'Test prompt');
+        // Don't set request options
+
+        $cloned = clone $original;
+
+        // Request options live on the builder's ModelResolver.
+        $this->assertNull($this->getResolverProperty($cloned, 'requestOptions'));
+    }
+
+    /**
+     * Tests asOutputMediaOrientation method.
+     *
+     * @return void
+     */
+    public function testAsOutputMediaOrientation(): void
+    {
+        $builder = new PromptBuilder($this->registry);
+        $result = $builder->asOutputMediaOrientation(MediaOrientationEnum::landscape());
+
+        $this->assertSame($builder, $result);
+
+        $reflection = new \ReflectionClass($builder);
+        $configProperty = $reflection->getProperty('modelConfig');
+        $configProperty->setAccessible(true);
+        /** @var ModelConfig $config */
+        $config = $configProperty->getValue($builder);
+
+        $outputMediaOrientation = $config->getOutputMediaOrientation();
+        $this->assertNotNull($outputMediaOrientation);
+        $this->assertTrue($outputMediaOrientation->isLandscape());
+    }
+
+    /**
+     * Tests asOutputMediaOrientation method with portrait orientation.
+     *
+     * @return void
+     */
+    public function testAsOutputMediaOrientationWithPortrait(): void
+    {
+        $builder = new PromptBuilder($this->registry);
+        $result = $builder->asOutputMediaOrientation(MediaOrientationEnum::portrait());
+
+        $this->assertSame($builder, $result);
+
+        $reflection = new \ReflectionClass($builder);
+        $configProperty = $reflection->getProperty('modelConfig');
+        $configProperty->setAccessible(true);
+        /** @var ModelConfig $config */
+        $config = $configProperty->getValue($builder);
+
+        $outputMediaOrientation = $config->getOutputMediaOrientation();
+        $this->assertNotNull($outputMediaOrientation);
+        $this->assertTrue($outputMediaOrientation->isPortrait());
+    }
+
+    /**
+     * Tests asOutputMediaAspectRatio method.
+     *
+     * @return void
+     */
+    public function testAsOutputMediaAspectRatio(): void
+    {
+        $builder = new PromptBuilder($this->registry);
+        $result = $builder->asOutputMediaAspectRatio('16:9');
+
+        $this->assertSame($builder, $result);
+
+        $reflection = new \ReflectionClass($builder);
+        $configProperty = $reflection->getProperty('modelConfig');
+        $configProperty->setAccessible(true);
+        /** @var ModelConfig $config */
+        $config = $configProperty->getValue($builder);
+
+        $this->assertEquals('16:9', $config->getOutputMediaAspectRatio());
+    }
+
+    /**
+     * Tests asOutputSpeechVoice method.
+     *
+     * @return void
+     */
+    public function testAsOutputSpeechVoice(): void
+    {
+        $builder = new PromptBuilder($this->registry);
+        $result = $builder->asOutputSpeechVoice('alloy');
+
+        $this->assertSame($builder, $result);
+
+        $reflection = new \ReflectionClass($builder);
+        $configProperty = $reflection->getProperty('modelConfig');
+        $configProperty->setAccessible(true);
+        /** @var ModelConfig $config */
+        $config = $configProperty->getValue($builder);
+
+        $this->assertEquals('alloy', $config->getOutputSpeechVoice());
+    }
+
+    /**
+     * Tests usingStopSequences sets the dedicated property.
+     *
+     * @return void
+     */
+    public function testUsingStopSequencesSetsProperty(): void
+    {
+        $builder = new PromptBuilder($this->registry);
+        $result = $builder->usingStopSequences('STOP', 'END');
+
+        $this->assertSame($builder, $result);
+
+        $reflection = new \ReflectionClass($builder);
+        $configProperty = $reflection->getProperty('modelConfig');
+        $configProperty->setAccessible(true);
+        /** @var ModelConfig $config */
+        $config = $configProperty->getValue($builder);
+
+        $this->assertEquals(['STOP', 'END'], $config->getStopSequences());
     }
 }

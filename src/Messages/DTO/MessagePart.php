@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace WordPress\AiClient\Messages\DTO;
 
-use InvalidArgumentException;
-use RuntimeException;
 use WordPress\AiClient\Common\AbstractDataTransferObject;
+use WordPress\AiClient\Common\Exception\InvalidArgumentException;
+use WordPress\AiClient\Common\Exception\RuntimeException;
 use WordPress\AiClient\Files\DTO\File;
 use WordPress\AiClient\Messages\Enums\MessagePartChannelEnum;
 use WordPress\AiClient\Messages\Enums\MessagePartTypeEnum;
@@ -19,7 +19,7 @@ use WordPress\AiClient\Tools\DTO\FunctionResponse;
  * Messages can contain multiple parts of different types, such as text, files,
  * function calls, etc. This DTO encapsulates one such part.
  *
- * @since n.e.x.t
+ * @since 0.1.0
  *
  * @phpstan-import-type FileArrayShape from File
  * @phpstan-import-type FunctionCallArrayShape from FunctionCall
@@ -28,6 +28,7 @@ use WordPress\AiClient\Tools\DTO\FunctionResponse;
  * @phpstan-type MessagePartArrayShape array{
  *     channel: string,
  *     type: string,
+ *     thoughtSignature?: string,
  *     text?: string,
  *     file?: FileArrayShape,
  *     functionCall?: FunctionCallArrayShape,
@@ -40,6 +41,7 @@ class MessagePart extends AbstractDataTransferObject
 {
     public const KEY_CHANNEL = 'channel';
     public const KEY_TYPE = 'type';
+    public const KEY_THOUGHT_SIGNATURE = 'thoughtSignature';
     public const KEY_TEXT = 'text';
     public const KEY_FILE = 'file';
     public const KEY_FUNCTION_CALL = 'functionCall';
@@ -54,6 +56,11 @@ class MessagePart extends AbstractDataTransferObject
      * @var MessagePartTypeEnum The type of this message part.
      */
     private MessagePartTypeEnum $type;
+
+    /**
+     * @var string|null Thought signature for extended thinking.
+     */
+    private ?string $thoughtSignature = null;
 
     /**
      * @var string|null Text content (when type is TEXT).
@@ -78,15 +85,17 @@ class MessagePart extends AbstractDataTransferObject
     /**
      * Constructor that accepts various content types and infers the message part type.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param mixed $content The content of this message part.
      * @param MessagePartChannelEnum|null $channel The channel this part belongs to. Defaults to CONTENT.
+     * @param string|null $thoughtSignature Optional thought signature for extended thinking.
      * @throws InvalidArgumentException If an unsupported content type is provided.
      */
-    public function __construct($content, ?MessagePartChannelEnum $channel = null)
+    public function __construct($content, ?MessagePartChannelEnum $channel = null, ?string $thoughtSignature = null)
     {
         $this->channel = $channel ?? MessagePartChannelEnum::content();
+        $this->thoughtSignature = $thoughtSignature;
 
         if (is_string($content)) {
             $this->type = MessagePartTypeEnum::text();
@@ -115,7 +124,7 @@ class MessagePart extends AbstractDataTransferObject
     /**
      * Gets the channel this message part belongs to.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return MessagePartChannelEnum The channel.
      */
@@ -127,7 +136,7 @@ class MessagePart extends AbstractDataTransferObject
     /**
      * Gets the type of this message part.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return MessagePartTypeEnum The type.
      */
@@ -137,9 +146,21 @@ class MessagePart extends AbstractDataTransferObject
     }
 
     /**
+     * Gets the thought signature.
+     *
+     * @since 1.3.0
+     *
+     * @return string|null The thought signature or null if not set.
+     */
+    public function getThoughtSignature(): ?string
+    {
+        return $this->thoughtSignature;
+    }
+
+    /**
      * Gets the text content.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return string|null The text content or null if not a text part.
      */
@@ -151,7 +172,7 @@ class MessagePart extends AbstractDataTransferObject
     /**
      * Gets the file.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return File|null The file or null if not a file part.
      */
@@ -163,7 +184,7 @@ class MessagePart extends AbstractDataTransferObject
     /**
      * Gets the function call.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return FunctionCall|null The function call or null if not a function call part.
      */
@@ -175,7 +196,7 @@ class MessagePart extends AbstractDataTransferObject
     /**
      * Gets the function response.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return FunctionResponse|null The function response or null if not a function response part.
      */
@@ -187,7 +208,7 @@ class MessagePart extends AbstractDataTransferObject
     /**
      * {@inheritDoc}
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      */
     public static function getJsonSchema(): array
     {
@@ -195,6 +216,11 @@ class MessagePart extends AbstractDataTransferObject
             'type' => 'string',
             'enum' => MessagePartChannelEnum::getValues(),
             'description' => 'The channel this message part belongs to.',
+        ];
+
+        $thoughtSignatureSchema = [
+            'type' => 'string',
+            'description' => 'Thought signature for extended thinking.',
         ];
 
         return [
@@ -211,6 +237,7 @@ class MessagePart extends AbstractDataTransferObject
                             'type' => 'string',
                             'description' => 'Text content.',
                         ],
+                        self::KEY_THOUGHT_SIGNATURE => $thoughtSignatureSchema,
                     ],
                     'required' => [self::KEY_TYPE, self::KEY_TEXT],
                     'additionalProperties' => false,
@@ -224,6 +251,7 @@ class MessagePart extends AbstractDataTransferObject
                             'const' => MessagePartTypeEnum::file()->value,
                         ],
                         self::KEY_FILE => File::getJsonSchema(),
+                        self::KEY_THOUGHT_SIGNATURE => $thoughtSignatureSchema,
                     ],
                     'required' => [self::KEY_TYPE, self::KEY_FILE],
                     'additionalProperties' => false,
@@ -237,6 +265,7 @@ class MessagePart extends AbstractDataTransferObject
                             'const' => MessagePartTypeEnum::functionCall()->value,
                         ],
                         self::KEY_FUNCTION_CALL => FunctionCall::getJsonSchema(),
+                        self::KEY_THOUGHT_SIGNATURE => $thoughtSignatureSchema,
                     ],
                     'required' => [self::KEY_TYPE, self::KEY_FUNCTION_CALL],
                     'additionalProperties' => false,
@@ -250,6 +279,7 @@ class MessagePart extends AbstractDataTransferObject
                             'const' => MessagePartTypeEnum::functionResponse()->value,
                         ],
                         self::KEY_FUNCTION_RESPONSE => FunctionResponse::getJsonSchema(),
+                        self::KEY_THOUGHT_SIGNATURE => $thoughtSignatureSchema,
                     ],
                     'required' => [self::KEY_TYPE, self::KEY_FUNCTION_RESPONSE],
                     'additionalProperties' => false,
@@ -261,7 +291,7 @@ class MessagePart extends AbstractDataTransferObject
     /**
      * {@inheritDoc}
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return MessagePartArrayShape
      */
@@ -287,13 +317,17 @@ class MessagePart extends AbstractDataTransferObject
             );
         }
 
+        if ($this->thoughtSignature !== null) {
+            $data[self::KEY_THOUGHT_SIGNATURE] = $this->thoughtSignature;
+        }
+
         return $data;
     }
 
     /**
      * {@inheritDoc}
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      */
     public static function fromArray(array $array): self
     {
@@ -303,19 +337,46 @@ class MessagePart extends AbstractDataTransferObject
             $channel = null;
         }
 
+        $thoughtSignature = $array[self::KEY_THOUGHT_SIGNATURE] ?? null;
+
         // Check which properties are set to determine how to construct the MessagePart
         if (isset($array[self::KEY_TEXT])) {
-            return new self($array[self::KEY_TEXT], $channel);
+            return new self($array[self::KEY_TEXT], $channel, $thoughtSignature);
         } elseif (isset($array[self::KEY_FILE])) {
-            return new self(File::fromArray($array[self::KEY_FILE]), $channel);
+            return new self(File::fromArray($array[self::KEY_FILE]), $channel, $thoughtSignature);
         } elseif (isset($array[self::KEY_FUNCTION_CALL])) {
-            return new self(FunctionCall::fromArray($array[self::KEY_FUNCTION_CALL]), $channel);
+            return new self(FunctionCall::fromArray($array[self::KEY_FUNCTION_CALL]), $channel, $thoughtSignature);
         } elseif (isset($array[self::KEY_FUNCTION_RESPONSE])) {
-            return new self(FunctionResponse::fromArray($array[self::KEY_FUNCTION_RESPONSE]), $channel);
+            return new self(
+                FunctionResponse::fromArray($array[self::KEY_FUNCTION_RESPONSE]),
+                $channel,
+                $thoughtSignature
+            );
         } else {
             throw new InvalidArgumentException(
                 'MessagePart requires one of: text, file, functionCall, or functionResponse.'
             );
+        }
+    }
+
+    /**
+     * Performs a deep clone of the message part.
+     *
+     * This method ensures that nested objects (file, function call, function response)
+     * are cloned to prevent modifications to the cloned part from affecting the original.
+     *
+     * @since 0.4.2
+     */
+    public function __clone()
+    {
+        if ($this->file !== null) {
+            $this->file = clone $this->file;
+        }
+        if ($this->functionCall !== null) {
+            $this->functionCall = clone $this->functionCall;
+        }
+        if ($this->functionResponse !== null) {
+            $this->functionResponse = clone $this->functionResponse;
         }
     }
 }

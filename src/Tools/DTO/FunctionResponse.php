@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace WordPress\AiClient\Tools\DTO;
 
-use InvalidArgumentException;
 use WordPress\AiClient\Common\AbstractDataTransferObject;
+use WordPress\AiClient\Common\Exception\InvalidArgumentException;
 
 /**
  * Represents a response to a function call.
@@ -13,9 +13,9 @@ use WordPress\AiClient\Common\AbstractDataTransferObject;
  * This DTO encapsulates the result of executing a function that was
  * requested by the AI model through a FunctionCall.
  *
- * @since n.e.x.t
+ * @since 0.1.0
  *
- * @phpstan-type FunctionResponseArrayShape array{id: string, name: string, response: mixed}
+ * @phpstan-type FunctionResponseArrayShape array{id?: string, name?: string, response: mixed}
  *
  * @extends AbstractDataTransferObject<FunctionResponseArrayShape>
  */
@@ -25,14 +25,14 @@ class FunctionResponse extends AbstractDataTransferObject
     public const KEY_NAME = 'name';
     public const KEY_RESPONSE = 'response';
     /**
-     * @var string The ID of the function call this is responding to.
+     * @var string|null The ID of the function call this is responding to.
      */
-    private string $id;
+    private ?string $id;
 
     /**
-     * @var string The name of the function that was called.
+     * @var string|null The name of the function that was called.
      */
-    private string $name;
+    private ?string $name;
 
     /**
      * @var mixed The response data from the function.
@@ -42,14 +42,19 @@ class FunctionResponse extends AbstractDataTransferObject
     /**
      * Constructor.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
-     * @param string $id The ID of the function call this is responding to.
-     * @param string $name The name of the function that was called.
+     * @param string|null $id The ID of the function call this is responding to.
+     * @param string|null $name The name of the function that was called.
      * @param mixed $response The response data from the function.
+     * @throws InvalidArgumentException If neither id nor name is provided.
      */
-    public function __construct(string $id, string $name, $response)
+    public function __construct(?string $id, ?string $name, $response)
     {
+        if ($id === null && $name === null) {
+            throw new InvalidArgumentException('At least one of id or name must be provided.');
+        }
+
         $this->id = $id;
         $this->name = $name;
         $this->response = $response;
@@ -58,7 +63,7 @@ class FunctionResponse extends AbstractDataTransferObject
     /**
      * Gets the function call ID.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return string|null The function call ID.
      */
@@ -70,7 +75,7 @@ class FunctionResponse extends AbstractDataTransferObject
     /**
      * Gets the function name.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return string|null The function name.
      */
@@ -82,7 +87,7 @@ class FunctionResponse extends AbstractDataTransferObject
     /**
      * Gets the function response.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return mixed The response data.
      */
@@ -94,7 +99,7 @@ class FunctionResponse extends AbstractDataTransferObject
     /**
      * {@inheritDoc}
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      */
     public static function getJsonSchema(): array
     {
@@ -114,7 +119,7 @@ class FunctionResponse extends AbstractDataTransferObject
                     'description' => 'The response data from the function.',
                 ],
             ],
-            'oneOf' => [
+            'anyOf' => [
                 [
                     'required' => [self::KEY_RESPONSE, self::KEY_ID],
                 ],
@@ -128,32 +133,35 @@ class FunctionResponse extends AbstractDataTransferObject
     /**
      * {@inheritDoc}
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return FunctionResponseArrayShape
      */
     public function toArray(): array
     {
-        return [
-            self::KEY_ID => $this->id,
-            self::KEY_NAME => $this->name,
-            self::KEY_RESPONSE => $this->response,
-        ];
+        $data = [];
+
+        if ($this->id !== null) {
+            $data[self::KEY_ID] = $this->id;
+        }
+
+        if ($this->name !== null) {
+            $data[self::KEY_NAME] = $this->name;
+        }
+
+        $data[self::KEY_RESPONSE] = $this->response;
+
+        return $data;
     }
 
     /**
      * {@inheritDoc}
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      */
     public static function fromArray(array $array): self
     {
         static::validateFromArrayData($array, [self::KEY_RESPONSE]);
-
-        // Validate that at least one of id or name is provided
-        if (!array_key_exists(self::KEY_ID, $array) && !array_key_exists(self::KEY_NAME, $array)) {
-            throw new InvalidArgumentException('At least one of id or name must be provided.');
-        }
 
         return new self(
             $array[self::KEY_ID] ?? null,

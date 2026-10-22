@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace WordPress\AiClient\Tests\unit\Files\DTO;
 
-use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
 use WordPress\AiClient\Common\Contracts\WithArrayTransformationInterface;
+use WordPress\AiClient\Common\Exception\InvalidArgumentException;
 use WordPress\AiClient\Files\DTO\File;
 use WordPress\AiClient\Files\Enums\FileTypeEnum;
 use WordPress\AiClient\Files\ValueObjects\MimeType;
@@ -570,5 +570,25 @@ class FileTest extends TestCase
         $urlFileNoMime = new File('https://example.com/document.pdf');
         $this->assertTrue($urlFileNoMime->isRemote());
         $this->assertFalse($urlFileNoMime->isInline());
+    }
+
+    /**
+     * Tests that cloning File creates an independent MimeType copy.
+     *
+     * @return void
+     */
+    public function testCloneClonesMimeType(): void
+    {
+        $original = new File('https://example.com/document.pdf', 'application/pdf');
+        $cloned = clone $original;
+
+        // MimeType object should be a different instance
+        $this->assertNotSame($original->getMimeTypeObject(), $cloned->getMimeTypeObject());
+
+        // But the string value should be equivalent
+        $this->assertEquals($original->getMimeType(), $cloned->getMimeType());
+
+        // FileType enum should be the same instance (enums are singletons)
+        $this->assertSame($original->getFileType(), $cloned->getFileType());
     }
 }

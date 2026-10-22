@@ -9,6 +9,15 @@
  *   GOOGLE_API_KEY=123456 php cli.php 'Your prompt here' --providerId=google --modelId=gemini-2.5-flash
  *   OPENAI_API_KEY=123456 php cli.php 'Your prompt here' --providerId=openai
  *   GOOGLE_API_KEY=123456 OPENAI_API_KEY=123456 php cli.php 'Your prompt here'
+ *
+ * Embedding output formats require both --providerId and --modelId, because embeddings are only
+ * comparable to other embeddings from the same model:
+ *   OPENAI_API_KEY=123456 php cli.php 'Your text here' --providerId=openai \
+ *     --modelId=text-embedding-3-small --outputFormat=embedding-json
+ *
+ * For large prompts (e.g., with images), use stdin or file input:
+ *   cat prompt.json | php cli.php - --providerId=openai --modelId=gpt-4o
+ *   php cli.php @prompt.json --providerId=openai --modelId=gpt-4o
  */
 
 declare(strict_types=1);
@@ -18,6 +27,19 @@ use WordPress\AiClient\Providers\Http\Exception\ResponseException;
 use WordPress\AiClient\Providers\Models\DTO\ModelConfig;
 
 require_once __DIR__ . '/vendor/autoload.php';
+
+// Register the provider packages that are installed as development dependencies.
+foreach (
+    [
+        'WordPress\AnthropicAiProvider\Provider\AnthropicProvider',
+        'WordPress\GoogleAiProvider\Provider\GoogleProvider',
+        'WordPress\OpenAiAiProvider\Provider\OpenAiProvider',
+    ] as $providerClassName
+) {
+    if (class_exists($providerClassName)) {
+        AiClient::defaultRegistry()->registerProvider($providerClassName);
+    }
+}
 
 /**
  * Prints the output to stdout.
@@ -89,10 +111,26 @@ if (empty($positional_args[0])) {
 }
 
 // Prompt input. Allow complex input as a JSON string.
+// Use "-" to read from stdin, or "@/path/to/file" to read from a file.
 $promptInput = $positional_args[0];
-if (strpos($promptInput, '{') === 0 || strpos($promptInput, '[') === 0) {
+if ($promptInput === '-') {
+    $promptInput = file_get_contents('php://stdin');
+    if ($promptInput === false) {
+        logError('Failed to read prompt from stdin.');
+    }
+} elseif (str_starts_with($promptInput, '@')) {
+    $filePath = substr($promptInput, 1);
+    if (!file_exists($filePath)) {
+        logError("Prompt file not found: {$filePath}");
+    }
+    $promptInput = file_get_contents($filePath);
+    if ($promptInput === false) {
+        logError("Failed to read prompt from file: {$filePath}");
+    }
+}
+if (str_starts_with($promptInput, '{') || str_starts_with($promptInput, '[')) {
     $decodedInput = json_decode($promptInput, true);
-    if ($decodedInput) {
+    if (json_last_error() === JSON_ERROR_NONE) {
         $promptInput = $decodedInput;
     }
 }
@@ -100,6 +138,7 @@ if (strpos($promptInput, '{') === 0 || strpos($promptInput, '[') === 0) {
 // Provider ID, model ID, and output format.
 $providerId = $named_args['providerId'] ?? null;
 $modelId = $named_args['modelId'] ?? null;
+$modelPreference = $named_args['modelPreference'] ?? null;
 $outputFormat = $named_args['outputFormat'] ?? 'message-text';
 
 // Any model configuration options.
@@ -138,29 +177,67 @@ foreach ($named_args as $key => $value) {
 
 // --- Main logic ---
 
-try {
-    $modelConfig = ModelConfig::fromArray($model_config_data);
+$isEmbedding = $outputFormat === 'embedding-json' || $outputFormat === 'embedding-result-json';
 
-    $promptBuilder = AiClient::prompt($promptInput);
-    $promptBuilder = $promptBuilder->usingModelConfig($modelConfig);
-    if ($providerId && $modelId) {
-        $providerClassName = AiClient::defaultRegistry()->getProviderClassName($providerId);
-        $promptBuilder = $promptBuilder->usingModel($providerClassName::model($modelId));
-    } elseif ($providerId) {
-        $promptBuilder = $promptBuilder->usingProvider($providerId);
-    }
-} catch (InvalidArgumentException $e) {
-    logError('Invalid arguments while trying to set up prompt builder: ' . $e->getMessage());
-} catch (ResponseException $e) {
-    logError('Request failed while trying to set up prompt builder: ' . $e->getMessage());
+if ($isEmbedding && (!$providerId || !$modelId)) {
+    logError(
+        'Embedding output formats require both --providerId and --modelId. Embeddings are only comparable '
+        . 'to other embeddings from the same model, so no model is selected automatically.'
+    );
+}
+
+if ($isEmbedding && $modelPreference) {
+    logWarning('The --modelPreference argument is ignored for embedding output formats.');
 }
 
 try {
-    $result = $promptBuilder->generateTextResult();
+    $modelConfig = ModelConfig::fromArray($model_config_data);
+
+    if ($isEmbedding) {
+        // Embeddings use a dedicated builder, which requires an explicit model.
+        $builder = AiClient::input($promptInput)
+            ->usingModelConfig($modelConfig)
+            ->usingProviderModel($providerId, $modelId);
+    } else {
+        $builder = AiClient::prompt($promptInput)->usingModelConfig($modelConfig);
+        if ($providerId && $modelId) {
+            $providerClassName = AiClient::defaultRegistry()->getProviderClassName($providerId);
+            $builder = $builder->usingModel($providerClassName::model($modelId));
+        } elseif ($providerId) {
+            $builder = $builder->usingProvider($providerId);
+        }
+        if ($modelPreference) {
+            $modelPreference = array_map(
+                static function ($item) {
+                    $item = trim($item);
+                    if (str_contains($item, '::')) {
+                        return explode('::', $item, 2);
+                    }
+                    return $item;
+                },
+                explode(',', $modelPreference)
+            );
+            $builder = $builder->usingModelPreference(...$modelPreference);
+        }
+    }
 } catch (InvalidArgumentException $e) {
-    logError('Invalid arguments while trying to generate text result: ' . $e->getMessage());
+    logError('Invalid arguments while trying to set up the builder: ' . $e->getMessage());
 } catch (ResponseException $e) {
-    logError('Request failed while trying to generate text result: ' . $e->getMessage());
+    logError('Request failed while trying to set up the builder: ' . $e->getMessage());
+}
+
+try {
+    if ($isEmbedding) {
+        $result = $builder->generateEmbeddingResult();
+    } elseif ($outputFormat === 'image-json' || $outputFormat === 'image-base64') {
+        $result = $builder->generateImageResult();
+    } else {
+        $result = $builder->generateTextResult();
+    }
+} catch (InvalidArgumentException $e) {
+    logError('Invalid arguments while trying to generate result: ' . $e->getMessage());
+} catch (ResponseException $e) {
+    logError('Request failed while trying to generate result: ' . $e->getMessage());
 }
 
 logInfo("Using provider ID: \"{$result->getProviderMetadata()->getId()}\"");
@@ -172,6 +249,18 @@ switch ($outputFormat) {
         break;
     case 'candidates-json':
         $output = json_encode($result->getCandidates(), JSON_PRETTY_PRINT);
+        break;
+    case 'image-json':
+        $output = json_encode($result->toFile(), JSON_PRETTY_PRINT);
+        break;
+    case 'image-base64':
+        $output = $result->toFile()->getBase64Data();
+        break;
+    case 'embedding-json':
+        $output = json_encode($result->getEmbedding(), JSON_PRETTY_PRINT);
+        break;
+    case 'embedding-result-json':
+        $output = json_encode($result, JSON_PRETTY_PRINT);
         break;
     case 'message-text':
     default:

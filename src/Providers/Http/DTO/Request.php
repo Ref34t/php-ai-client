@@ -4,9 +4,10 @@ declare(strict_types=1);
 
 namespace WordPress\AiClient\Providers\Http\DTO;
 
-use InvalidArgumentException;
 use JsonException;
+use Psr\Http\Message\RequestInterface;
 use WordPress\AiClient\Common\AbstractDataTransferObject;
+use WordPress\AiClient\Common\Exception\InvalidArgumentException;
 use WordPress\AiClient\Providers\Http\Collections\HeadersCollection;
 use WordPress\AiClient\Providers\Http\Enums\HttpMethodEnum;
 
@@ -16,13 +17,15 @@ use WordPress\AiClient\Providers\Http\Enums\HttpMethodEnum;
  * This class encapsulates HTTP request data that can be converted
  * to PSR-7 requests by the HTTP transporter.
  *
- * @since n.e.x.t
+ * @since 0.1.0
  *
+ * @phpstan-import-type RequestOptionsArrayShape from RequestOptions
  * @phpstan-type RequestArrayShape array{
  *     method: string,
  *     uri: string,
  *     headers: array<string, list<string>>,
- *     body?: string|null
+ *     body?: string|null,
+ *     options?: RequestOptionsArrayShape
  * }
  *
  * @extends AbstractDataTransferObject<RequestArrayShape>
@@ -33,6 +36,7 @@ class Request extends AbstractDataTransferObject
     public const KEY_URI = 'uri';
     public const KEY_HEADERS = 'headers';
     public const KEY_BODY = 'body';
+    public const KEY_OPTIONS = 'options';
 
     /**
      * @var HttpMethodEnum The HTTP method.
@@ -60,19 +64,30 @@ class Request extends AbstractDataTransferObject
     protected ?string $body = null;
 
     /**
+     * @var RequestOptions|null Request transport options.
+     */
+    protected ?RequestOptions $options = null;
+
+    /**
      * Constructor.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param HttpMethodEnum $method The HTTP method.
      * @param string $uri The request URI.
      * @param array<string, string|list<string>> $headers The request headers.
      * @param string|array<string, mixed>|null $data The request data.
+     * @param RequestOptions|null $options The request transport options.
      *
      * @throws InvalidArgumentException If the URI is empty.
      */
-    public function __construct(HttpMethodEnum $method, string $uri, array $headers = [], $data = null)
-    {
+    public function __construct(
+        HttpMethodEnum $method,
+        string $uri,
+        array $headers = [],
+        $data = null,
+        ?RequestOptions $options = null
+    ) {
         if (empty($uri)) {
             throw new InvalidArgumentException('URI cannot be empty.');
         }
@@ -87,12 +102,36 @@ class Request extends AbstractDataTransferObject
         } elseif (is_array($data)) {
             $this->data = $data;
         }
+
+        $this->options = $options;
+    }
+
+    /**
+     * Creates a deep clone of this request.
+     *
+     * Clones the headers collection and request options to ensure
+     * the cloned request is independent of the original.
+     * The HTTP method enum is immutable and can be safely shared.
+     *
+     * @since 0.4.2
+     */
+    public function __clone()
+    {
+        // Clone headers collection
+        $this->headers = clone $this->headers;
+
+        // Clone request options if present (contains only primitives)
+        if ($this->options !== null) {
+            $this->options = clone $this->options;
+        }
+
+        // Note: $method is an immutable enum and can be safely shared
     }
 
     /**
      * Gets the HTTP method.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return HttpMethodEnum The HTTP method.
      */
@@ -106,7 +145,7 @@ class Request extends AbstractDataTransferObject
      *
      * For GET requests with array data, appends the data as query parameters.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return string The URI.
      */
@@ -114,7 +153,7 @@ class Request extends AbstractDataTransferObject
     {
         // If GET request with data, append as query parameters
         if ($this->method === HttpMethodEnum::GET() && $this->data !== null && !empty($this->data)) {
-            $separator = strpos($this->uri, '?') === false ? '?' : '&';
+            $separator = str_contains($this->uri, '?') ? '&' : '?';
             return $this->uri . $separator . http_build_query($this->data);
         }
 
@@ -124,7 +163,7 @@ class Request extends AbstractDataTransferObject
     /**
      * Gets the request headers.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return array<string, list<string>> The headers.
      */
@@ -136,7 +175,7 @@ class Request extends AbstractDataTransferObject
     /**
      * Gets a specific header value.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param string $name The header name (case-insensitive).
      * @return list<string>|null The header value(s) or null if not found.
@@ -149,7 +188,7 @@ class Request extends AbstractDataTransferObject
     /**
      * Gets header values as a comma-separated string.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param string $name The header name (case-insensitive).
      * @return string|null The header values as a comma-separated string, or null if not found.
@@ -162,7 +201,7 @@ class Request extends AbstractDataTransferObject
     /**
      * Checks if a header exists.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param string $name The header name (case-insensitive).
      * @return bool True if the header exists, false otherwise.
@@ -181,7 +220,7 @@ class Request extends AbstractDataTransferObject
      * - If data is set and Content-Type is JSON, returns JSON-encoded data
      * - If data is set and Content-Type is form, returns URL-encoded data
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return string|null The body.
      * @throws JsonException If the data cannot be encoded to JSON.
@@ -217,7 +256,7 @@ class Request extends AbstractDataTransferObject
     /**
      * Gets the Content-Type header value.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return string|null The Content-Type header value or null if not set.
      */
@@ -230,7 +269,7 @@ class Request extends AbstractDataTransferObject
     /**
      * Returns a new instance with the specified header.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param string $name The header name.
      * @param string|list<string> $value The header value(s).
@@ -247,7 +286,7 @@ class Request extends AbstractDataTransferObject
     /**
      * Returns a new instance with the specified data.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param string|array<string, mixed> $data The request data.
      * @return self A new instance with the data.
@@ -271,7 +310,7 @@ class Request extends AbstractDataTransferObject
     /**
      * Gets the request data array.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return array<string, mixed>|null The request data array.
      */
@@ -281,9 +320,36 @@ class Request extends AbstractDataTransferObject
     }
 
     /**
+     * Gets the request options.
+     *
+     * @since 0.2.0
+     *
+     * @return RequestOptions|null Request transport options when configured.
+     */
+    public function getOptions(): ?RequestOptions
+    {
+        return $this->options;
+    }
+
+    /**
+     * Returns a new instance with the specified request options.
+     *
+     * @since 0.2.0
+     *
+     * @param RequestOptions|null $options The request options to apply.
+     * @return self A new instance with the options.
+     */
+    public function withOptions(?RequestOptions $options): self
+    {
+        $new = clone $this;
+        $new->options = $options;
+        return $new;
+    }
+
+    /**
      * {@inheritDoc}
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      */
     public static function getJsonSchema(): array
     {
@@ -310,6 +376,7 @@ class Request extends AbstractDataTransferObject
                     'type' => ['string'],
                     'description' => 'The request body.',
                 ],
+                self::KEY_OPTIONS => RequestOptions::getJsonSchema(),
             ],
             'required' => [self::KEY_METHOD, self::KEY_URI, self::KEY_HEADERS],
         ];
@@ -318,7 +385,7 @@ class Request extends AbstractDataTransferObject
     /**
      * {@inheritDoc}
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return RequestArrayShape
      */
@@ -336,13 +403,20 @@ class Request extends AbstractDataTransferObject
             $array[self::KEY_BODY] = $body;
         }
 
+        if ($this->options !== null) {
+            $optionsArray = $this->options->toArray();
+            if (!empty($optionsArray)) {
+                $array[self::KEY_OPTIONS] = $optionsArray;
+            }
+        }
+
         return $array;
     }
 
     /**
      * {@inheritDoc}
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      */
     public static function fromArray(array $array): self
     {
@@ -352,7 +426,35 @@ class Request extends AbstractDataTransferObject
             HttpMethodEnum::from($array[self::KEY_METHOD]),
             $array[self::KEY_URI],
             $array[self::KEY_HEADERS] ?? [],
-            $array[self::KEY_BODY] ?? null
+            $array[self::KEY_BODY] ?? null,
+            isset($array[self::KEY_OPTIONS])
+                ? RequestOptions::fromArray($array[self::KEY_OPTIONS])
+                : null
         );
+    }
+
+    /**
+     * Creates a Request instance from a PSR-7 RequestInterface.
+     *
+     * @since 0.2.0
+     *
+     * @param RequestInterface $psrRequest The PSR-7 request to convert.
+     * @return self A new Request instance.
+     * @throws InvalidArgumentException If the HTTP method is not supported.
+     */
+    public static function fromPsrRequest(RequestInterface $psrRequest): self
+    {
+        $method = HttpMethodEnum::from($psrRequest->getMethod());
+        $uri = (string) $psrRequest->getUri();
+
+        // Convert PSR-7 headers to array format expected by our constructor
+        /** @var array<string, list<string>> $headers */
+        $headers = $psrRequest->getHeaders();
+
+        // Get body content
+        $body = $psrRequest->getBody()->getContents();
+        $bodyOrData = !empty($body) ? $body : null;
+
+        return new self($method, $uri, $headers, $bodyOrData);
     }
 }

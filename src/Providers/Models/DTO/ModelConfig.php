@@ -4,12 +4,11 @@ declare(strict_types=1);
 
 namespace WordPress\AiClient\Providers\Models\DTO;
 
-use InvalidArgumentException;
 use WordPress\AiClient\Common\AbstractDataTransferObject;
+use WordPress\AiClient\Common\Exception\InvalidArgumentException;
 use WordPress\AiClient\Files\Enums\FileTypeEnum;
 use WordPress\AiClient\Files\Enums\MediaOrientationEnum;
 use WordPress\AiClient\Messages\Enums\ModalityEnum;
-use WordPress\AiClient\Providers\Models\Enums\OptionEnum;
 use WordPress\AiClient\Tools\DTO\FunctionDeclaration;
 use WordPress\AiClient\Tools\DTO\WebSearch;
 
@@ -20,7 +19,7 @@ use WordPress\AiClient\Tools\DTO\WebSearch;
  * including output modalities, system instructions, generation parameters,
  * and tool integrations.
  *
- * @since n.e.x.t
+ * @since 0.1.0
  *
  * @phpstan-import-type FunctionDeclarationArrayShape from FunctionDeclaration
  * @phpstan-import-type WebSearchArrayShape from WebSearch
@@ -46,6 +45,7 @@ use WordPress\AiClient\Tools\DTO\WebSearch;
  *     outputMediaOrientation?: string,
  *     outputMediaAspectRatio?: string,
  *     outputSpeechVoice?: string,
+ *     dimensions?: int,
  *     customOptions?: array<string, mixed>
  * }
  *
@@ -73,6 +73,7 @@ class ModelConfig extends AbstractDataTransferObject
     public const KEY_OUTPUT_MEDIA_ORIENTATION = 'outputMediaOrientation';
     public const KEY_OUTPUT_MEDIA_ASPECT_RATIO = 'outputMediaAspectRatio';
     public const KEY_OUTPUT_SPEECH_VOICE = 'outputSpeechVoice';
+    public const KEY_DIMENSIONS = 'dimensions';
     public const KEY_CUSTOM_OPTIONS = 'customOptions';
 
     /*
@@ -183,14 +184,49 @@ class ModelConfig extends AbstractDataTransferObject
     protected ?string $outputSpeechVoice = null;
 
     /**
+     * @var int|null Embedding vector dimensions.
+     */
+    protected ?int $dimensions = null;
+
+    /**
      * @var array<string, mixed> Custom provider-specific options.
      */
     protected array $customOptions = [];
 
     /**
+     * Creates a deep clone of this configuration.
+     *
+     * Clones nested objects (functionDeclarations, webSearch) to ensure
+     * the cloned configuration is independent of the original.
+     * Enum value objects (outputModalities, outputFileType, outputMediaOrientation)
+     * are intentionally shared as they are immutable.
+     *
+     * @since 0.4.2
+     */
+    public function __clone()
+    {
+        // Deep clone function declarations if set
+        if ($this->functionDeclarations !== null) {
+            $clonedDeclarations = [];
+            foreach ($this->functionDeclarations as $declaration) {
+                $clonedDeclarations[] = clone $declaration;
+            }
+            $this->functionDeclarations = $clonedDeclarations;
+        }
+
+        // Clone web search if set
+        if ($this->webSearch !== null) {
+            $this->webSearch = clone $this->webSearch;
+        }
+
+        // Note: Enum value objects (outputModalities, outputFileType, outputMediaOrientation)
+        // are immutable and can be safely shared.
+    }
+
+    /**
      * Sets the output modalities.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param list<ModalityEnum> $outputModalities The output modalities.
      *
@@ -208,7 +244,7 @@ class ModelConfig extends AbstractDataTransferObject
     /**
      * Gets the output modalities.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return list<ModalityEnum>|null The output modalities.
      */
@@ -220,7 +256,7 @@ class ModelConfig extends AbstractDataTransferObject
     /**
      * Sets the system instruction.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param string $systemInstruction The system instruction.
      */
@@ -232,7 +268,7 @@ class ModelConfig extends AbstractDataTransferObject
     /**
      * Gets the system instruction.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return string|null The system instruction.
      */
@@ -244,7 +280,7 @@ class ModelConfig extends AbstractDataTransferObject
     /**
      * Sets the candidate count.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param int $candidateCount The candidate count.
      */
@@ -256,7 +292,7 @@ class ModelConfig extends AbstractDataTransferObject
     /**
      * Gets the candidate count.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return int|null The candidate count.
      */
@@ -268,7 +304,7 @@ class ModelConfig extends AbstractDataTransferObject
     /**
      * Sets the maximum tokens.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param int $maxTokens The maximum tokens.
      */
@@ -280,7 +316,7 @@ class ModelConfig extends AbstractDataTransferObject
     /**
      * Gets the maximum tokens.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return int|null The maximum tokens.
      */
@@ -292,7 +328,7 @@ class ModelConfig extends AbstractDataTransferObject
     /**
      * Sets the temperature.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param float $temperature The temperature.
      */
@@ -304,7 +340,7 @@ class ModelConfig extends AbstractDataTransferObject
     /**
      * Gets the temperature.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return float|null The temperature.
      */
@@ -316,7 +352,7 @@ class ModelConfig extends AbstractDataTransferObject
     /**
      * Sets the top-p parameter.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param float $topP The top-p parameter.
      */
@@ -328,7 +364,7 @@ class ModelConfig extends AbstractDataTransferObject
     /**
      * Gets the top-p parameter.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return float|null The top-p parameter.
      */
@@ -340,7 +376,7 @@ class ModelConfig extends AbstractDataTransferObject
     /**
      * Sets the top-k parameter.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param int $topK The top-k parameter.
      */
@@ -352,7 +388,7 @@ class ModelConfig extends AbstractDataTransferObject
     /**
      * Gets the top-k parameter.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return int|null The top-k parameter.
      */
@@ -364,7 +400,7 @@ class ModelConfig extends AbstractDataTransferObject
     /**
      * Sets the stop sequences.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param list<string> $stopSequences The stop sequences.
      *
@@ -382,7 +418,7 @@ class ModelConfig extends AbstractDataTransferObject
     /**
      * Gets the stop sequences.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return list<string>|null The stop sequences.
      */
@@ -394,7 +430,7 @@ class ModelConfig extends AbstractDataTransferObject
     /**
      * Sets the presence penalty.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param float $presencePenalty The presence penalty.
      */
@@ -406,7 +442,7 @@ class ModelConfig extends AbstractDataTransferObject
     /**
      * Gets the presence penalty.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return float|null The presence penalty.
      */
@@ -418,7 +454,7 @@ class ModelConfig extends AbstractDataTransferObject
     /**
      * Sets the frequency penalty.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param float $frequencyPenalty The frequency penalty.
      */
@@ -430,7 +466,7 @@ class ModelConfig extends AbstractDataTransferObject
     /**
      * Gets the frequency penalty.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return float|null The frequency penalty.
      */
@@ -442,7 +478,7 @@ class ModelConfig extends AbstractDataTransferObject
     /**
      * Sets whether to return log probabilities.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param bool $logprobs Whether to return log probabilities.
      */
@@ -454,7 +490,7 @@ class ModelConfig extends AbstractDataTransferObject
     /**
      * Gets whether to return log probabilities.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return bool|null Whether to return log probabilities.
      */
@@ -466,7 +502,7 @@ class ModelConfig extends AbstractDataTransferObject
     /**
      * Sets the number of top log probabilities to return.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param int $topLogprobs The number of top log probabilities.
      */
@@ -478,7 +514,7 @@ class ModelConfig extends AbstractDataTransferObject
     /**
      * Gets the number of top log probabilities to return.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return int|null The number of top log probabilities.
      */
@@ -490,25 +526,25 @@ class ModelConfig extends AbstractDataTransferObject
     /**
      * Sets the function declarations.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
-     * @param list<FunctionDeclaration> $function_declarations The function declarations.
+     * @param list<FunctionDeclaration> $functionDeclarations The function declarations.
      *
      * @throws InvalidArgumentException If the array is not a list.
      */
-    public function setFunctionDeclarations(array $function_declarations): void
+    public function setFunctionDeclarations(array $functionDeclarations): void
     {
-        if (!array_is_list($function_declarations)) {
+        if (!array_is_list($functionDeclarations)) {
             throw new InvalidArgumentException('Function declarations must be a list array.');
         }
 
-        $this->functionDeclarations = $function_declarations;
+        $this->functionDeclarations = $functionDeclarations;
     }
 
     /**
      * Gets the function declarations.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return list<FunctionDeclaration>|null The function declarations.
      */
@@ -520,19 +556,19 @@ class ModelConfig extends AbstractDataTransferObject
     /**
      * Sets the web search configuration.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
-     * @param WebSearch $web_search The web search configuration.
+     * @param WebSearch $webSearch The web search configuration.
      */
-    public function setWebSearch(WebSearch $web_search): void
+    public function setWebSearch(WebSearch $webSearch): void
     {
-        $this->webSearch = $web_search;
+        $this->webSearch = $webSearch;
     }
 
     /**
      * Gets the web search configuration.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return WebSearch|null The web search configuration.
      */
@@ -544,7 +580,7 @@ class ModelConfig extends AbstractDataTransferObject
     /**
      * Sets the output file type.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param FileTypeEnum $outputFileType The output file type.
      */
@@ -556,7 +592,7 @@ class ModelConfig extends AbstractDataTransferObject
     /**
      * Gets the output file type.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return FileTypeEnum|null The output file type.
      */
@@ -568,7 +604,7 @@ class ModelConfig extends AbstractDataTransferObject
     /**
      * Sets the output MIME type.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param string $outputMimeType The output MIME type.
      */
@@ -580,7 +616,7 @@ class ModelConfig extends AbstractDataTransferObject
     /**
      * Gets the output MIME type.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return string|null The output MIME type.
      */
@@ -595,7 +631,7 @@ class ModelConfig extends AbstractDataTransferObject
      * When setting an output schema, this method automatically sets
      * the output MIME type to "application/json" if not already set.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param array<string, mixed> $outputSchema The output schema (JSON schema).
      */
@@ -612,7 +648,7 @@ class ModelConfig extends AbstractDataTransferObject
     /**
      * Gets the output schema.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return array<string, mixed>|null The output schema.
      */
@@ -624,19 +660,25 @@ class ModelConfig extends AbstractDataTransferObject
     /**
      * Sets the output media orientation.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param MediaOrientationEnum $outputMediaOrientation The output media orientation.
      */
     public function setOutputMediaOrientation(MediaOrientationEnum $outputMediaOrientation): void
     {
+        if ($this->outputMediaAspectRatio) {
+            $this->validateMediaOrientationAspectRatioCompatibility(
+                $outputMediaOrientation,
+                $this->outputMediaAspectRatio
+            );
+        }
         $this->outputMediaOrientation = $outputMediaOrientation;
     }
 
     /**
      * Gets the output media orientation.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return MediaOrientationEnum|null The output media orientation.
      */
@@ -650,7 +692,7 @@ class ModelConfig extends AbstractDataTransferObject
      *
      * If set, this supersedes the output media orientation, as it is a more specific configuration.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param string $outputMediaAspectRatio The output media aspect ratio (e.g. 3:2, 16:9).
      */
@@ -661,13 +703,19 @@ class ModelConfig extends AbstractDataTransferObject
                 'Output media aspect ratio must be in the format "width:height" (e.g. 3:2, 16:9).'
             );
         }
+        if ($this->outputMediaOrientation) {
+            $this->validateMediaOrientationAspectRatioCompatibility(
+                $this->outputMediaOrientation,
+                $outputMediaAspectRatio
+            );
+        }
         $this->outputMediaAspectRatio = $outputMediaAspectRatio;
     }
 
     /**
      * Gets the output media aspect ratio.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return string|null The output media aspect ratio (e.g. 3:2, 16:9).
      */
@@ -677,9 +725,39 @@ class ModelConfig extends AbstractDataTransferObject
     }
 
     /**
+     * Validates that the given media orientation and aspect ratio values do not conflict with each other.
+     *
+     * @since 0.4.0
+     *
+     * @param MediaOrientationEnum $orientation The desired media orientation.
+     * @param string $aspectRatio The desired media aspect ratio.
+     */
+    protected function validateMediaOrientationAspectRatioCompatibility(
+        MediaOrientationEnum $orientation,
+        string $aspectRatio
+    ): void {
+        $aspectRatioParts = explode(':', $aspectRatio);
+        if ($orientation->isSquare() && $aspectRatioParts[0] !== $aspectRatioParts[1]) {
+            throw new InvalidArgumentException(
+                'The aspect ratio "' . $aspectRatio . '" is not compatible with the square orientation.'
+            );
+        }
+        if ($orientation->isLandscape() && $aspectRatioParts[0] <= $aspectRatioParts[1]) {
+            throw new InvalidArgumentException(
+                'The aspect ratio "' . $aspectRatio . '" is not compatible with the landscape orientation.'
+            );
+        }
+        if ($orientation->isPortrait() && $aspectRatioParts[0] >= $aspectRatioParts[1]) {
+            throw new InvalidArgumentException(
+                'The aspect ratio "' . $aspectRatio . '" is not compatible with the portrait orientation.'
+            );
+        }
+    }
+
+    /**
      * Sets the output speech voice.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param string $outputSpeechVoice The output speech voice.
      */
@@ -691,7 +769,7 @@ class ModelConfig extends AbstractDataTransferObject
     /**
      * Gets the output speech voice.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return string|null The output speech voice.
      */
@@ -701,9 +779,37 @@ class ModelConfig extends AbstractDataTransferObject
     }
 
     /**
+     * Sets the embedding dimensions.
+     *
+     * @since 1.4.0
+     *
+     * @param int $dimensions The embedding dimensions.
+     */
+    public function setDimensions(int $dimensions): void
+    {
+        if ($dimensions < 1) {
+            throw new InvalidArgumentException('Dimensions must be greater than zero.');
+        }
+
+        $this->dimensions = $dimensions;
+    }
+
+    /**
+     * Gets the embedding dimensions.
+     *
+     * @since 1.4.0
+     *
+     * @return int|null The embedding dimensions.
+     */
+    public function getDimensions(): ?int
+    {
+        return $this->dimensions;
+    }
+
+    /**
      * Sets a single custom option.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param string $key   The option key.
      * @param mixed  $value The option value.
@@ -716,7 +822,7 @@ class ModelConfig extends AbstractDataTransferObject
     /**
      * Sets the custom options.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param array<string, mixed> $customOptions The custom options.
      */
@@ -728,7 +834,7 @@ class ModelConfig extends AbstractDataTransferObject
     /**
      * Gets the custom options.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return array<string, mixed> The custom options.
      */
@@ -740,7 +846,7 @@ class ModelConfig extends AbstractDataTransferObject
     /**
      * {@inheritDoc}
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      */
     public static function getJsonSchema(): array
     {
@@ -844,6 +950,11 @@ class ModelConfig extends AbstractDataTransferObject
                     'type' => 'string',
                     'description' => 'Output speech voice.',
                 ],
+                self::KEY_DIMENSIONS => [
+                    'type' => 'integer',
+                    'minimum' => 1,
+                    'description' => 'Embedding vector dimensions.',
+                ],
                 self::KEY_CUSTOM_OPTIONS => [
                     'type' => 'object',
                     'additionalProperties' => true,
@@ -857,7 +968,7 @@ class ModelConfig extends AbstractDataTransferObject
     /**
      * {@inheritDoc}
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return ModelConfigArrayShape
      */
@@ -920,8 +1031,8 @@ class ModelConfig extends AbstractDataTransferObject
 
         if ($this->functionDeclarations !== null) {
             $data[self::KEY_FUNCTION_DECLARATIONS] = array_map(
-                static function (FunctionDeclaration $function_declaration): array {
-                    return $function_declaration->toArray();
+                static function (FunctionDeclaration $functionDeclaration): array {
+                    return $functionDeclaration->toArray();
                 },
                 $this->functionDeclarations
             );
@@ -955,6 +1066,10 @@ class ModelConfig extends AbstractDataTransferObject
             $data[self::KEY_OUTPUT_SPEECH_VOICE] = $this->outputSpeechVoice;
         }
 
+        if ($this->dimensions !== null) {
+            $data[self::KEY_DIMENSIONS] = $this->dimensions;
+        }
+
         if (!empty($this->customOptions)) {
             $data[self::KEY_CUSTOM_OPTIONS] = $this->customOptions;
         }
@@ -962,143 +1077,11 @@ class ModelConfig extends AbstractDataTransferObject
         return $data;
     }
 
-    /**
-     * Converts the model configuration to required options.
-     *
-     * @since n.e.x.t
-     *
-     * @return list<RequiredOption> The required options.
-     */
-    public function toRequiredOptions(): array
-    {
-        $requiredOptions = [];
-
-        // Map properties that have corresponding OptionEnum values
-        if ($this->outputModalities !== null) {
-            $requiredOptions[] = new RequiredOption(
-                OptionEnum::outputModalities(),
-                $this->outputModalities
-            );
-        }
-
-        if ($this->systemInstruction !== null) {
-            $requiredOptions[] = new RequiredOption(
-                OptionEnum::systemInstruction(),
-                $this->systemInstruction
-            );
-        }
-
-        if ($this->candidateCount !== null) {
-            $requiredOptions[] = new RequiredOption(
-                OptionEnum::candidateCount(),
-                $this->candidateCount
-            );
-        }
-
-        if ($this->maxTokens !== null) {
-            $requiredOptions[] = new RequiredOption(
-                OptionEnum::maxTokens(),
-                $this->maxTokens
-            );
-        }
-
-        if ($this->temperature !== null) {
-            $requiredOptions[] = new RequiredOption(
-                OptionEnum::temperature(),
-                $this->temperature
-            );
-        }
-
-        if ($this->topP !== null) {
-            $requiredOptions[] = new RequiredOption(
-                OptionEnum::topP(),
-                $this->topP
-            );
-        }
-
-        if ($this->topK !== null) {
-            $requiredOptions[] = new RequiredOption(
-                OptionEnum::topK(),
-                $this->topK
-            );
-        }
-
-        if ($this->outputMimeType !== null) {
-            $requiredOptions[] = new RequiredOption(
-                OptionEnum::outputMimeType(),
-                $this->outputMimeType
-            );
-        }
-
-        if ($this->outputSchema !== null) {
-            $requiredOptions[] = new RequiredOption(
-                OptionEnum::outputSchema(),
-                $this->outputSchema
-            );
-        }
-
-        // Handle properties without OptionEnum values as custom options
-        // These would need to be handled specially by providers
-        if ($this->stopSequences !== null) {
-            $requiredOptions[] = new RequiredOption(OptionEnum::stopSequences(), $this->stopSequences);
-        }
-
-        if ($this->presencePenalty !== null) {
-            $requiredOptions[] = new RequiredOption(OptionEnum::presencePenalty(), $this->presencePenalty);
-        }
-
-        if ($this->frequencyPenalty !== null) {
-            $requiredOptions[] = new RequiredOption(OptionEnum::frequencyPenalty(), $this->frequencyPenalty);
-        }
-
-        if ($this->logprobs !== null) {
-            $requiredOptions[] = new RequiredOption(OptionEnum::logprobs(), $this->logprobs);
-        }
-
-        if ($this->topLogprobs !== null) {
-            $requiredOptions[] = new RequiredOption(OptionEnum::topLogprobs(), $this->topLogprobs);
-        }
-
-        if ($this->functionDeclarations !== null) {
-            $requiredOptions[] = new RequiredOption(OptionEnum::functionDeclarations(), true);
-        }
-
-        if ($this->webSearch !== null) {
-            $requiredOptions[] = new RequiredOption(OptionEnum::webSearch(), true);
-        }
-
-        if ($this->outputFileType !== null) {
-            $requiredOptions[] = new RequiredOption(OptionEnum::outputFileType(), $this->outputFileType->value);
-        }
-
-        if ($this->outputMediaOrientation !== null) {
-            $requiredOptions[] = new RequiredOption(
-                OptionEnum::outputMediaOrientation(),
-                $this->outputMediaOrientation->value
-            );
-        }
-
-        if ($this->outputMediaAspectRatio !== null) {
-            $requiredOptions[] = new RequiredOption(
-                OptionEnum::outputMediaAspectRatio(),
-                $this->outputMediaAspectRatio
-            );
-        }
-
-        // Add custom options as individual RequiredOptions
-        // Custom options don't have predefined OptionEnum values, so we use the customOptions enum
-        // with the actual key-value pair as the value
-        foreach ($this->customOptions as $key => $value) {
-            $requiredOptions[] = new RequiredOption(OptionEnum::customOptions(), [$key => $value]);
-        }
-
-        return $requiredOptions;
-    }
 
     /**
      * {@inheritDoc}
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      */
     public static function fromArray(array $array): self
     {
@@ -1157,8 +1140,8 @@ class ModelConfig extends AbstractDataTransferObject
 
         if (isset($array[self::KEY_FUNCTION_DECLARATIONS])) {
             $config->setFunctionDeclarations(array_map(
-                static function (array $function_declaration_data): FunctionDeclaration {
-                    return FunctionDeclaration::fromArray($function_declaration_data);
+                static function (array $functionDeclarationData): FunctionDeclaration {
+                    return FunctionDeclaration::fromArray($functionDeclarationData);
                 },
                 $array[self::KEY_FUNCTION_DECLARATIONS]
             ));
@@ -1190,6 +1173,10 @@ class ModelConfig extends AbstractDataTransferObject
 
         if (isset($array[self::KEY_OUTPUT_SPEECH_VOICE])) {
             $config->setOutputSpeechVoice($array[self::KEY_OUTPUT_SPEECH_VOICE]);
+        }
+
+        if (isset($array[self::KEY_DIMENSIONS])) {
+            $config->setDimensions($array[self::KEY_DIMENSIONS]);
         }
 
         if (isset($array[self::KEY_CUSTOM_OPTIONS])) {

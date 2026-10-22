@@ -18,8 +18,13 @@ vendor/
 ############
 
 .claude/
-CLAUDE.md
+.clinerules
+.clinerules/
+.codex/
 .cursor/
+.gemini/
+.windsurf/
+CLAUDE.md
 GEMINI.md
 
 ############
@@ -27,3 +32,19 @@ GEMINI.md
 ############
 
 .phpunit.cache/
+coverage.xml
+
+############
+## IDEs
+############
+
+.idea/
+.vscode/
+
+############
+## Environment
+############
+
+.env
+.env.local
+.env.*.local

@@ -21,6 +21,7 @@ use WordPress\AiClient\Providers\Models\DTO\ModelConfig;
  * Dynamically loaded from ModelConfig KEY_* constants:
  * @method static self candidateCount() Creates an instance for CANDIDATE_COUNT option.
  * @method static self customOptions() Creates an instance for CUSTOM_OPTIONS option.
+ * @method static self dimensions() Creates an instance for DIMENSIONS option.
  * @method static self frequencyPenalty() Creates an instance for FREQUENCY_PENALTY option.
  * @method static self functionDeclarations() Creates an instance for FUNCTION_DECLARATIONS option.
  * @method static self logprobs() Creates an instance for LOGPROBS option.
@@ -42,6 +43,7 @@ use WordPress\AiClient\Providers\Models\DTO\ModelConfig;
  * @method static self webSearch() Creates an instance for WEB_SEARCH option.
  * @method bool isCandidateCount() Checks if the option is CANDIDATE_COUNT.
  * @method bool isCustomOptions() Checks if the option is CUSTOM_OPTIONS.
+ * @method bool isDimensions() Checks if the option is DIMENSIONS.
  * @method bool isFrequencyPenalty() Checks if the option is FREQUENCY_PENALTY.
  * @method bool isFunctionDeclarations() Checks if the option is FUNCTION_DECLARATIONS.
  * @method bool isLogprobs() Checks if the option is LOGPROBS.
@@ -62,7 +64,7 @@ use WordPress\AiClient\Providers\Models\DTO\ModelConfig;
  * @method bool isTopP() Checks if the option is TOP_P.
  * @method bool isWebSearch() Checks if the option is WEB_SEARCH.
  *
- * @since n.e.x.t
+ * @since 0.1.0
  */
 class OptionEnum extends AbstractEnum
 {
@@ -81,7 +83,7 @@ class OptionEnum extends AbstractEnum
      * that are prefixed with KEY_. These are transformed to remove the KEY_ prefix
      * and converted to snake_case values.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param class-string $className The fully qualified class name.
      * @return array<string, string> The enum constants.
@@ -97,7 +99,7 @@ class OptionEnum extends AbstractEnum
 
         // Add ModelConfig constants that start with KEY_
         foreach ($modelConfigConstants as $constantName => $constantValue) {
-            if (strpos($constantName, 'KEY_') === 0) {
+            if (str_starts_with($constantName, 'KEY_')) {
                 // Remove KEY_ prefix to get the enum constant name
                 $enumConstantName = substr($constantName, 4);
 

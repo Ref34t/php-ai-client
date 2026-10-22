@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace WordPress\AiClient\Common;
 
-use InvalidArgumentException;
 use JsonSerializable;
 use stdClass;
 use WordPress\AiClient\Common\Contracts\WithArrayTransformationInterface;
 use WordPress\AiClient\Common\Contracts\WithJsonSchemaInterface;
+use WordPress\AiClient\Common\Exception\InvalidArgumentException;
 
 /**
  * Abstract base class for all Data Value Objects in the AI Client.
@@ -22,7 +22,7 @@ use WordPress\AiClient\Common\Contracts\WithJsonSchemaInterface;
  * All DTOs in the AI Client should extend this class to ensure
  * consistent behavior across the codebase.
  *
- * @since n.e.x.t
+ * @since 0.1.0
  *
  * @template TArrayShape of array<string, mixed>
  * @implements WithArrayTransformationInterface<TArrayShape>
@@ -35,7 +35,7 @@ abstract class AbstractDataTransferObject implements
     /**
      * Validates that required keys exist in the array data.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param array<mixed> $data The array data to validate.
      * @param string[] $requiredKeys The keys that must be present.
@@ -65,7 +65,7 @@ abstract class AbstractDataTransferObject implements
     /**
      * {@inheritDoc}
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      */
     public static function isArrayShape(array $array): bool
     {
@@ -85,7 +85,7 @@ abstract class AbstractDataTransferObject implements
      * based on the JSON schema to ensure proper object representation for
      * empty arrays.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return mixed The JSON-serializable representation.
      */
@@ -101,7 +101,7 @@ abstract class AbstractDataTransferObject implements
     /**
      * Recursively converts empty arrays to stdClass objects where the schema expects objects.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param mixed $data The data to process.
      * @param array<mixed, mixed> $schema The JSON schema for the data.
@@ -132,11 +132,13 @@ abstract class AbstractDataTransferObject implements
                 }
             }
 
-            // Handle oneOf schemas - just use the first one
-            if (isset($schema['oneOf']) && is_array($schema['oneOf'])) {
-                foreach ($schema['oneOf'] as $possibleSchema) {
-                    if (is_array($possibleSchema)) {
-                        return $this->convertEmptyArraysToObjects($data, $possibleSchema);
+            // Handle oneOf/anyOf schemas - just use the first one
+            foreach (['oneOf', 'anyOf'] as $keyword) {
+                if (isset($schema[$keyword]) && is_array($schema[$keyword])) {
+                    foreach ($schema[$keyword] as $possibleSchema) {
+                        if (is_array($possibleSchema)) {
+                            return $this->convertEmptyArraysToObjects($data, $possibleSchema);
+                        }
                     }
                 }
             }

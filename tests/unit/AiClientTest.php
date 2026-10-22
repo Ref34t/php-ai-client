@@ -7,11 +7,14 @@ namespace WordPress\AiClient\Tests\unit;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
 use WordPress\AiClient\AiClient;
+use WordPress\AiClient\Builders\EmbeddingBuilder;
+use WordPress\AiClient\Common\Exception\InvalidArgumentException;
 use WordPress\AiClient\Messages\DTO\MessagePart;
 use WordPress\AiClient\Messages\DTO\UserMessage;
 use WordPress\AiClient\Providers\Contracts\ProviderAvailabilityInterface;
 use WordPress\AiClient\Providers\Models\DTO\ModelConfig;
 use WordPress\AiClient\Providers\ProviderRegistry;
+use WordPress\AiClient\Tests\mocks\MockProvider;
 use WordPress\AiClient\Tests\traits\MockModelCreationTrait;
 
 /**
@@ -20,17 +23,6 @@ use WordPress\AiClient\Tests\traits\MockModelCreationTrait;
 class AiClientTest extends TestCase
 {
     use MockModelCreationTrait;
-
-    protected function setUp(): void
-    {
-        // Tests use dependency injection - registry instances passed directly to methods
-    }
-
-
-    protected function tearDown(): void
-    {
-        // Tests use dependency injection - registry instances passed directly to methods
-    }
 
     /**
      * Creates a mock registry that returns empty results for model discovery.
@@ -146,6 +138,174 @@ class AiClientTest extends TestCase
         AiClient::generateImageResult($prompt, $invalidModel, $registry);
     }
 
+    /**
+     * Tests generateVideoResult with string prompt and provided model.
+     */
+    public function testGenerateVideoResultWithStringAndModel(): void
+    {
+        $prompt = 'Generate video';
+        $expectedResult = $this->createTestResult();
+        $mockModel = $this->createMockVideoGenerationModel($expectedResult);
+        $registry = $this->createRegistryWithMockProvider();
+
+        $result = AiClient::generateVideoResult($prompt, $mockModel, $registry);
+
+        $this->assertSame($expectedResult, $result);
+    }
+
+    /**
+     * Tests generateVideoResult throws exception for model without video generation interface.
+     */
+    public function testGenerateVideoResultWithInvalidModel(): void
+    {
+        $prompt = 'Generate video';
+        $invalidModel = $this->createMockUnsupportedModel('invalid-video-model');
+        $registry = $this->createRegistryWithMockProvider();
+
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('Model "invalid-video-model" does not support video generation.');
+
+        AiClient::generateVideoResult($prompt, $invalidModel, $registry);
+    }
+
+    /**
+     * Tests generateEmbeddingResult with string prompt and provided model.
+     */
+    public function testGenerateEmbeddingResultWithStringAndModel(): void
+    {
+        $prompt = 'Generate embedding';
+        $expectedResult = $this->createTestEmbeddingResult();
+        $mockModel = $this->createMockEmbeddingGenerationModel($expectedResult);
+        $registry = $this->createRegistryWithMockProvider();
+
+        $result = AiClient::generateEmbeddingResult($prompt, $mockModel, null, $registry);
+
+        $this->assertSame($expectedResult, $result);
+    }
+
+    /**
+     * Tests generateEmbeddingResult accepts a [provider ID, model ID] tuple.
+     */
+    public function testGenerateEmbeddingResultWithProviderModelTuple(): void
+    {
+        $expectedResult = $this->createTestEmbeddingResult();
+        $mockModel = $this->createMockEmbeddingGenerationModel($expectedResult);
+
+        $registry = $this->createMock(ProviderRegistry::class);
+        $registry->method('isProviderConfigured')->willReturn(true);
+        $registry->expects($this->once())
+            ->method('getProviderModel')
+            ->with('mock', 'test-embedding-model', $this->isInstanceOf(ModelConfig::class))
+            ->willReturn($mockModel);
+
+        $result = AiClient::generateEmbeddingResult(
+            'Generate embedding',
+            ['mock', 'test-embedding-model'],
+            null,
+            $registry
+        );
+
+        $this->assertSame($expectedResult, $result);
+    }
+
+    /**
+     * Tests generateEmbeddingResult applies the optional model configuration.
+     */
+    public function testGenerateEmbeddingResultAppliesModelConfig(): void
+    {
+        $expectedResult = $this->createTestEmbeddingResult();
+        $mockModel = $this->createMockEmbeddingGenerationModel($expectedResult);
+        $registry = $this->createRegistryWithMockProvider();
+
+        $modelConfig = new ModelConfig();
+        $modelConfig->setDimensions(3);
+
+        AiClient::generateEmbeddingResult('Generate embedding', $mockModel, $modelConfig, $registry);
+
+        $this->assertSame(3, $mockModel->getConfig()->getDimensions());
+    }
+
+    /**
+     * Tests generateEmbeddingResult rejects a model parameter of an unsupported type.
+     */
+    public function testGenerateEmbeddingResultWithInvalidModelParameter(): void
+    {
+        $registry = $this->createRegistryWithMockProvider();
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Model must be a ModelInterface instance or a [provider ID, model ID] tuple.');
+
+        // A ModelConfig cannot identify a model, so it is no longer accepted in the model position.
+        AiClient::generateEmbeddingResult('Generate embedding', new ModelConfig(), null, $registry);
+    }
+
+    /**
+     * Tests generateEmbedding returns the first vector.
+     */
+    public function testGenerateEmbeddingReturnsFirstVector(): void
+    {
+        $expectedResult = $this->createTestEmbeddingResult([[0.1, 0.2]]);
+        $mockModel = $this->createMockEmbeddingGenerationModel($expectedResult);
+        $registry = $this->createRegistryWithMockProvider();
+
+        $embedding = AiClient::generateEmbedding('Generate embedding', $mockModel, null, $registry);
+
+        $this->assertSame([0.1, 0.2], $embedding->getValues());
+    }
+
+    /**
+     * Tests generateEmbeddings returns batch vectors.
+     */
+    public function testGenerateEmbeddingsReturnsBatchVectors(): void
+    {
+        $expectedEmbeddings = [[0.1, 0.2], [0.3, 0.4]];
+        $expectedResult = $this->createTestEmbeddingResult($expectedEmbeddings);
+        $mockModel = $this->createMockEmbeddingGenerationModel($expectedResult);
+        $registry = $this->createRegistryWithMockProvider();
+
+        $embeddings = AiClient::generateEmbeddings(['First prompt', 'Second prompt'], $mockModel, null, $registry);
+
+        $this->assertSame($expectedEmbeddings, array_map(
+            static fn ($embedding): array => $embedding->getValues(),
+            $embeddings
+        ));
+    }
+
+    /**
+     * Tests generateEmbeddingResult throws exception for model without embedding generation interface.
+     */
+    public function testGenerateEmbeddingResultWithInvalidModel(): void
+    {
+        $prompt = 'Generate embedding';
+        $invalidModel = $this->createMockUnsupportedModel('invalid-embedding-model');
+        $registry = $this->createRegistryWithMockProvider();
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage(
+            'Model "invalid-embedding-model" from provider "mock" does not support embedding generation.'
+        );
+
+        AiClient::generateEmbeddingResult($prompt, $invalidModel, null, $registry);
+    }
+
+    /**
+     * Tests input() returns an EmbeddingBuilder configured with the given input.
+     */
+    public function testInputReturnsEmbeddingBuilder(): void
+    {
+        $embeddings = [[0.1, 0.2], [0.3, 0.4]];
+        $expectedResult = $this->createTestEmbeddingResult($embeddings);
+        $mockModel = $this->createMockEmbeddingGenerationModel($expectedResult);
+        $registry = $this->createRegistryWithMockProvider();
+
+        $builder = AiClient::input(['First input', 'Second input'], $registry);
+
+        $this->assertInstanceOf(EmbeddingBuilder::class, $builder);
+
+        $result = $builder->usingModel($mockModel)->generateEmbeddings();
+        $this->assertCount(2, $result);
+    }
+
 
     /**
      * Tests generateTextResult with Message object.
@@ -247,6 +407,119 @@ class AiClientTest extends TestCase
     }
 
     /**
+     * Tests isConfigured method with provider ID string leverages default registry.
+     */
+    public function testIsConfiguredWithProviderIdString(): void
+    {
+        // Register a mock provider to test the delegation path
+        $registry = AiClient::defaultRegistry();
+        $registry->registerProvider(MockProvider::class);
+
+        $result = AiClient::isConfigured('mock');
+
+        // The result will be false because no actual API keys are configured in tests,
+        // but the important thing is that no exception is thrown and the registry delegation works
+        $this->assertIsBool($result);
+    }
+
+    /**
+     * Tests isConfigured method with provider class name leverages default registry.
+     */
+    public function testIsConfiguredWithProviderClassName(): void
+    {
+        // Register a mock provider to test the delegation path
+        $registry = AiClient::defaultRegistry();
+        $registry->registerProvider(MockProvider::class);
+
+        $result = AiClient::isConfigured(MockProvider::class);
+
+        // The result will be false because no actual API keys are configured in tests,
+        // but the important thing is that no exception is thrown and the registry delegation works
+        $this->assertIsBool($result);
+    }
+
+    /**
+     * Tests isConfigured method throws exception for invalid parameter types.
+     */
+    public function testIsConfiguredThrowsExceptionForInvalidParameterTypes(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage(
+            'Parameter must be a ProviderAvailabilityInterface instance, provider ID string, or provider class name. ' .
+            'Received: integer'
+        );
+
+        AiClient::isConfigured(123);
+    }
+
+    /**
+     * Data provider for invalid isConfigured parameter types.
+     *
+     * @return array<string, array{mixed, string}>
+     */
+    public function invalidIsConfiguredParameterTypesProvider(): array
+    {
+        return [
+            'integer parameter' => [123, 'integer'],
+            'array parameter' => [['invalid_array'], 'array'],
+            'object parameter' => [new \stdClass(), 'stdClass'],
+            'boolean parameter' => [true, 'boolean'],
+            'null parameter' => [null, 'NULL'],
+        ];
+    }
+
+    /**
+     * Tests that isConfigured rejects all invalid parameter types consistently.
+     *
+     * @dataProvider invalidIsConfiguredParameterTypesProvider
+     * @param mixed $invalidParam
+     */
+    public function testIsConfiguredRejectsInvalidParameterTypes($invalidParam, string $expectedType): void
+    {
+        try {
+            AiClient::isConfigured($invalidParam);
+            $this->fail("Expected InvalidArgumentException for isConfigured with $expectedType");
+        } catch (\InvalidArgumentException $e) {
+            $this->assertStringContainsString(
+                'Parameter must be a ProviderAvailabilityInterface instance, provider ID string, ' .
+                'or provider class name.',
+                $e->getMessage(),
+                "isConfigured should reject invalid parameter type: $expectedType"
+            );
+            $this->assertStringContainsString(
+                "Received: $expectedType",
+                $e->getMessage(),
+                "isConfigured should include received type in error message"
+            );
+        }
+    }
+
+    /**
+     * Tests backward compatibility - isConfigured still works with ProviderAvailabilityInterface.
+     */
+    public function testIsConfiguredBackwardCompatibility(): void
+    {
+        // Test that the original interface-based approach still works exactly as before
+        $mockAvailability = $this->createMock(ProviderAvailabilityInterface::class);
+        $mockAvailability->expects($this->once())
+            ->method('isConfigured')
+            ->willReturn(true);
+
+        // Should work without registry parameter
+        $result = AiClient::isConfigured($mockAvailability);
+        $this->assertTrue($result);
+
+        // Should work in all cases with interface input
+        $mockAvailability2 = $this->createMock(ProviderAvailabilityInterface::class);
+        $mockAvailability2->expects($this->once())
+            ->method('isConfigured')
+            ->willReturn(false);
+
+        $result2 = AiClient::isConfigured($mockAvailability2);
+        $this->assertFalse($result2);
+    }
+
+    /**
      * Tests generateResult delegates to generateTextResult when model supports text generation.
      */
     public function testGenerateResultDelegatesToTextGeneration(): void
@@ -277,6 +550,21 @@ class AiClientTest extends TestCase
     }
 
     /**
+     * Tests generateResult delegates to generateVideoResult when model supports video generation.
+     */
+    public function testGenerateResultDelegatesToVideoGeneration(): void
+    {
+        $prompt = 'Generate video prompt';
+        $expectedResult = $this->createTestResult();
+        $mockModel = $this->createMockVideoGenerationModel($expectedResult);
+        $registry = $this->createRegistryWithMockProvider();
+
+        $result = AiClient::generateResult($prompt, $mockModel, $registry);
+
+        $this->assertSame($expectedResult, $result);
+    }
+
+    /**
      * Tests generateResult with null model delegates to PromptBuilder.
      */
     public function testGenerateResultWithNullModelDelegatesToPromptBuilder(): void
@@ -285,7 +573,7 @@ class AiClientTest extends TestCase
 
         // This should delegate to PromptBuilder's intelligent discovery
         $this->expectException(\InvalidArgumentException::class);
-        $this->expectExceptionMessage('No models found that support the required capabilities');
+        $this->expectExceptionMessage('No models found that support text_generation for this prompt.');
 
         AiClient::generateResult($prompt, null, $this->createMockEmptyRegistry());
     }
@@ -321,6 +609,21 @@ class AiClientTest extends TestCase
     }
 
     /**
+     * Tests generateResult with video generation model.
+     */
+    public function testGenerateResultWithVideoGenerationModel(): void
+    {
+        $prompt = 'Generate a video';
+        $expectedResult = $this->createTestResult();
+        $mockModel = $this->createMockVideoGenerationModel($expectedResult);
+        $registry = $this->createRegistryWithMockProvider();
+
+        $result = AiClient::generateResult($prompt, $mockModel, $registry);
+
+        $this->assertSame($expectedResult, $result);
+    }
+
+    /**
      * Tests that generateResult accepts ModelConfig and delegates to PromptBuilder.
      */
     public function testGenerateResultWithModelConfigDelegatesToPromptBuilder(): void
@@ -331,7 +634,7 @@ class AiClientTest extends TestCase
         $config->setMaxTokens(100);
 
         $this->expectException(\InvalidArgumentException::class);
-        $this->expectExceptionMessage('No models found that support the required capabilities');
+        $this->expectExceptionMessage('No models found that support text_generation for this prompt.');
 
         AiClient::generateResult($prompt, $config, $this->createMockEmptyRegistry());
     }
@@ -350,7 +653,8 @@ class AiClientTest extends TestCase
             'generateTextResult',
             'generateImageResult',
             'convertTextToSpeechResult',
-            'generateSpeechResult'
+            'generateSpeechResult',
+            'generateVideoResult'
         ];
 
         $mockRegistry = $this->createMockEmptyRegistry();
@@ -409,6 +713,7 @@ class AiClientTest extends TestCase
             'generateImageResult' => ['generateImageResult'],
             'convertTextToSpeechResult' => ['convertTextToSpeechResult'],
             'generateSpeechResult' => ['generateSpeechResult'],
+            'generateVideoResult' => ['generateVideoResult'],
         ];
     }
 
@@ -503,7 +808,7 @@ class AiClientTest extends TestCase
                 $this->fail("Expected InvalidArgumentException for configuration $index");
             } catch (\InvalidArgumentException $e) {
                 $this->assertStringContainsString(
-                    'No models found that support the required capabilities',
+                    'No models found that support text_generation for this prompt.',
                     $e->getMessage(),
                     "Configuration $index should delegate to PromptBuilder properly"
                 );
@@ -520,7 +825,7 @@ class AiClientTest extends TestCase
         $emptyConfig = new ModelConfig();
 
         $this->expectException(\InvalidArgumentException::class);
-        $this->expectExceptionMessage('No models found that support the required capabilities');
+        $this->expectExceptionMessage('No models found that support text_generation for this prompt.');
 
         AiClient::generateResult($prompt, $emptyConfig, $this->createMockEmptyRegistry());
     }
@@ -539,7 +844,8 @@ class AiClientTest extends TestCase
             'generateTextResult',
             'generateImageResult',
             'convertTextToSpeechResult',
-            'generateSpeechResult'
+            'generateSpeechResult',
+            'generateVideoResult'
         ];
 
         $mockRegistry = $this->createMockEmptyRegistry();

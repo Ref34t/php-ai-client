@@ -4,27 +4,35 @@ declare(strict_types=1);
 
 namespace WordPress\AiClient\Builders;
 
-use InvalidArgumentException;
-use RuntimeException;
+use Psr\EventDispatcher\EventDispatcherInterface;
+use WordPress\AiClient\Builders\Traits\ModelResolutionTrait;
+use WordPress\AiClient\Common\Exception\InvalidArgumentException;
+use WordPress\AiClient\Common\Exception\RuntimeException;
+use WordPress\AiClient\Events\AfterGenerateResultEvent;
+use WordPress\AiClient\Events\BeforeGenerateResultEvent;
 use WordPress\AiClient\Files\DTO\File;
+use WordPress\AiClient\Files\Enums\FileTypeEnum;
+use WordPress\AiClient\Files\Enums\MediaOrientationEnum;
 use WordPress\AiClient\Messages\DTO\Message;
 use WordPress\AiClient\Messages\DTO\MessagePart;
 use WordPress\AiClient\Messages\DTO\UserMessage;
 use WordPress\AiClient\Messages\Enums\MessageRoleEnum;
 use WordPress\AiClient\Messages\Enums\ModalityEnum;
+use WordPress\AiClient\Providers\ModelResolver;
 use WordPress\AiClient\Providers\Models\Contracts\ModelInterface;
 use WordPress\AiClient\Providers\Models\DTO\ModelConfig;
 use WordPress\AiClient\Providers\Models\DTO\ModelRequirements;
-use WordPress\AiClient\Providers\Models\DTO\RequiredOption;
 use WordPress\AiClient\Providers\Models\Enums\CapabilityEnum;
-use WordPress\AiClient\Providers\Models\Enums\OptionEnum;
 use WordPress\AiClient\Providers\Models\ImageGeneration\Contracts\ImageGenerationModelInterface;
 use WordPress\AiClient\Providers\Models\SpeechGeneration\Contracts\SpeechGenerationModelInterface;
 use WordPress\AiClient\Providers\Models\TextGeneration\Contracts\TextGenerationModelInterface;
 use WordPress\AiClient\Providers\Models\TextToSpeechConversion\Contracts\TextToSpeechConversionModelInterface;
+use WordPress\AiClient\Providers\Models\VideoGeneration\Contracts\VideoGenerationModelInterface;
 use WordPress\AiClient\Providers\ProviderRegistry;
 use WordPress\AiClient\Results\DTO\GenerativeAiResult;
+use WordPress\AiClient\Tools\DTO\FunctionDeclaration;
 use WordPress\AiClient\Tools\DTO\FunctionResponse;
+use WordPress\AiClient\Tools\DTO\WebSearch;
 
 /**
  * Fluent builder for constructing AI prompts.
@@ -33,7 +41,7 @@ use WordPress\AiClient\Tools\DTO\FunctionResponse;
  * content types and model configurations. It automatically infers model
  * requirements based on the features used in the prompt.
  *
- * @since n.e.x.t
+ * @since 0.1.0
  *
  * @phpstan-import-type MessageArrayShape from Message
  * @phpstan-import-type MessagePartArrayShape from MessagePart
@@ -42,10 +50,7 @@ use WordPress\AiClient\Tools\DTO\FunctionResponse;
  */
 class PromptBuilder
 {
-    /**
-     * @var ProviderRegistry The provider registry for finding suitable models.
-     */
-    private ProviderRegistry $registry;
+    use ModelResolutionTrait;
 
     /**
      * @var list<Message> The messages in the conversation.
@@ -53,34 +58,29 @@ class PromptBuilder
     protected array $messages = [];
 
     /**
-     * @var ModelInterface|null The model to use for generation.
+     * @var EventDispatcherInterface|null The event dispatcher for prompt lifecycle events.
      */
-    protected ?ModelInterface $model = null;
-
-    /**
-     * @var string|null The provider ID or class name.
-     */
-    protected ?string $providerIdOrClassName = null;
-
-    /**
-     * @var ModelConfig The model configuration.
-     */
-    protected ModelConfig $modelConfig;
+    private ?EventDispatcherInterface $eventDispatcher = null;
 
     // phpcs:disable Generic.Files.LineLength.TooLong
     /**
      * Constructor.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param ProviderRegistry $registry The provider registry for finding suitable models.
      * @param Prompt $prompt Optional initial prompt content.
+     * @param EventDispatcherInterface|null $eventDispatcher Optional event dispatcher for lifecycle events.
      */
     // phpcs:enable Generic.Files.LineLength.TooLong
-    public function __construct(ProviderRegistry $registry, $prompt = null)
-    {
-        $this->registry = $registry;
+    public function __construct(
+        ProviderRegistry $registry,
+        $prompt = null,
+        ?EventDispatcherInterface $eventDispatcher = null
+    ) {
         $this->modelConfig = new ModelConfig();
+        $this->modelResolver = new ModelResolver($registry);
+        $this->eventDispatcher = $eventDispatcher;
 
         if ($prompt === null) {
             return;
@@ -98,9 +98,37 @@ class PromptBuilder
     }
 
     /**
+     * Creates a deep clone of this builder.
+     *
+     * Clones all mutable state including messages, model configuration, and request options.
+     * Service objects (registry, model, event dispatcher) are intentionally NOT cloned
+     * as they are shared dependencies.
+     *
+     * @since 0.4.2
+     */
+    public function __clone()
+    {
+        // Deep clone messages array (Message has __clone)
+        $clonedMessages = [];
+        foreach ($this->messages as $message) {
+            $clonedMessages[] = clone $message;
+        }
+        $this->messages = $clonedMessages;
+
+        // Clone model config (ModelConfig has __clone)
+        $this->modelConfig = clone $this->modelConfig;
+
+        // Clone model resolver (ModelResolver has __clone; clones request options)
+        $this->modelResolver = clone $this->modelResolver;
+
+        // Note: $eventDispatcher is a service object and is intentionally NOT
+        // cloned - it should be a shared reference.
+    }
+
+    /**
      * Adds text to the current message.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param string $text The text to add.
      * @return self
@@ -122,7 +150,7 @@ class PromptBuilder
      * - Data URI string (data:mime/type;base64,data)
      * - Local file path string
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param string|File $file The file (File object or string representation).
      * @param string|null $mimeType The MIME type (optional, ignored if File object provided).
@@ -141,7 +169,7 @@ class PromptBuilder
     /**
      * Adds a function response to the current message.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param FunctionResponse $functionResponse The function response.
      * @return self
@@ -156,7 +184,7 @@ class PromptBuilder
     /**
      * Adds message parts to the current message.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param MessagePart ...$parts The message parts to add.
      * @return self
@@ -175,7 +203,7 @@ class PromptBuilder
      * Historical messages are prepended to the beginning of the message list,
      * before the current message being built.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param Message ...$messages The messages to add to history.
      * @return self
@@ -189,77 +217,12 @@ class PromptBuilder
     }
 
     /**
-     * Sets the model to use for generation.
-     *
-     * The model's configuration will be merged with the builder's configuration,
-     * with the builder's configuration taking precedence for any overlapping settings.
-     *
-     * @since n.e.x.t
-     *
-     * @param ModelInterface $model The model to use.
-     * @return self
-     */
-    public function usingModel(ModelInterface $model): self
-    {
-        $this->model = $model;
-
-        // Merge model's config with builder's config, with builder's config taking precedence
-        $modelConfigArray = $model->getConfig()->toArray();
-        $builderConfigArray = $this->modelConfig->toArray();
-        $mergedConfigArray = array_merge($modelConfigArray, $builderConfigArray);
-
-        $this->modelConfig = ModelConfig::fromArray($mergedConfigArray);
-
-        return $this;
-    }
-
-    /**
-     * Sets the model configuration.
-     *
-     * Merges the provided configuration with the builder's configuration,
-     * with builder configuration taking precedence.
-     *
-     * @since n.e.x.t
-     *
-     * @param ModelConfig $config The model configuration to merge.
-     * @return self
-     */
-    public function usingModelConfig(ModelConfig $config): self
-    {
-        // Convert both configs to arrays
-        $builderConfigArray = $this->modelConfig->toArray();
-        $providedConfigArray = $config->toArray();
-
-        // Merge arrays with builder config taking precedence
-        $mergedArray = array_merge($providedConfigArray, $builderConfigArray);
-
-        // Create new config from merged array
-        $this->modelConfig = ModelConfig::fromArray($mergedArray);
-
-        return $this;
-    }
-
-    /**
-     * Sets the provider to use for generation.
-     *
-     * @since n.e.x.t
-     *
-     * @param string $providerIdOrClassName The provider ID or class name.
-     * @return self
-     */
-    public function usingProvider(string $providerIdOrClassName): self
-    {
-        $this->providerIdOrClassName = $providerIdOrClassName;
-        return $this;
-    }
-
-    /**
      * Sets the system instruction.
      *
      * System instructions are stored in the model configuration and guide
      * the AI model's behavior throughout the conversation.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param string $systemInstruction The system instruction text.
      * @return self
@@ -273,7 +236,7 @@ class PromptBuilder
     /**
      * Sets the maximum number of tokens to generate.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param int $maxTokens The maximum number of tokens.
      * @return self
@@ -287,7 +250,7 @@ class PromptBuilder
     /**
      * Sets the temperature for generation.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param float $temperature The temperature value.
      * @return self
@@ -301,7 +264,7 @@ class PromptBuilder
     /**
      * Sets the top-p value for generation.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param float $topP The top-p value.
      * @return self
@@ -315,7 +278,7 @@ class PromptBuilder
     /**
      * Sets the top-k value for generation.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param int $topK The top-k value.
      * @return self
@@ -329,21 +292,21 @@ class PromptBuilder
     /**
      * Sets stop sequences for generation.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param string ...$stopSequences The stop sequences.
      * @return self
      */
     public function usingStopSequences(string ...$stopSequences): self
     {
-        $this->modelConfig->setCustomOption('stopSequences', $stopSequences);
+        $this->modelConfig->setStopSequences($stopSequences);
         return $this;
     }
 
     /**
      * Sets the number of candidates to generate.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param int $candidateCount The number of candidates.
      * @return self
@@ -355,9 +318,89 @@ class PromptBuilder
     }
 
     /**
+     * Sets the function declarations available to the model.
+     *
+     * @since 0.1.0
+     *
+     * @param FunctionDeclaration ...$functionDeclarations The function declarations.
+     * @return self
+     */
+    public function usingFunctionDeclarations(FunctionDeclaration ...$functionDeclarations): self
+    {
+        $this->modelConfig->setFunctionDeclarations($functionDeclarations);
+        return $this;
+    }
+
+    /**
+     * Sets the presence penalty for generation.
+     *
+     * @since 0.1.0
+     *
+     * @param float $presencePenalty The presence penalty value.
+     * @return self
+     */
+    public function usingPresencePenalty(float $presencePenalty): self
+    {
+        $this->modelConfig->setPresencePenalty($presencePenalty);
+        return $this;
+    }
+
+    /**
+     * Sets the frequency penalty for generation.
+     *
+     * @since 0.1.0
+     *
+     * @param float $frequencyPenalty The frequency penalty value.
+     * @return self
+     */
+    public function usingFrequencyPenalty(float $frequencyPenalty): self
+    {
+        $this->modelConfig->setFrequencyPenalty($frequencyPenalty);
+        return $this;
+    }
+
+    /**
+     * Sets the web search configuration.
+     *
+     * @since 0.1.0
+     *
+     * @param WebSearch $webSearch The web search configuration.
+     * @return self
+     */
+    public function usingWebSearch(WebSearch $webSearch): self
+    {
+        $this->modelConfig->setWebSearch($webSearch);
+        return $this;
+    }
+
+    /**
+     * Sets the top log probabilities configuration.
+     *
+     * If $topLogprobs is null, enables log probabilities.
+     * If $topLogprobs has a value, enables log probabilities and sets the number of top log probabilities to return.
+     *
+     * @since 0.1.0
+     *
+     * @param int|null $topLogprobs The number of top log probabilities to return, or null to enable log probabilities.
+     * @return self
+     */
+    public function usingTopLogprobs(?int $topLogprobs = null): self
+    {
+        // Always enable log probabilities
+        $this->modelConfig->setLogprobs(true);
+
+        // If a specific number is provided, set it
+        if ($topLogprobs !== null) {
+            $this->modelConfig->setTopLogprobs($topLogprobs);
+        }
+
+        return $this;
+    }
+
+    /**
      * Sets the output MIME type.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param string $mimeType The MIME type.
      * @return self
@@ -371,7 +414,7 @@ class PromptBuilder
     /**
      * Sets the output schema.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param array<string, mixed> $schema The output schema.
      * @return self
@@ -385,7 +428,7 @@ class PromptBuilder
     /**
      * Sets the output modalities.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param ModalityEnum ...$modalities The output modalities.
      * @return self
@@ -397,9 +440,68 @@ class PromptBuilder
     }
 
     /**
+     * Sets the output file type.
+     *
+     * @since 0.1.0
+     *
+     * @param FileTypeEnum $fileType The output file type.
+     * @return self
+     */
+    public function asOutputFileType(FileTypeEnum $fileType): self
+    {
+        $this->modelConfig->setOutputFileType($fileType);
+        return $this;
+    }
+
+    /**
+     * Sets the output media orientation.
+     *
+     * @since 1.3.0
+     *
+     * @param MediaOrientationEnum $orientation The output media orientation.
+     * @return self
+     */
+    public function asOutputMediaOrientation(MediaOrientationEnum $orientation): self
+    {
+        $this->modelConfig->setOutputMediaOrientation($orientation);
+        return $this;
+    }
+
+    /**
+     * Sets the output media aspect ratio.
+     *
+     * If set, this supersedes the output media orientation, as it is a more
+     * specific configuration.
+     *
+     * @since 1.3.0
+     *
+     * @param string $aspectRatio The aspect ratio (e.g. "16:9", "3:2").
+     * @return self
+     */
+    public function asOutputMediaAspectRatio(string $aspectRatio): self
+    {
+        $this->modelConfig->setOutputMediaAspectRatio($aspectRatio);
+        return $this;
+    }
+
+    /**
+     * Sets the output speech voice.
+     *
+     * @since 1.3.0
+     *
+     * @param string $voice The output speech voice.
+     * @return self
+     */
+    public function asOutputSpeechVoice(string $voice): self
+    {
+        $this->modelConfig->setOutputSpeechVoice($voice);
+        return $this;
+    }
+
+    /**
      * Configures the prompt for JSON response output.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param array<string, mixed>|null $schema Optional JSON schema.
      * @return self
@@ -413,84 +515,11 @@ class PromptBuilder
         return $this;
     }
 
-    /**
-     * Gets the inferred model requirements based on prompt features.
-     *
-     * @since n.e.x.t
-     *
-     * @param CapabilityEnum $capability The capability the model must support.
-     * @return ModelRequirements The inferred requirements.
-     */
-    private function getModelRequirements(CapabilityEnum $capability): ModelRequirements
-    {
-        $capabilities = [$capability];
-        $inputModalities = [];
-
-        // Check if we have chat history (multiple messages)
-        if (count($this->messages) > 1) {
-            $capabilities[] = CapabilityEnum::chatHistory();
-        }
-
-        // Analyze all messages to determine required input modalities
-        $hasFunctionMessageParts = false;
-        foreach ($this->messages as $message) {
-            foreach ($message->getParts() as $part) {
-                // Check for text input
-                if ($part->getType()->isText()) {
-                    $inputModalities[] = ModalityEnum::text();
-                }
-
-                // Check for file inputs
-                if ($part->getType()->isFile()) {
-                    $file = $part->getFile();
-
-                    if ($file !== null) {
-                        if ($file->isImage()) {
-                            $inputModalities[] = ModalityEnum::image();
-                        } elseif ($file->isAudio()) {
-                            $inputModalities[] = ModalityEnum::audio();
-                        } elseif ($file->isVideo()) {
-                            $inputModalities[] = ModalityEnum::video();
-                        } elseif ($file->isDocument() || $file->isText()) {
-                            $inputModalities[] = ModalityEnum::document();
-                        }
-                    }
-                }
-
-                // Check for function calls/responses (these might require special capabilities)
-                if ($part->getType()->isFunctionCall() || $part->getType()->isFunctionResponse()) {
-                    $hasFunctionMessageParts = true;
-                }
-            }
-        }
-
-        // Build required options from ModelConfig
-        $requiredOptions = $this->modelConfig->toRequiredOptions();
-
-        if ($hasFunctionMessageParts) {
-            // Add function declarations option if we have function calls/responses
-            $requiredOptions = $this->includeInRequiredOptions(
-                $requiredOptions,
-                new RequiredOption(OptionEnum::functionDeclarations(), true)
-            );
-        }
-
-        // Add input modalities if we have any inputs
-        $requiredOptions = $this->includeInRequiredOptions(
-            $requiredOptions,
-            new RequiredOption(OptionEnum::inputModalities(), $inputModalities)
-        );
-
-        return new ModelRequirements(
-            $capabilities,
-            $requiredOptions
-        );
-    }
 
     /**
      * Infers the capability from configured output modalities.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return CapabilityEnum The inferred capability.
      * @throws RuntimeException If the output modality is not supported.
@@ -533,7 +562,7 @@ class PromptBuilder
     /**
      * Infers the capability from a model's implemented interfaces.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param ModelInterface $model The model to infer capability from.
      * @return CapabilityEnum|null The inferred capability, or null if none can be inferred.
@@ -553,7 +582,9 @@ class PromptBuilder
         if ($model instanceof SpeechGenerationModelInterface) {
             return CapabilityEnum::speechGeneration();
         }
-
+        if ($model instanceof VideoGenerationModelInterface) {
+            return CapabilityEnum::videoGeneration();
+        }
         // No supported interface found
         return null;
     }
@@ -561,40 +592,41 @@ class PromptBuilder
     /**
      * Checks if the current prompt is supported by the selected model.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
+     * @since 0.3.0 Method visibility changed to public.
      *
-     * @param CapabilityEnum|null $intendedCapability Optional capability to check support for.
+     * @param CapabilityEnum|null $capability Optional capability to check support for.
      * @return bool True if supported, false otherwise.
      */
-    private function isSupported(?CapabilityEnum $intendedCapability = null): bool
+    public function isSupported(?CapabilityEnum $capability = null): bool
     {
         // If no intended capability provided, infer from output modalities
-        if ($intendedCapability === null) {
-            $intendedCapability = $this->inferCapabilityFromOutputModalities();
+        if ($capability === null) {
+            // First try to infer from a specific model if one is set
+            $model = $this->modelResolver->getModel();
+            if ($model !== null) {
+                $inferredCapability = $this->inferCapabilityFromModelInterfaces($model);
+                if ($inferredCapability !== null) {
+                    $capability = $inferredCapability;
+                }
+            }
+
+            // If still no capability, infer from output modalities
+            if ($capability === null) {
+                $capability = $this->inferCapabilityFromOutputModalities();
+            }
         }
 
         // Build requirements with the specified capability
-        $requirements = $this->getModelRequirements($intendedCapability);
+        $requirements = ModelRequirements::fromPromptData($capability, $this->messages, $this->modelConfig);
 
-        // If the model has been set, check if it meets the requirements
-        if ($this->model !== null) {
-            return $this->model->metadata()->meetsRequirements($requirements);
-        }
-
-        try {
-            // Check if any models support these requirements
-            $models = $this->registry->findModelsMetadataForSupport($requirements);
-            return !empty($models);
-        } catch (InvalidArgumentException $e) {
-            // No models support the requirements
-            return false;
-        }
+        return $this->modelResolver->isSupported($requirements);
     }
 
     /**
      * Checks if the prompt is supported for text generation.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return bool True if text generation is supported.
      */
@@ -606,7 +638,7 @@ class PromptBuilder
     /**
      * Checks if the prompt is supported for image generation.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return bool True if image generation is supported.
      */
@@ -618,7 +650,7 @@ class PromptBuilder
     /**
      * Checks if the prompt is supported for text to speech conversion.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return bool True if text to speech conversion is supported.
      */
@@ -630,7 +662,7 @@ class PromptBuilder
     /**
      * Checks if the prompt is supported for video generation.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return bool True if video generation is supported.
      */
@@ -642,7 +674,7 @@ class PromptBuilder
     /**
      * Checks if the prompt is supported for speech generation.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return bool True if speech generation is supported.
      */
@@ -654,7 +686,7 @@ class PromptBuilder
     /**
      * Checks if the prompt is supported for music generation.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return bool True if music generation is supported.
      */
@@ -666,7 +698,7 @@ class PromptBuilder
     /**
      * Checks if the prompt is supported for embedding generation.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return bool True if embedding generation is supported.
      */
@@ -682,7 +714,7 @@ class PromptBuilder
      * potentially multiple candidates) based on the specified capability or
      * the configured output modality.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param CapabilityEnum|null $capability Optional capability to use for generation.
      *                                        If null, capability is inferred from output modality.
@@ -697,8 +729,9 @@ class PromptBuilder
         // If capability is not provided, infer it
         if ($capability === null) {
             // First try to infer from a specific model if one is set
-            if ($this->model !== null) {
-                $inferredCapability = $this->inferCapabilityFromModelInterfaces($this->model);
+            $setModel = $this->modelResolver->getModel();
+            if ($setModel !== null) {
+                $inferredCapability = $this->inferCapabilityFromModelInterfaces($setModel);
                 if ($inferredCapability !== null) {
                     $capability = $inferredCapability;
                 }
@@ -712,7 +745,38 @@ class PromptBuilder
 
         $model = $this->getConfiguredModel($capability);
 
+        // Dispatch BeforeGenerateResultEvent
+        $this->dispatchEvent(
+            new BeforeGenerateResultEvent($this->messages, $model, $capability)
+        );
+
         // Route to the appropriate generation method based on capability
+        $result = $this->executeModelGeneration($model, $capability, $this->messages);
+
+        // Dispatch AfterGenerateResultEvent
+        $this->dispatchEvent(
+            new AfterGenerateResultEvent($this->messages, $model, $capability, $result)
+        );
+
+        return $result;
+    }
+
+    /**
+     * Executes the model generation based on capability.
+     *
+     * @since 0.4.0
+     *
+     * @param ModelInterface $model The model to use for generation.
+     * @param CapabilityEnum $capability The capability to use.
+     * @param list<Message> $messages The messages to send.
+     * @return GenerativeAiResult The generated result.
+     * @throws RuntimeException If the model doesn't support the required capability.
+     */
+    private function executeModelGeneration(
+        ModelInterface $model,
+        CapabilityEnum $capability,
+        array $messages
+    ): GenerativeAiResult {
         if ($capability->isTextGeneration()) {
             if (!$model instanceof TextGenerationModelInterface) {
                 throw new RuntimeException(
@@ -722,7 +786,7 @@ class PromptBuilder
                     )
                 );
             }
-            return $model->generateTextResult($this->messages);
+            return $model->generateTextResult($messages);
         }
 
         if ($capability->isImageGeneration()) {
@@ -734,7 +798,7 @@ class PromptBuilder
                     )
                 );
             }
-            return $model->generateImageResult($this->messages);
+            return $model->generateImageResult($messages);
         }
 
         if ($capability->isTextToSpeechConversion()) {
@@ -746,7 +810,7 @@ class PromptBuilder
                     )
                 );
             }
-            return $model->convertTextToSpeechResult($this->messages);
+            return $model->convertTextToSpeechResult($messages);
         }
 
         if ($capability->isSpeechGeneration()) {
@@ -758,12 +822,19 @@ class PromptBuilder
                     )
                 );
             }
-            return $model->generateSpeechResult($this->messages);
+            return $model->generateSpeechResult($messages);
         }
 
         if ($capability->isVideoGeneration()) {
-            // Video generation is not yet implemented
-            throw new RuntimeException('Output modality "video" is not yet supported.');
+            if (!$model instanceof VideoGenerationModelInterface) {
+                throw new RuntimeException(
+                    sprintf(
+                        'Model "%s" does not support video generation.',
+                        $model->metadata()->getId()
+                    )
+                );
+            }
+            return $model->generateVideoResult($messages);
         }
 
         // TODO: Add support for other capabilities when interfaces are available
@@ -775,7 +846,7 @@ class PromptBuilder
     /**
      * Generates a text result from the prompt.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return GenerativeAiResult The generated result containing text candidates.
      * @throws InvalidArgumentException If the prompt or model validation fails.
@@ -793,7 +864,7 @@ class PromptBuilder
     /**
      * Generates an image result from the prompt.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return GenerativeAiResult The generated result containing image candidates.
      * @throws InvalidArgumentException If the prompt or model validation fails.
@@ -811,7 +882,7 @@ class PromptBuilder
     /**
      * Generates a speech result from the prompt.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return GenerativeAiResult The generated result containing speech audio candidates.
      * @throws InvalidArgumentException If the prompt or model validation fails.
@@ -829,7 +900,7 @@ class PromptBuilder
     /**
      * Converts text to speech and returns the result.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return GenerativeAiResult The generated result containing speech audio candidates.
      * @throws InvalidArgumentException If the prompt or model validation fails.
@@ -845,9 +916,27 @@ class PromptBuilder
     }
 
     /**
+     * Generates a video result from the prompt.
+     *
+     * @since 1.3.0
+     *
+     * @return GenerativeAiResult The generated result containing video candidates.
+     * @throws InvalidArgumentException If the prompt or model validation fails.
+     * @throws RuntimeException If the model doesn't support video generation.
+     */
+    public function generateVideoResult(): GenerativeAiResult
+    {
+        // Include video in output modalities
+        $this->includeOutputModalities(ModalityEnum::video());
+
+        // Generate and return the result with video generation capability
+        return $this->generateResult(CapabilityEnum::videoGeneration());
+    }
+
+    /**
      * Generates text from the prompt.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return string The generated text.
      * @throws InvalidArgumentException If the prompt or model validation fails.
@@ -860,7 +949,7 @@ class PromptBuilder
     /**
      * Generates multiple text candidates from the prompt.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param int|null $candidateCount The number of candidates to generate.
      * @return list<string> The generated texts.
@@ -879,7 +968,7 @@ class PromptBuilder
     /**
      * Generates an image from the prompt.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return File The generated image file.
      * @throws InvalidArgumentException If the prompt or model validation fails.
@@ -893,7 +982,7 @@ class PromptBuilder
     /**
      * Generates multiple images from the prompt.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param int|null $candidateCount The number of images to generate.
      * @return list<File> The generated image files.
@@ -912,7 +1001,7 @@ class PromptBuilder
     /**
      * Converts text to speech.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return File The generated speech audio file.
      * @throws InvalidArgumentException If the prompt or model validation fails.
@@ -926,7 +1015,7 @@ class PromptBuilder
     /**
      * Converts text to multiple speech outputs.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param int|null $candidateCount The number of speech outputs to generate.
      * @return list<File> The generated speech audio files.
@@ -945,7 +1034,7 @@ class PromptBuilder
     /**
      * Generates speech from the prompt.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return File The generated speech audio file.
      * @throws InvalidArgumentException If the prompt or model validation fails.
@@ -959,7 +1048,7 @@ class PromptBuilder
     /**
      * Generates multiple speech outputs from the prompt.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param int|null $candidateCount The number of speech outputs to generate.
      * @return list<File> The generated speech audio files.
@@ -976,12 +1065,45 @@ class PromptBuilder
     }
 
     /**
+     * Generates a video from the prompt.
+     *
+     * @since 1.3.0
+     *
+     * @return File The generated video file.
+     * @throws InvalidArgumentException If the prompt or model validation fails.
+     * @throws RuntimeException If no video is generated.
+     */
+    public function generateVideo(): File
+    {
+        return $this->generateVideoResult()->toFile();
+    }
+
+    /**
+     * Generates multiple videos from the prompt.
+     *
+     * @since 1.3.0
+     *
+     * @param int|null $candidateCount The number of videos to generate.
+     * @return list<File> The generated video files.
+     * @throws InvalidArgumentException If the prompt or model validation fails.
+     * @throws RuntimeException If no videos are generated.
+     */
+    public function generateVideos(?int $candidateCount = null): array
+    {
+        if ($candidateCount !== null) {
+            $this->usingCandidateCount($candidateCount);
+        }
+
+        return $this->generateVideoResult()->toFiles();
+    }
+
+    /**
      * Appends a MessagePart to the messages array.
      *
      * If the last message has a user role, the part is added to it.
      * Otherwise, a new UserMessage is created with the part.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param MessagePart $part The part to append.
      * @return void
@@ -1007,7 +1129,7 @@ class PromptBuilder
      * If a model has been explicitly set, validates it meets requirements and returns it.
      * Otherwise, finds a suitable model based on the prompt requirements.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param CapabilityEnum $capability The capability the model will be using.
      * @return ModelInterface The model to use.
@@ -1015,75 +1137,15 @@ class PromptBuilder
      */
     private function getConfiguredModel(CapabilityEnum $capability): ModelInterface
     {
-        $requirements = $this->getModelRequirements($capability);
+        $requirements = ModelRequirements::fromPromptData($capability, $this->messages, $this->modelConfig);
 
-        // If a model has been explicitly set, return it
-        if ($this->model !== null) {
-            $this->model->setConfig($this->modelConfig);
-            $this->registry->bindModelDependencies($this->model);
-            return $this->model;
-        }
-
-        // Find a suitable model based on requirements
-        if ($this->providerIdOrClassName === null) {
-            $providerModelsMetadata = $this->registry->findModelsMetadataForSupport($requirements);
-
-            if (empty($providerModelsMetadata)) {
-                throw new InvalidArgumentException(
-                    sprintf(
-                        'No models found that support the required capabilities and options for this prompt. ' .
-                        'Required capabilities: %s. Required options: %s',
-                        implode(', ', array_map(function ($cap) {
-                            return $cap->value;
-                        }, $requirements->getRequiredCapabilities())),
-                        implode(', ', array_map(function ($opt) {
-                            return $opt->getName()->value . '=' . json_encode($opt->getValue());
-                        }, $requirements->getRequiredOptions()))
-                    )
-                );
-            }
-
-            $firstProviderModels = $providerModelsMetadata[0];
-            $provider = $firstProviderModels->getProvider()->getId();
-            $modelMetadata = $firstProviderModels->getModels()[0];
-        } else {
-            $modelsMetadata = $this->registry->findProviderModelsMetadataForSupport(
-                $this->providerIdOrClassName,
-                $requirements
-            );
-
-            if (empty($modelsMetadata)) {
-                throw new InvalidArgumentException(
-                    sprintf(
-                        'No models found for %s that support the required capabilities and options for this prompt. ' .
-                        'Required capabilities: %s. Required options: %s',
-                        $this->providerIdOrClassName,
-                        implode(', ', array_map(function ($cap) {
-                            return $cap->value;
-                        }, $requirements->getRequiredCapabilities())),
-                        implode(', ', array_map(function ($opt) {
-                            return $opt->getName()->value . '=' . json_encode($opt->getValue());
-                        }, $requirements->getRequiredOptions()))
-                    )
-                );
-            }
-
-            $provider = $this->providerIdOrClassName;
-            $modelMetadata = $modelsMetadata[0];
-        }
-
-        // Get the model instance from the provider
-        return $this->registry->getProviderModel(
-            $provider,
-            $modelMetadata->getId(),
-            $this->modelConfig
-        );
+        return $this->modelResolver->resolve($requirements, $this->modelConfig, 'prompt');
     }
 
     /**
      * Parses various input types into a Message with the given role.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param mixed $input The input to parse.
      * @param MessageRoleEnum $defaultRole The role for the message if not specified by input.
@@ -1164,27 +1226,30 @@ class PromptBuilder
      * - The last message is a user message
      * - The last message has parts
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return void
      * @throws InvalidArgumentException If validation fails.
      */
     private function validateMessages(): void
     {
-        if (empty($this->messages)) {
+        // Work on a copy so reset() and end() do not change the property array's internal pointer.
+        $messages = $this->messages;
+
+        if (empty($messages)) {
             throw new InvalidArgumentException(
                 'Cannot generate from an empty prompt. Add content using withText() or similar methods.'
             );
         }
 
-        $firstMessage = reset($this->messages);
+        $firstMessage = reset($messages);
         if (!$firstMessage->getRole()->isUser()) {
             throw new InvalidArgumentException(
                 'The first message must be from a user role, not from ' . $firstMessage->getRole()->value
             );
         }
 
-        $lastMessage = end($this->messages);
+        $lastMessage = end($messages);
         if (!$lastMessage->getRole()->isUser()) {
             throw new InvalidArgumentException(
                 'The last message must be from a user role, not from ' . $lastMessage->getRole()->value
@@ -1201,7 +1266,7 @@ class PromptBuilder
     /**
      * Checks if the value is a list of Message objects.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param mixed $value The value to check.
      * @return bool True if the value is a list of Message objects.
@@ -1225,40 +1290,13 @@ class PromptBuilder
     }
 
     /**
-     * Includes a required option in the list if not already present.
-     *
-     * Checks if a RequiredOption with the same name already exists in the list.
-     * If not, adds the new option. Returns the updated list.
-     *
-     * @since n.e.x.t
-     *
-     * @param list<RequiredOption> $options The existing list of required options.
-     * @param RequiredOption $option The option to potentially add.
-     * @return list<RequiredOption> The updated list of required options.
-     */
-    private function includeInRequiredOptions(array $options, RequiredOption $option): array
-    {
-        // Check if an option with the same name already exists
-        foreach ($options as $existingOption) {
-            if ($existingOption->getName()->equals($option->getName())) {
-                // Option already exists, return unchanged list
-                return $options;
-            }
-        }
-
-        // Add the new option
-        $options[] = $option;
-        return $options;
-    }
-
-    /**
      * Includes output modalities if not already present.
      *
      * Adds the given modalities to the output modalities list if they're not
      * already included. If output modalities is null, initializes it with
      * the given modalities.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param ModalityEnum ...$modalities The modalities to include.
      * @return void
@@ -1290,6 +1328,21 @@ class PromptBuilder
         // Update if we have new modalities to add
         if (!empty($toAdd)) {
             $this->modelConfig->setOutputModalities(array_merge($existing, $toAdd));
+        }
+    }
+
+    /**
+     * Dispatches an event if an event dispatcher is registered.
+     *
+     * @since 0.4.0
+     *
+     * @param object $event The event to dispatch.
+     * @return void
+     */
+    private function dispatchEvent(object $event): void
+    {
+        if ($this->eventDispatcher !== null) {
+            $this->eventDispatcher->dispatch($event);
         }
     }
 }

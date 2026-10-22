@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace WordPress\AiClient\Tools\DTO;
 
-use InvalidArgumentException;
 use WordPress\AiClient\Common\AbstractDataTransferObject;
+use WordPress\AiClient\Common\Exception\InvalidArgumentException;
 
 /**
  * Represents a function call request from an AI model.
@@ -13,7 +13,7 @@ use WordPress\AiClient\Common\AbstractDataTransferObject;
  * This DTO encapsulates information about a function that the AI model
  * wants to invoke, including the function name and its arguments.
  *
- * @since n.e.x.t
+ * @since 0.1.0
  *
  * @phpstan-type FunctionCallArrayShape array{id?: string, name?: string, args?: mixed}
  *
@@ -42,7 +42,7 @@ class FunctionCall extends AbstractDataTransferObject
     /**
      * Constructor.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param string|null $id Unique identifier for this function call.
      * @param string|null $name The name of the function to call.
@@ -63,7 +63,7 @@ class FunctionCall extends AbstractDataTransferObject
     /**
      * Gets the function call ID.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return string|null The function call ID.
      */
@@ -75,7 +75,7 @@ class FunctionCall extends AbstractDataTransferObject
     /**
      * Gets the function name.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return string|null The function name.
      */
@@ -87,7 +87,7 @@ class FunctionCall extends AbstractDataTransferObject
     /**
      * Gets the function arguments.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return mixed The function arguments.
      */
@@ -99,7 +99,7 @@ class FunctionCall extends AbstractDataTransferObject
     /**
      * {@inheritDoc}
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      */
     public static function getJsonSchema(): array
     {
@@ -119,7 +119,7 @@ class FunctionCall extends AbstractDataTransferObject
                     'description' => 'The arguments to pass to the function.',
                 ],
             ],
-            'oneOf' => [
+            'anyOf' => [
                 [
                     'required' => [self::KEY_ID],
                 ],
@@ -133,7 +133,7 @@ class FunctionCall extends AbstractDataTransferObject
     /**
      * {@inheritDoc}
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return FunctionCallArrayShape
      */
@@ -159,7 +159,7 @@ class FunctionCall extends AbstractDataTransferObject
     /**
      * {@inheritDoc}
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      */
     public static function fromArray(array $array): self
     {

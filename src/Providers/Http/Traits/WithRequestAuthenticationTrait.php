@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace WordPress\AiClient\Providers\Http\Traits;
 
-use RuntimeException;
+use WordPress\AiClient\Common\Exception\RuntimeException;
 use WordPress\AiClient\Providers\Http\Contracts\RequestAuthenticationInterface;
 
 /**
  * Trait for a class that implements WithRequestAuthenticationInterface.
  *
- * @since n.e.x.t
+ * @since 0.1.0
  */
 trait WithRequestAuthenticationTrait
 {
@@ -22,7 +22,7 @@ trait WithRequestAuthenticationTrait
     /**
      * {@inheritDoc}
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      */
     public function setRequestAuthentication(RequestAuthenticationInterface $requestAuthentication): void
     {
@@ -32,7 +32,7 @@ trait WithRequestAuthenticationTrait
     /**
      * {@inheritDoc}
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      */
     public function getRequestAuthentication(): RequestAuthenticationInterface
     {

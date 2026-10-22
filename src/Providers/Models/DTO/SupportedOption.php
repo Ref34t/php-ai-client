@@ -4,8 +4,9 @@ declare(strict_types=1);
 
 namespace WordPress\AiClient\Providers\Models\DTO;
 
-use InvalidArgumentException;
 use WordPress\AiClient\Common\AbstractDataTransferObject;
+use WordPress\AiClient\Common\AbstractEnum;
+use WordPress\AiClient\Common\Exception\InvalidArgumentException;
 use WordPress\AiClient\Providers\Models\Enums\OptionEnum;
 
 /**
@@ -14,7 +15,7 @@ use WordPress\AiClient\Providers\Models\Enums\OptionEnum;
  * This class defines an option that a model supports, including its name
  * and the values that are valid for that option.
  *
- * @since n.e.x.t
+ * @since 0.1.0
  *
  * @phpstan-type SupportedOptionArrayShape array{
  *     name: string,
@@ -41,7 +42,7 @@ class SupportedOption extends AbstractDataTransferObject
     /**
      * Constructor.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param OptionEnum $name The option name.
      * @param list<mixed>|null $supportedValues The supported values for this option, or null if any value is supported.
@@ -61,7 +62,7 @@ class SupportedOption extends AbstractDataTransferObject
     /**
      * Gets the option name.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return OptionEnum The option name.
      */
@@ -73,7 +74,7 @@ class SupportedOption extends AbstractDataTransferObject
     /**
      * Checks if a value is supported for this option.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param mixed $value The value to check.
      * @return bool True if the value is supported, false otherwise.
@@ -87,26 +88,71 @@ class SupportedOption extends AbstractDataTransferObject
 
         // If the value is an array, consider it a set (i.e. order doesn't matter).
         if (is_array($value)) {
-            sort($value);
+            $normalizedValue = self::normalizeArrayForComparison($value);
             foreach ($this->supportedValues as $supportedValue) {
                 if (!is_array($supportedValue)) {
                     continue;
                 }
-                sort($supportedValue);
-                if ($value === $supportedValue) {
+                $normalizedSupported = self::normalizeArrayForComparison($supportedValue);
+                if ($normalizedValue === $normalizedSupported) {
                     return true;
                 }
             }
             return false;
         }
 
-        return in_array($value, $this->supportedValues, true);
+        $normalizedValue = self::normalizeValue($value);
+        foreach ($this->supportedValues as $supportedValue) {
+            if (self::normalizeValue($supportedValue) === $normalizedValue) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Normalizes an AbstractEnum instance to its string value.
+     *
+     * This ensures comparisons work correctly even after deserialization
+     * (e.g. Redis/Memcached object cache), where AbstractEnum singletons
+     * are reconstructed as separate instances.
+     *
+     * @since 1.2.1
+     *
+     * @param mixed $value The value to normalize.
+     * @return mixed The normalized value.
+     */
+    private static function normalizeValue($value)
+    {
+        if ($value instanceof AbstractEnum) {
+            return $value->value;
+        }
+        return $value;
+    }
+
+    /**
+     * Normalizes and sorts an array for comparison.
+     *
+     * Maps each element through normalizeValue() and sorts the result,
+     * ensuring consistent comparison regardless of element order or
+     * AbstractEnum instance identity.
+     *
+     * @since 1.2.1
+     *
+     * @param array<mixed> $items The array to normalize.
+     * @return array<mixed> The normalized, sorted array.
+     */
+    private static function normalizeArrayForComparison(array $items): array
+    {
+        $normalized = array_map([self::class, 'normalizeValue'], $items);
+        sort($normalized);
+        return $normalized;
     }
 
     /**
      * Gets the supported values for this option.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return list<mixed>|null The supported values, or null if any value is supported.
      */
@@ -118,7 +164,7 @@ class SupportedOption extends AbstractDataTransferObject
     /**
      * {@inheritDoc}
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      */
     public static function getJsonSchema(): array
     {
@@ -152,7 +198,7 @@ class SupportedOption extends AbstractDataTransferObject
     /**
      * {@inheritDoc}
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return SupportedOptionArrayShape
      */
@@ -174,7 +220,7 @@ class SupportedOption extends AbstractDataTransferObject
     /**
      * {@inheritDoc}
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      */
     public static function fromArray(array $array): self
     {

@@ -103,35 +103,28 @@ class MessageTest extends TestCase
     }
 
     /**
-     * Tests complex message with all part types.
+     * Tests complex message with multiple content types (text and files).
      *
      * @return void
      */
-    public function testComplexMessageWithAllPartTypes(): void
+    public function testComplexMessageWithMultipleContentTypes(): void
     {
-        // Test with user role since it can have function responses but not function calls
+        // Test user message with text and files
         $role = MessageRoleEnum::user();
         $parts = [
             new MessagePart('I need help with searching.'),
-            new MessagePart(new FunctionResponse('search_123', 'webSearch', ['results' => ['item1', 'item2']])),
             new MessagePart('Here is additional information:'),
             new MessagePart(new File('data:text/plain;base64,SGVsbG8=', 'text/plain')),
         ];
 
         $message = new Message($role, $parts);
 
-        $this->assertCount(4, $message->getParts());
+        $this->assertCount(3, $message->getParts());
+        $this->assertEquals('I need help with searching.', $message->getParts()[0]->getText());
+        $this->assertEquals('Here is additional information:', $message->getParts()[1]->getText());
+        $this->assertInstanceOf(File::class, $message->getParts()[2]->getFile());
 
-        // Verify each part type
-        $this->assertEquals(
-            'I need help with searching.',
-            $message->getParts()[0]->getText()
-        );
-        $this->assertInstanceOf(FunctionResponse::class, $message->getParts()[1]->getFunctionResponse());
-        $this->assertEquals('Here is additional information:', $message->getParts()[2]->getText());
-        $this->assertInstanceOf(File::class, $message->getParts()[3]->getFile());
-
-        // Also test model role with function calls
+        // Test model message with text and function calls (model can combine these)
         $modelRole = MessageRoleEnum::model();
         $modelParts = [
             new MessagePart('I\'ll help you with that. Let me search for the information.'),
@@ -383,8 +376,6 @@ class MessageTest extends TestCase
 
     /**
      * Tests that withPart creates a new instance with the part appended.
-     *
-     * @since n.e.x.t
      */
     public function testWithPartCreatesNewInstance(): void
     {
@@ -508,5 +499,30 @@ class MessageTest extends TestCase
         ];
 
         new Message(MessageRoleEnum::user(), $parts);
+    }
+
+    /**
+     * Tests that cloning the message creates independent part copies.
+     *
+     * @return void
+     */
+    public function testCloneClonesParts(): void
+    {
+        $parts = [
+            new MessagePart('First part'),
+            new MessagePart('Second part'),
+        ];
+        $original = new Message(MessageRoleEnum::user(), $parts);
+        $cloned = clone $original;
+
+        // Parts should be different instances
+        $originalParts = $original->getParts();
+        $clonedParts = $cloned->getParts();
+        foreach ($originalParts as $index => $originalPart) {
+            $this->assertNotSame($originalPart, $clonedParts[$index]);
+        }
+
+        // Role enum should be the same instance (enums are singletons)
+        $this->assertSame($original->getRole(), $cloned->getRole());
     }
 }

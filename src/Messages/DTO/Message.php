@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace WordPress\AiClient\Messages\DTO;
 
-use InvalidArgumentException;
 use WordPress\AiClient\Common\AbstractDataTransferObject;
+use WordPress\AiClient\Common\Exception\InvalidArgumentException;
 use WordPress\AiClient\Messages\Enums\MessageRoleEnum;
 
 /**
@@ -14,7 +14,7 @@ use WordPress\AiClient\Messages\Enums\MessageRoleEnum;
  * Messages are the fundamental unit of communication with AI models,
  * containing a role and one or more parts with different content types.
  *
- * @since n.e.x.t
+ * @since 0.1.0
  *
  * @phpstan-import-type MessagePartArrayShape from MessagePart
  *
@@ -42,7 +42,7 @@ class Message extends AbstractDataTransferObject
     /**
      * Constructor.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param MessageRoleEnum $role The role of the message sender.
      * @param MessagePart[] $parts The parts that make up this message.
@@ -58,7 +58,7 @@ class Message extends AbstractDataTransferObject
     /**
      * Gets the role of the message sender.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return MessageRoleEnum The role.
      */
@@ -70,7 +70,7 @@ class Message extends AbstractDataTransferObject
     /**
      * Gets the message parts.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return MessagePart[] The message parts.
      */
@@ -82,7 +82,7 @@ class Message extends AbstractDataTransferObject
     /**
      * Returns a new instance with the given part appended.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param MessagePart $part The part to append.
      * @return Message A new instance with the part appended.
@@ -99,7 +99,7 @@ class Message extends AbstractDataTransferObject
     /**
      * Validates that the message parts are appropriate for the message role.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return void
      * @throws InvalidArgumentException If validation fails.
@@ -107,13 +107,15 @@ class Message extends AbstractDataTransferObject
     private function validateParts(): void
     {
         foreach ($this->parts as $part) {
-            if ($this->role->isUser() && $part->getType()->isFunctionCall()) {
+            $type = $part->getType();
+
+            if ($this->role->isUser() && $type->isFunctionCall()) {
                 throw new InvalidArgumentException(
                     'User messages cannot contain function calls.'
                 );
             }
 
-            if ($this->role->isModel() && $part->getType()->isFunctionResponse()) {
+            if ($this->role->isModel() && $type->isFunctionResponse()) {
                 throw new InvalidArgumentException(
                     'Model messages cannot contain function responses.'
                 );
@@ -124,7 +126,7 @@ class Message extends AbstractDataTransferObject
     /**
      * {@inheritDoc}
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      */
     public static function getJsonSchema(): array
     {
@@ -150,7 +152,7 @@ class Message extends AbstractDataTransferObject
     /**
      * {@inheritDoc}
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return MessageArrayShape
      */
@@ -167,7 +169,7 @@ class Message extends AbstractDataTransferObject
     /**
      * {@inheritDoc}
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return self The specific message class based on the role.
      */
@@ -188,7 +190,24 @@ class Message extends AbstractDataTransferObject
             return new ModelMessage($parts);
         } else {
             // Only USER and MODEL roles are supported
-            throw new \InvalidArgumentException('Invalid message role: ' . $role->value);
+            throw new InvalidArgumentException('Invalid message role: ' . $role->value);
         }
+    }
+
+    /**
+     * Performs a deep clone of the message.
+     *
+     * This method ensures that message part objects are cloned to prevent
+     * modifications to the cloned message from affecting the original.
+     *
+     * @since 0.4.2
+     */
+    public function __clone()
+    {
+        $clonedParts = [];
+        foreach ($this->parts as $part) {
+            $clonedParts[] = clone $part;
+        }
+        $this->parts = $clonedParts;
     }
 }

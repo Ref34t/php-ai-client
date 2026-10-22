@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace WordPress\AiClient\Providers\Models\DTO;
 
-use InvalidArgumentException;
 use WordPress\AiClient\Common\AbstractDataTransferObject;
+use WordPress\AiClient\Common\Exception\InvalidArgumentException;
 use WordPress\AiClient\Providers\Models\Enums\CapabilityEnum;
 
 /**
@@ -14,7 +14,7 @@ use WordPress\AiClient\Providers\Models\Enums\CapabilityEnum;
  * This class contains information about a specific AI model, including
  * its identifier, display name, supported capabilities, and configuration options.
  *
- * @since n.e.x.t
+ * @since 0.1.0
  *
  * @phpstan-import-type SupportedOptionArrayShape from SupportedOption
  *
@@ -54,20 +54,11 @@ class ModelMetadata extends AbstractDataTransferObject
      */
     protected array $supportedOptions;
 
-    /**
-     * @var array<string, true> Map of supported capabilities for O(1) lookups.
-     */
-    private array $capabilitiesMap = [];
-
-    /**
-     * @var array<string, SupportedOption> Map of supported options by name for O(1) lookups.
-     */
-    private array $optionsMap = [];
 
     /**
      * Constructor.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param string $id The model's unique identifier.
      * @param string $name The model's display name.
@@ -90,22 +81,12 @@ class ModelMetadata extends AbstractDataTransferObject
         $this->name = $name;
         $this->supportedCapabilities = $supportedCapabilities;
         $this->supportedOptions = $supportedOptions;
-
-        // Build capability map for efficient lookups
-        foreach ($supportedCapabilities as $capability) {
-            $this->capabilitiesMap[$capability->value] = true;
-        }
-
-        // Build options map for efficient lookups
-        foreach ($supportedOptions as $option) {
-            $this->optionsMap[$option->getName()->value] = $option;
-        }
     }
 
     /**
      * Gets the model's unique identifier.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return string The model ID.
      */
@@ -117,7 +98,7 @@ class ModelMetadata extends AbstractDataTransferObject
     /**
      * Gets the model's display name.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return string The model name.
      */
@@ -129,7 +110,7 @@ class ModelMetadata extends AbstractDataTransferObject
     /**
      * Gets the model's supported capabilities.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return list<CapabilityEnum> The supported capabilities.
      */
@@ -141,7 +122,7 @@ class ModelMetadata extends AbstractDataTransferObject
     /**
      * Gets the model's supported configuration options.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return list<SupportedOption> The supported options.
      */
@@ -153,7 +134,7 @@ class ModelMetadata extends AbstractDataTransferObject
     /**
      * {@inheritDoc}
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      */
     public static function getJsonSchema(): array
     {
@@ -189,7 +170,7 @@ class ModelMetadata extends AbstractDataTransferObject
     /**
      * {@inheritDoc}
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return ModelMetadataArrayShape
      */
@@ -210,45 +191,9 @@ class ModelMetadata extends AbstractDataTransferObject
     }
 
     /**
-     * Checks whether this model meets the specified requirements.
-     *
-     * @since n.e.x.t
-     *
-     * @param ModelRequirements $requirements The requirements to check against.
-     * @return bool True if the model meets all requirements, false otherwise.
-     */
-    public function meetsRequirements(ModelRequirements $requirements): bool
-    {
-        // Check if all required capabilities are supported using map lookup
-        foreach ($requirements->getRequiredCapabilities() as $requiredCapability) {
-            if (!isset($this->capabilitiesMap[$requiredCapability->value])) {
-                return false;
-            }
-        }
-
-        // Check if all required options are supported with the specified values
-        foreach ($requirements->getRequiredOptions() as $requiredOption) {
-            // Use map lookup instead of linear search
-            if (!isset($this->optionsMap[$requiredOption->getName()->value])) {
-                return false;
-            }
-
-            $supportedOption = $this->optionsMap[$requiredOption->getName()->value];
-
-            // Check if the required value is supported by this option
-            if (!$supportedOption->isSupportedValue($requiredOption->getValue())) {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
-
-    /**
      * {@inheritDoc}
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      */
     public static function fromArray(array $array): self
     {
@@ -271,5 +216,22 @@ class ModelMetadata extends AbstractDataTransferObject
                 $array[self::KEY_SUPPORTED_OPTIONS]
             )
         );
+    }
+
+    /**
+     * Performs a deep clone of the model metadata.
+     *
+     * This method ensures that supported option objects are cloned to prevent
+     * modifications to the cloned metadata from affecting the original.
+     *
+     * @since 0.4.2
+     */
+    public function __clone()
+    {
+        $clonedOptions = [];
+        foreach ($this->supportedOptions as $option) {
+            $clonedOptions[] = clone $option;
+        }
+        $this->supportedOptions = $clonedOptions;
     }
 }

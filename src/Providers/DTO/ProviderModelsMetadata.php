@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace WordPress\AiClient\Providers\DTO;
 
-use InvalidArgumentException;
 use WordPress\AiClient\Common\AbstractDataTransferObject;
+use WordPress\AiClient\Common\Exception\InvalidArgumentException;
 use WordPress\AiClient\Providers\Models\DTO\ModelMetadata;
 
 /**
@@ -14,7 +14,7 @@ use WordPress\AiClient\Providers\Models\DTO\ModelMetadata;
  * This class combines provider information with the models that
  * the provider offers, facilitating model discovery and selection.
  *
- * @since n.e.x.t
+ * @since 0.1.0
  *
  * @phpstan-import-type ProviderMetadataArrayShape from ProviderMetadata
  * @phpstan-import-type ModelMetadataArrayShape from ModelMetadata
@@ -44,7 +44,7 @@ class ProviderModelsMetadata extends AbstractDataTransferObject
     /**
      * Constructor.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param ProviderMetadata $provider The provider metadata.
      * @param list<ModelMetadata> $models The available models.
@@ -62,9 +62,30 @@ class ProviderModelsMetadata extends AbstractDataTransferObject
     }
 
     /**
+     * Creates a deep clone of this metadata.
+     *
+     * Clones the provider metadata and all model metadata objects
+     * to ensure the cloned instance is independent of the original.
+     *
+     * @since 0.4.2
+     */
+    public function __clone()
+    {
+        // Clone provider metadata
+        $this->provider = clone $this->provider;
+
+        // Deep clone models array (ModelMetadata has __clone)
+        $clonedModels = [];
+        foreach ($this->models as $model) {
+            $clonedModels[] = clone $model;
+        }
+        $this->models = $clonedModels;
+    }
+
+    /**
      * Gets the provider metadata.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return ProviderMetadata The provider metadata.
      */
@@ -76,7 +97,7 @@ class ProviderModelsMetadata extends AbstractDataTransferObject
     /**
      * Gets the available models.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return list<ModelMetadata> The available models.
      */
@@ -88,7 +109,7 @@ class ProviderModelsMetadata extends AbstractDataTransferObject
     /**
      * {@inheritDoc}
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      */
     public static function getJsonSchema(): array
     {
@@ -109,7 +130,7 @@ class ProviderModelsMetadata extends AbstractDataTransferObject
     /**
      * {@inheritDoc}
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return ProviderModelsMetadataArrayShape
      */
@@ -127,7 +148,7 @@ class ProviderModelsMetadata extends AbstractDataTransferObject
     /**
      * {@inheritDoc}
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      */
     public static function fromArray(array $array): self
     {

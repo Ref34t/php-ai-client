@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace WordPress\AiClient\Results\DTO;
 
-use InvalidArgumentException;
 use WordPress\AiClient\Common\AbstractDataTransferObject;
+use WordPress\AiClient\Common\Exception\InvalidArgumentException;
 use WordPress\AiClient\Messages\DTO\Message;
 use WordPress\AiClient\Results\Enums\FinishReasonEnum;
 
@@ -15,7 +15,7 @@ use WordPress\AiClient\Results\Enums\FinishReasonEnum;
  * When generating content, AI models can produce multiple candidates.
  * Each candidate contains a message and metadata about why generation stopped.
  *
- * @since n.e.x.t
+ * @since 0.1.0
  *
  * @phpstan-import-type MessageArrayShape from Message
  *
@@ -40,7 +40,7 @@ class Candidate extends AbstractDataTransferObject
     /**
      * Constructor.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @param Message $message The generated message.
      * @param FinishReasonEnum $finishReason The reason generation stopped.
@@ -60,7 +60,7 @@ class Candidate extends AbstractDataTransferObject
     /**
      * Gets the generated message.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return Message The message.
      */
@@ -72,7 +72,7 @@ class Candidate extends AbstractDataTransferObject
     /**
      * Gets the finish reason.
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return FinishReasonEnum The finish reason.
      */
@@ -84,7 +84,7 @@ class Candidate extends AbstractDataTransferObject
     /**
      * {@inheritDoc}
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      */
     public static function getJsonSchema(): array
     {
@@ -105,7 +105,7 @@ class Candidate extends AbstractDataTransferObject
     /**
      * {@inheritDoc}
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      *
      * @return CandidateArrayShape
      */
@@ -120,7 +120,7 @@ class Candidate extends AbstractDataTransferObject
     /**
      * {@inheritDoc}
      *
-     * @since n.e.x.t
+     * @since 0.1.0
      */
     public static function fromArray(array $array): self
     {
@@ -132,5 +132,18 @@ class Candidate extends AbstractDataTransferObject
             Message::fromArray($messageData),
             FinishReasonEnum::from($array[self::KEY_FINISH_REASON])
         );
+    }
+
+    /**
+     * Performs a deep clone of the candidate.
+     *
+     * This method ensures that the message object is cloned to prevent
+     * modifications to the cloned candidate from affecting the original.
+     *
+     * @since 0.4.2
+     */
+    public function __clone()
+    {
+        $this->message = clone $this->message;
     }
 }

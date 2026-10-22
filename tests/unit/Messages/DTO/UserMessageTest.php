@@ -14,7 +14,7 @@ use WordPress\AiClient\Messages\Enums\MessageRoleEnum;
 use WordPress\AiClient\Tests\traits\ArrayTransformationTestTrait;
 
 /**
- * @covers UserMessage
+ * @covers \WordPress\AiClient\Messages\DTO\UserMessage
  */
 class UserMessageTest extends TestCase
 {
@@ -314,8 +314,6 @@ class UserMessageTest extends TestCase
 
     /**
      * Tests that withPart returns a new Message with user role.
-     *
-     * @since n.e.x.t
      */
     public function testWithPartReturnsNewMessage(): void
     {

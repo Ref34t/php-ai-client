@@ -8,6 +8,7 @@ use JsonSerializable;
 use PHPUnit\Framework\TestCase;
 use WordPress\AiClient\Common\Contracts\WithArrayTransformationInterface;
 use WordPress\AiClient\Common\Contracts\WithJsonSchemaInterface;
+use WordPress\AiClient\Common\Exception\InvalidArgumentException;
 use WordPress\AiClient\Providers\DTO\ProviderMetadata;
 use WordPress\AiClient\Providers\Enums\ProviderTypeEnum;
 
@@ -31,8 +32,71 @@ class ProviderMetadataTest extends TestCase
 
         $this->assertEquals($id, $metadata->getId());
         $this->assertEquals($name, $metadata->getName());
+        $this->assertNull($metadata->getDescription());
         $this->assertSame($type, $metadata->getType());
         $this->assertTrue($metadata->getType()->isCloud());
+        $this->assertNull($metadata->getCredentialsUrl());
+        $this->assertNull($metadata->getLogoPath());
+    }
+
+    /**
+     * Tests constructor with credentials URL.
+     *
+     * @return void
+     */
+    public function testConstructorWithCredentialsUrl(): void
+    {
+        $id = 'openai';
+        $name = 'OpenAI';
+        $type = ProviderTypeEnum::cloud();
+        $credentialsUrl = 'https://platform.openai.com/account/api-keys';
+
+        $metadata = new ProviderMetadata($id, $name, $type, $credentialsUrl);
+
+        $this->assertEquals($id, $metadata->getId());
+        $this->assertEquals($name, $metadata->getName());
+        $this->assertSame($type, $metadata->getType());
+        $this->assertEquals($credentialsUrl, $metadata->getCredentialsUrl());
+    }
+
+    /**
+     * Tests constructor with description.
+     *
+     * @return void
+     */
+    public function testConstructorWithDescription(): void
+    {
+        $id = 'openai';
+        $name = 'OpenAI';
+        $type = ProviderTypeEnum::cloud();
+        $description = 'OpenAI is a leading AI research lab.';
+
+        $metadata = new ProviderMetadata($id, $name, $type, null, null, $description);
+
+        $this->assertEquals($id, $metadata->getId());
+        $this->assertEquals($name, $metadata->getName());
+        $this->assertEquals($description, $metadata->getDescription());
+        $this->assertSame($type, $metadata->getType());
+    }
+
+    /**
+     * Tests constructor with logo path.
+     *
+     * @return void
+     */
+    public function testConstructorWithLogoPath(): void
+    {
+        $id = 'openai';
+        $name = 'OpenAI';
+        $type = ProviderTypeEnum::cloud();
+        $logoPath = '/var/www/assets/openai-logo.png';
+
+        $metadata = new ProviderMetadata($id, $name, $type, null, null, null, $logoPath);
+
+        $this->assertEquals($id, $metadata->getId());
+        $this->assertEquals($name, $metadata->getName());
+        $this->assertEquals($logoPath, $metadata->getLogoPath());
+        $this->assertSame($type, $metadata->getType());
     }
 
     /**
@@ -77,12 +141,18 @@ class ProviderMetadataTest extends TestCase
         $this->assertArrayHasKey('properties', $schema);
         $this->assertArrayHasKey(ProviderMetadata::KEY_ID, $schema['properties']);
         $this->assertArrayHasKey(ProviderMetadata::KEY_NAME, $schema['properties']);
+        $this->assertArrayHasKey(ProviderMetadata::KEY_DESCRIPTION, $schema['properties']);
         $this->assertArrayHasKey(ProviderMetadata::KEY_TYPE, $schema['properties']);
+        $this->assertArrayHasKey(ProviderMetadata::KEY_CREDENTIALS_URL, $schema['properties']);
+        $this->assertArrayHasKey(ProviderMetadata::KEY_LOGO_PATH, $schema['properties']);
 
         // Check property types
         $this->assertEquals('string', $schema['properties'][ProviderMetadata::KEY_ID]['type']);
         $this->assertEquals('string', $schema['properties'][ProviderMetadata::KEY_NAME]['type']);
+        $this->assertEquals('string', $schema['properties'][ProviderMetadata::KEY_DESCRIPTION]['type']);
         $this->assertEquals('string', $schema['properties'][ProviderMetadata::KEY_TYPE]['type']);
+        $this->assertEquals('string', $schema['properties'][ProviderMetadata::KEY_CREDENTIALS_URL]['type']);
+        $this->assertEquals('string', $schema['properties'][ProviderMetadata::KEY_LOGO_PATH]['type']);
 
         // Check enum values for type
         $this->assertArrayHasKey('enum', $schema['properties'][ProviderMetadata::KEY_TYPE]);
@@ -109,8 +179,12 @@ class ProviderMetadataTest extends TestCase
         $this->assertIsArray($array);
         $this->assertEquals('anthropic', $array[ProviderMetadata::KEY_ID]);
         $this->assertEquals('Anthropic', $array[ProviderMetadata::KEY_NAME]);
+        $this->assertNull($array[ProviderMetadata::KEY_DESCRIPTION]);
         $this->assertEquals('cloud', $array[ProviderMetadata::KEY_TYPE]);
-        $this->assertCount(3, $array);
+        $this->assertNull($array[ProviderMetadata::KEY_CREDENTIALS_URL]);
+        $this->assertNull($array[ProviderMetadata::KEY_AUTHENTICATION_METHOD]);
+        $this->assertNull($array[ProviderMetadata::KEY_LOGO_PATH]);
+        $this->assertCount(7, $array);
     }
 
     /**
@@ -123,7 +197,8 @@ class ProviderMetadataTest extends TestCase
         $data = [
             ProviderMetadata::KEY_ID => 'custom-provider',
             ProviderMetadata::KEY_NAME => 'Custom Provider',
-            ProviderMetadata::KEY_TYPE => 'server'
+            ProviderMetadata::KEY_TYPE => 'server',
+            ProviderMetadata::KEY_CREDENTIALS_URL => 'https://example.com/credentials',
         ];
 
         $metadata = ProviderMetadata::fromArray($data);
@@ -132,6 +207,7 @@ class ProviderMetadataTest extends TestCase
         $this->assertEquals('custom-provider', $metadata->getId());
         $this->assertEquals('Custom Provider', $metadata->getName());
         $this->assertTrue($metadata->getType()->isServer());
+        $this->assertEquals('https://example.com/credentials', $metadata->getCredentialsUrl());
     }
 
     /**
@@ -189,20 +265,64 @@ class ProviderMetadataTest extends TestCase
     }
 
     /**
-     * Tests with empty strings.
+     * Tests that empty string ID throws an exception.
      *
      * @return void
      */
-    public function testEmptyStrings(): void
+    public function testEmptyIdThrowsException(): void
     {
-        $metadata = new ProviderMetadata('', '', ProviderTypeEnum::cloud());
+        $this->expectException(InvalidArgumentException::class);
+        new ProviderMetadata('', '', ProviderTypeEnum::cloud());
+    }
 
-        $this->assertEquals('', $metadata->getId());
-        $this->assertEquals('', $metadata->getName());
+    /**
+     * Tests that uppercase characters in ID throw an exception.
+     *
+     * @return void
+     */
+    public function testUppercaseIdThrowsException(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        new ProviderMetadata('OpenAI', 'OpenAI', ProviderTypeEnum::cloud());
+    }
 
-        $array = $metadata->toArray();
-        $this->assertEquals('', $array[ProviderMetadata::KEY_ID]);
-        $this->assertEquals('', $array[ProviderMetadata::KEY_NAME]);
+    /**
+     * Tests that spaces in ID throw an exception.
+     *
+     * @return void
+     */
+    public function testSpacesInIdThrowsException(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        new ProviderMetadata('my provider', 'My Provider', ProviderTypeEnum::cloud());
+    }
+
+    /**
+     * Tests that special characters in ID throw an exception.
+     *
+     * @return void
+     */
+    public function testSpecialCharsInIdThrowsException(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        new ProviderMetadata('provider!', 'Provider', ProviderTypeEnum::cloud());
+    }
+
+    /**
+     * Tests that valid IDs with hyphens and underscores are accepted.
+     *
+     * @return void
+     */
+    public function testValidIdFormats(): void
+    {
+        $metadata1 = new ProviderMetadata('my-provider', 'My Provider', ProviderTypeEnum::cloud());
+        $this->assertEquals('my-provider', $metadata1->getId());
+
+        $metadata2 = new ProviderMetadata('provider_v2', 'Provider V2', ProviderTypeEnum::cloud());
+        $this->assertEquals('provider_v2', $metadata2->getId());
+
+        $metadata3 = new ProviderMetadata('a1-b2_c3', 'Test', ProviderTypeEnum::cloud());
+        $this->assertEquals('a1-b2_c3', $metadata3->getId());
     }
 
     /**
